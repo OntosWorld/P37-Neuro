@@ -75,10 +75,14 @@ class FakeKms:
 
     def get_public_key(self, *, request):
         assert request["name"] == self.name
-        pem = self.private_key.public_key().public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo,
-        ).decode("utf-8")
+        pem = (
+            self.private_key.public_key()
+            .public_bytes(
+                encoding=serialization.Encoding.PEM,
+                format=serialization.PublicFormat.SubjectPublicKeyInfo,
+            )
+            .decode("utf-8")
+        )
         return FakePublicKeyResponse(
             name=self.name,
             pem=pem,
@@ -116,10 +120,7 @@ def test_s3_store_is_content_addressed_and_verified(tmp_path: Path) -> None:
 
 
 def test_kms_signer_preserves_release_verification() -> None:
-    key_name = (
-        "projects/p/locations/global/keyRings/releases/cryptoKeys/p37/"
-        "cryptoKeyVersions/1"
-    )
+    key_name = "projects/p/locations/global/keyRings/releases/cryptoKeys/p37/cryptoKeyVersions/1"
     private_key = Ed25519PrivateKey.generate()
     signer = GcpKmsReleaseSigner(
         key_name,

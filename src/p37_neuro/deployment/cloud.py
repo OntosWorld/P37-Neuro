@@ -48,9 +48,7 @@ class S3ArtifactStore:
             try:
                 boto3: Any = import_module("boto3")
             except ModuleNotFoundError as exc:
-                raise RuntimeError(
-                    "S3 support is optional; install p37-neuro[cloud]"
-                ) from exc
+                raise RuntimeError("S3 support is optional; install p37-neuro[cloud]") from exc
             client = boto3.client("s3", endpoint_url=endpoint_url)
         self.client = client
 
