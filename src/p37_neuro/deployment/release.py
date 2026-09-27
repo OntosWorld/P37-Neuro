@@ -76,11 +76,12 @@ class SignedRelease:
                 indent=2,
                 sort_keys=True,
             )
-            + "\n"
+            + "
+"
         )
 
     @classmethod
-    def from_json(cls, text: str) -> "SignedRelease":
+    def from_json(cls, text: str) -> SignedRelease:
         raw = json.loads(text)
         return cls(
             manifest=ReleaseManifest(**raw["manifest"]),
@@ -96,11 +97,15 @@ class ReleaseSigner:
         self.private_key = private_key
 
     @classmethod
-    def generate(cls) -> "ReleaseSigner":
+    def generate(cls) -> ReleaseSigner:
         return cls(Ed25519PrivateKey.generate())
 
     @classmethod
-    def from_private_key_pem(cls, path: str | Path, password: bytes | None = None) -> "ReleaseSigner":
+    def from_private_key_pem(
+        cls,
+        path: str | Path,
+        password: bytes | None = None,
+    ) -> ReleaseSigner:
         key = serialization.load_pem_private_key(Path(path).read_bytes(), password=password)
         if not isinstance(key, Ed25519PrivateKey):
             raise ValueError("release key must be Ed25519")

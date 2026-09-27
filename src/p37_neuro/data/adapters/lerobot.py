@@ -67,7 +67,7 @@ def from_frames(
     *,
     embodiment: EmbodimentSpec,
     source: str,
-    mapping: LeRobotMapping = LeRobotMapping(),
+    mapping: LeRobotMapping | None = None,
 ) -> tuple[Episode, ...]:
     """Normalize LeRobot frame dictionaries into P37 episodes.
 
@@ -75,10 +75,11 @@ def from_frames(
     decoded cache. The mapping is explicit because public datasets differ in
     how robot state vectors are constructed.
     """
+    resolved_mapping = mapping or LeRobotMapping()
     grouped: OrderedDict[int, list[Mapping[str, Any]]] = OrderedDict()
     for frame_index, frame in enumerate(frames):
         try:
-            episode_index = int(frame[mapping.episode_index_key])
+            episode_index = int(frame[resolved_mapping.episode_index_key])
         except (KeyError, TypeError, ValueError) as exc:
             raise LeRobotAdapterError(
                 f"frame {frame_index} has no valid episode index"
@@ -92,14 +93,20 @@ def from_frames(
 
         for step_index, row in enumerate(rows):
             try:
-                timestamp = float(row[mapping.timestamp_key])
+                timestamp = float(row[resolved_mapping.timestamp_key])
                 positions = _joint_map(
-                    _vector(row[mapping.position_key], label=mapping.position_key),
+                    _vector(
+                        row[resolved_mapping.position_key],
+                        label=resolved_mapping.position_key,
+                    ),
                     embodiment,
                     label="position",
                 )
                 actions = _joint_map(
-                    _vector(row[mapping.action_key], label=mapping.action_key),
+                    _vector(
+                        row[resolved_mapping.action_key],
+                        label=resolved_mapping.action_key,
+                    ),
                     embodiment,
                     label="action",
                 )
@@ -111,23 +118,38 @@ def from_frames(
                 ) from exc
 
             velocities: dict[str, float] = {}
-            if mapping.velocity_key is not None and mapping.velocity_key in row:
+            if (
+                resolved_mapping.velocity_key is not None
+                and resolved_mapping.velocity_key in row
+            ):
                 velocities = _joint_map(
-                    _vector(row[mapping.velocity_key], label=mapping.velocity_key),
+                    _vector(
+                        row[resolved_mapping.velocity_key],
+                        label=resolved_mapping.velocity_key,
+                    ),
                     embodiment,
                     label="velocity",
                 )
 
-            if mapping.task_key in row and str(row[mapping.task_key]).strip():
-                task_id = str(row[mapping.task_key]).strip()
+            if (
+                resolved_mapping.task_key in row
+                and str(row[resolved_mapping.task_key]).strip()
+            ):
+                task_id = str(row[resolved_mapping.task_key]).strip()
 
             reward = None
-            if mapping.reward_key is not None and mapping.reward_key in row:
-                reward = float(row[mapping.reward_key])
+            if (
+                resolved_mapping.reward_key is not None
+                and resolved_mapping.reward_key in row
+            ):
+                reward = float(row[resolved_mapping.reward_key])
 
             terminal = step_index == len(rows) - 1
-            if mapping.terminal_key is not None and mapping.terminal_key in row:
-                terminal = bool(row[mapping.terminal_key])
+            if (
+                resolved_mapping.terminal_key is not None
+                and resolved_mapping.terminal_key in row
+            ):
+                terminal = bool(row[resolved_mapping.terminal_key])
 
             steps.append(
                 EpisodeStep(
@@ -170,7 +192,7 @@ def load_dataset(
     episodes: list[int] | None = None,
     root: str | Path | None = None,
     revision: str | None = None,
-    mapping: LeRobotMapping = LeRobotMapping(),
+    mapping: LeRobotMapping | None = None,
 ) -> tuple[Episode, ...]:
     """Load a LeRobot dataset lazily and normalize selected episodes."""
     try:

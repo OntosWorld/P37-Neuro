@@ -17,17 +17,17 @@ def sha256_file(path: str | Path) -> str:
     return digest.hexdigest()
 
 
-class ArtifactStore(Protocol):
-    def put(self, path: str | Path) -> "StoredArtifact": ...
-
-    def resolve(self, sha256: str) -> Path: ...
-
-
 @dataclass(frozen=True, slots=True)
 class StoredArtifact:
     sha256: str
     path: Path
     size_bytes: int
+
+
+class ArtifactStore(Protocol):
+    def put(self, path: str | Path) -> StoredArtifact: ...
+
+    def resolve(self, sha256: str) -> Path: ...
 
 
 class FilesystemArtifactStore:

@@ -66,11 +66,11 @@ class OnPolicyCollector:
         self,
         model: P37Neuro,
         environment: VectorPolicyEnv,
-        config: RolloutConfig = RolloutConfig(),
+        config: RolloutConfig | None = None,
     ) -> None:
         self.model = model
         self.environment = environment
-        self.config = config
+        self.config = config or RolloutConfig()
 
     @staticmethod
     def _zero_done_memory(memory: Tensor, done: Tensor) -> Tensor:
