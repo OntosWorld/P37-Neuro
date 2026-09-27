@@ -1,0 +1,33 @@
+name: Simulation CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "sim/**"
+      - ".github/workflows/sim-ci.yml"
+  pull_request:
+    paths:
+      - "sim/**"
+      - ".github/workflows/sim-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  mujoco:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: sim
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --all-groups
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
