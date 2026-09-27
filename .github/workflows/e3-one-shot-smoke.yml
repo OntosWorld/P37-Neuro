@@ -1,0 +1,40 @@
+name: E3 One-Shot Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ml/src/p37_neuro_ml/e3_one_shot_smoke.py"
+      - "ml/tests/test_e3_one_shot_smoke.py"
+      - "src/p37_neuro/benchmarks/demonstration.py"
+      - ".github/workflows/e3-one-shot-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  one-shot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --all-groups
+      - name: Train demonstration-conditioned checkpoint and evaluate unseen tasks
+        run: uv run python -m p37_neuro_ml.e3_one_shot_smoke --epochs 80 --output artifacts/e3-one-shot-smoke
+      - name: Show metrics
+        run: cat artifacts/e3-one-shot-smoke/metrics.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p37-e3-one-shot-smoke
+          path: |
+            ml/artifacts/e3-one-shot-smoke/metrics.json
+            ml/artifacts/e3-one-shot-smoke/checkpoint/manifest.json
+          if-no-files-found: error
