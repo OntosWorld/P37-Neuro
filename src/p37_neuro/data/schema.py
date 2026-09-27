@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 from math import isfinite
-from typing import Mapping, Sequence
 
 from p37_neuro.core.types import Seconds
 
