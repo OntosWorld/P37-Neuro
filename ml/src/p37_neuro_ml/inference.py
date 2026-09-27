@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import torch
-
 from p37_neuro.data.schema import Action, Observation
 from p37_neuro.embodiment.schema import EmbodimentSpec
 from p37_neuro.runtime.safety import JointSafetyEnvelope

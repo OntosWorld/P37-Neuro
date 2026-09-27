@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import StrEnum
+from itertools import pairwise
 from math import isfinite
 
 from p37_neuro.data.schema import Episode
@@ -27,7 +28,7 @@ def score_episode(episode: Episode) -> EpisodeQuality:
     score = 1.0
     reasons: list[str] = []
     timestamps = [step.observation.timestamp_s for step in episode.steps]
-    if any(later <= earlier for earlier, later in zip(timestamps, timestamps[1:])):
+    if any(later <= earlier for earlier, later in pairwise(timestamps)):
         score -= 0.45
         reasons.append("non_monotonic_time")
     if any(step.reward is not None and not isfinite(step.reward) for step in episode.steps):

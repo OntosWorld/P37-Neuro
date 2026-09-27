@@ -75,9 +75,7 @@ class MuJoCoAdapter:
         self._renderer: mujoco.Renderer | None = None
         definitions = _actuators(self.path)
         if not definitions:
-            raise MuJoCoConfigurationError(
-                "MJCF contains no supported position/velocity actuators"
-            )
+            raise MuJoCoConfigurationError("MJCF contains no supported position/velocity actuators")
 
         mapping = dict(joint_to_actuator or self._infer_mapping(definitions))
         if not mapping:
@@ -97,9 +95,7 @@ class MuJoCoAdapter:
                 raise MuJoCoConfigurationError(
                     f"actuator {actuator_name!r} targets {target!r}, not {joint_name!r}"
                 )
-            actuator_id = mujoco.mj_name2id(
-                self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, actuator_name
-            )
+            actuator_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_ACTUATOR, actuator_name)
             if actuator_id < 0:
                 raise MuJoCoConfigurationError(f"compiled actuator missing: {actuator_name}")
             self._actuator_ids[joint_name] = actuator_id
