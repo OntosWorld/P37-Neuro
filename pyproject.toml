@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "p37-neuro"
-version = "0.3.0"
+version = "0.4.0"
 description = "Core contracts and runtime foundations for the P37 Neuro general-purpose robot intelligence program."
 readme = "README.md"
 requires-python = ">=3.12,<3.14"
@@ -27,6 +27,11 @@ dependencies = [
 p37-neuro = "p37_neuro.cli:main"
 
 [project.optional-dependencies]
+cloud = [
+  "boto3>=1.35,<2",
+  "google-cloud-kms>=3,<4",
+  "google-crc32c>=1.5,<2",
+]
 data = ["lerobot>=0.6,<0.7"]
 sim = ["mujoco>=3.3"]
 train = ["torch>=2.8"]
