@@ -1,0 +1,1 @@
+"""Cross-embodiment manipulation contracts."""
