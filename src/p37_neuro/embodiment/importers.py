@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from importlib import import_module
 from math import isfinite, radians
 from pathlib import Path
+from typing import Any
 from xml.etree import ElementTree
 
 from p37_neuro.core.types import ControlMode, JointType, NumericRange
@@ -137,17 +139,19 @@ def load_usd(path: str | Path, *, embodiment_id: str | None = None) -> Embodimen
     """
     source = Path(path)
     try:
-        from pxr import Usd, UsdGeom, UsdPhysics
-    except ImportError as exc:
+        usd: Any = import_module("pxr.Usd")
+        usd_geom: Any = import_module("pxr.UsdGeom")
+        usd_physics: Any = import_module("pxr.UsdPhysics")
+    except ModuleNotFoundError as exc:
         raise RobotDescriptionError(
             "OpenUSD Python bindings are required to import USD robot descriptions"
         ) from exc
 
-    stage = Usd.Stage.Open(str(source))
+    stage = usd.Stage.Open(str(source))
     if stage is None:
         raise RobotDescriptionError(f"unable to open USD stage: {source}")
 
-    metres_per_unit = float(UsdGeom.GetStageMetersPerUnit(stage))
+    metres_per_unit = float(usd_geom.GetStageMetersPerUnit(stage))
     joints: list[JointSpec] = []
 
     for prim in stage.Traverse():
@@ -155,16 +159,16 @@ def load_usd(path: str | Path, *, embodiment_id: str | None = None) -> Embodimen
         lower: float | None = None
         upper: float | None = None
 
-        if prim.IsA(UsdPhysics.RevoluteJoint):
-            schema = UsdPhysics.RevoluteJoint(prim)
+        if prim.IsA(usd_physics.RevoluteJoint):
+            schema = usd_physics.RevoluteJoint(prim)
             joint_type = JointType.REVOLUTE
             raw_lower = schema.GetLowerLimitAttr().Get()
             raw_upper = schema.GetUpperLimitAttr().Get()
             if raw_lower is not None and raw_upper is not None:
                 lower = radians(float(raw_lower))
                 upper = radians(float(raw_upper))
-        elif prim.IsA(UsdPhysics.PrismaticJoint):
-            schema = UsdPhysics.PrismaticJoint(prim)
+        elif prim.IsA(usd_physics.PrismaticJoint):
+            schema = usd_physics.PrismaticJoint(prim)
             joint_type = JointType.PRISMATIC
             raw_lower = schema.GetLowerLimitAttr().Get()
             raw_upper = schema.GetUpperLimitAttr().Get()
@@ -194,6 +198,7 @@ def load_usd(path: str | Path, *, embodiment_id: str | None = None) -> Embodimen
                 f"USD prismatic joint {name!r} requires finite lower/upper limits"
             )
 
+        assert lower is not None and upper is not None
         joints.append(
             JointSpec(
                 name=name,

@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import OrderedDict
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
+from importlib import import_module
 from pathlib import Path
 from typing import Any
 
@@ -179,11 +180,11 @@ def load_dataset(
 ) -> tuple[Episode, ...]:
     """Load a LeRobot dataset lazily and normalize selected episodes."""
     try:
-        from lerobot.datasets import LeRobotDataset
-    except ImportError as exc:
+        module: Any = import_module("lerobot.datasets")
+    except ModuleNotFoundError as exc:
         raise RuntimeError("LeRobot support is optional; install p37-neuro[data]") from exc
 
-    dataset = LeRobotDataset(
+    dataset = module.LeRobotDataset(
         repo_id,
         root=root,
         episodes=episodes,
