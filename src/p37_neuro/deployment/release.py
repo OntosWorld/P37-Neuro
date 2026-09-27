@@ -76,8 +76,7 @@ class SignedRelease:
                 indent=2,
                 sort_keys=True,
             )
-            + "
-"
+            + "\\n"
         )
 
     @classmethod
