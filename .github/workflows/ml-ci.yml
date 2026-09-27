@@ -1,0 +1,33 @@
+name: ML CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ml/**"
+      - ".github/workflows/ml-ci.yml"
+  pull_request:
+    paths:
+      - "ml/**"
+      - ".github/workflows/ml-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  model-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --all-groups
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run pytest -q
