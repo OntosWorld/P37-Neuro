@@ -4,13 +4,10 @@ from __future__ import annotations
 
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Generic, TypeVar
-
-T = TypeVar("T")
 
 
 @dataclass(slots=True)
-class ContextWindow(Generic[T]):
+class ContextWindow[T]:
     """Bounded memory preserving the most recent physical context."""
 
     capacity: int

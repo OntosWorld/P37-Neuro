@@ -26,8 +26,7 @@ class FleetLogger:
         if not event.event_id.strip() or not event.robot_id.strip() or not event.model_id.strip():
             raise ValueError("event_id, robot_id and model_id are required")
         with self.path.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(asdict(event), sort_keys=True) + "
-")
+            handle.write(json.dumps(asdict(event), sort_keys=True) + "\n")
 
     def read(self) -> tuple[FleetEvent, ...]:
         if not self.path.exists():

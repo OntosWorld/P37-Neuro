@@ -33,8 +33,7 @@ class ArtifactRegistry:
         if record.artifact_id in existing:
             raise ValueError(f"artifact already registered: {record.artifact_id}")
         with self.index.open("a", encoding="utf-8") as handle:
-            handle.write(json.dumps(asdict(record), sort_keys=True) + "
-")
+            handle.write(json.dumps(asdict(record), sort_keys=True) + "\n")
 
     def list(self) -> tuple[ArtifactRecord, ...]:
         if not self.index.exists():

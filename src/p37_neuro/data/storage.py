@@ -33,8 +33,7 @@ def write_episode(path: str | Path, episode: Episode) -> str:
     record = episode_to_dict(episode)
     record["sha256"] = episode_digest(episode)
     temporary = destination.with_suffix(destination.suffix + ".tmp")
-    temporary.write_text(_canonical_json(record) + "
-", encoding="utf-8")
+    temporary.write_text(_canonical_json(record) + "\n", encoding="utf-8")
     temporary.replace(destination)
     return str(record["sha256"])
 

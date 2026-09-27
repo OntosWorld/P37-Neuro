@@ -13,12 +13,7 @@ from p37_neuro.registry import ArtifactRecord, ArtifactRegistry
 def test_load_config_yaml(tmp_path: Path) -> None:
     path = tmp_path / "config.yaml"
     path.write_text(
-        "schema_version: 1
-project: demo
-seed: 7
-embodiment: arm
-mode: train
-",
+        "schema_version: 1\nproject: demo\nseed: 7\nembodiment: arm\nmode: train\n",
         encoding="utf-8",
     )
     assert load_config(path).seed == 7
@@ -58,7 +53,11 @@ def test_mjcf_importer(tmp_path: Path) -> None:
 
 
 def _episode() -> Episode:
-    observation = Observation(timestamp_s=0.0, joint_position={"j1": 0.0}, joint_velocity={"j1": 0.0})
+    observation = Observation(
+        timestamp_s=0.0,
+        joint_position={"j1": 0.0},
+        joint_velocity={"j1": 0.0},
+    )
     action = Action(timestamp_s=0.0, joint_commands={"j1": 0.1})
     return Episode(
         episode_id="e1",

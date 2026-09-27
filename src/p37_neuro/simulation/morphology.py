@@ -22,8 +22,9 @@ class MorphologyRange:
             raise ValueError("invalid joint-count range")
 
 
-def generate_morphology(seed: int, space: MorphologyRange = MorphologyRange()) -> EmbodimentSpec:
+def generate_morphology(seed: int, space: MorphologyRange | None = None) -> EmbodimentSpec:
     """Generate one deterministic synthetic articulated body."""
+    space = space or MorphologyRange()
     rng = Random(seed)
     count = rng.randint(space.min_joints, space.max_joints)
     joints = []
