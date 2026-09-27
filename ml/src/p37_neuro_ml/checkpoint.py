@@ -41,8 +41,10 @@ def save_checkpoint(
         "config": asdict(model.config),
         "metadata": metadata or {},
     }
-    (root / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "
-")
+    (root / "manifest.json").write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+    )
     return digest
 
 
@@ -51,7 +53,9 @@ def load_checkpoint(
 ) -> tuple[P37Neuro, dict[str, Any]]:
     """Verify and load a checkpoint directory."""
     root = Path(directory)
-    manifest: dict[str, Any] = json.loads((root / "manifest.json").read_text())
+    manifest: dict[str, Any] = json.loads(
+        (root / "manifest.json").read_text(encoding="utf-8")
+    )
     weights = root / "model.pt"
     actual = _sha256(weights)
     if actual != manifest["sha256"]:
