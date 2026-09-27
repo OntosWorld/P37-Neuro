@@ -5,12 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import StrEnum
 from math import isfinite
-from typing import TypeAlias
 
-Seconds: TypeAlias = float
-Radians: TypeAlias = float
-RadiansPerSecond: TypeAlias = float
-NewtonMeters: TypeAlias = float
+type Seconds = float
+type Radians = float
+type RadiansPerSecond = float
+type NewtonMeters = float
 
 
 class ControlMode(StrEnum):
