@@ -33,6 +33,8 @@ def test_signed_release_rejects_tampering() -> None:
     )
     release = signer.sign(manifest)
     verify_release(release, signer.public_key)
+    assert release.to_json().endswith(chr(10))
+    assert not release.to_json().endswith("\\n")
 
     tampered = replace(
         release,
