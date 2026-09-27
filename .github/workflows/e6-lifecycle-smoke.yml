@@ -1,0 +1,39 @@
+name: E6 Lifecycle Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/p37_neuro/deployment/**"
+      - "src/p37_neuro/fleet/**"
+      - "src/p37_neuro/data/**"
+      - "src/p37_neuro/registry.py"
+      - "tests/test_e6_lifecycle_smoke.py"
+      - ".github/workflows/e6-lifecycle-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lifecycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --all-groups
+      - name: Exercise fleet to rollback lifecycle
+        run: uv run python -m p37_neuro.deployment.exercise --output artifacts/e6-lifecycle-smoke
+      - name: Show report
+        run: cat artifacts/e6-lifecycle-smoke/report.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p37-e6-lifecycle-smoke
+          path: |
+            artifacts/e6-lifecycle-smoke/report.json
+            artifacts/e6-lifecycle-smoke/candidate/release.json
+          if-no-files-found: error
