@@ -28,9 +28,7 @@ class IsaacLabRun:
     rl_library: str = "rsl_rl"
     headless: bool = True
     checkpoint: Path | None = None
-    external_callback: str | None = (
-        "p37_neuro_sim.isaac_tasks.registration.register_from_isaac_cli"
-    )
+    external_callback: str | None = "p37_neuro_sim.isaac_tasks.registration.register_from_isaac_cli"
     extra_args: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:

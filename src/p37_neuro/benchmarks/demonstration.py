@@ -37,9 +37,7 @@ class OneShotTrial:
     def qualifies_as_one_shot(self) -> bool:
         """True only for held-out tasks with one demo and no weight updates."""
         return (
-            self.task_was_held_out
-            and self.demonstration_count == 1
-            and self.gradient_updates == 0
+            self.task_was_held_out and self.demonstration_count == 1 and self.gradient_updates == 0
         )
 
     @property
