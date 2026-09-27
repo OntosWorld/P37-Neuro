@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import base64
+from collections.abc import Callable
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
@@ -151,7 +152,9 @@ class GcpKmsReleaseSigner:
                 raise RuntimeError(
                     "CRC32C support is optional; install p37-neuro[cloud]"
                 ) from exc
-            crc32c = lambda data: int(google_crc32c.value(data))
+            def crc32c(data: bytes) -> int:
+                return int(google_crc32c.value(data))
+
         self.crc32c = crc32c
         self._public_key: Ed25519PublicKey | None = None
 
