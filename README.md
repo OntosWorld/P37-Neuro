@@ -329,3 +329,29 @@ Security or safety-sensitive issues should follow [SECURITY.md](SECURITY.md).
 ## License
 
 No public software license has been granted yet. Unless and until a license file is added, all rights are reserved by Ontos World.
+
+
+## End-to-end product implementation
+
+P37 Neuro is one continuous program from **P37-E0 through P37-E6**. The repository now contains executable platform boundaries for every stage, while learned capabilities are promoted only after training and evaluation gates pass.
+
+| Stage | Product responsibility | Platform status |
+| --- | --- | --- |
+| **E0** | robot/config ingestion, canonical episodes, replay, artifact registry | implemented |
+| **E1** | morphology generation, domain randomization, locomotion training/evaluation contracts | implemented baseline |
+| **E2** | cross-embodiment manipulation, teleoperation/data normalization | implemented baseline |
+| **E3** | demonstration/video-conditioned task context | implemented baseline |
+| **E4** | long-context memory, progress and recovery state | implemented baseline |
+| **E5** | RL post-training plans and offline/physical promotion gates | implemented baseline |
+| **E6** | fleet logging, dataset lineage, model promotion and rollback | implemented baseline |
+| **Runtime** | independent actuator-facing deployment path | C++20 runtime implemented |
+
+"Implemented baseline" means the executable product contract exists and is tested. It does **not** mean a frontier-quality checkpoint has already been trained. Training, simulation-scale evaluation and physical validation remain measurable release work.
+
+### Language boundaries
+
+- **Python:** model/data/research plane from E0–E6.
+- **C++20:** deterministic real-time runtime and hardware/inference boundary.
+- **CUDA/TensorRT:** introduced behind the C++ runtime only when profiling justifies accelerator-specific optimization.
+
+See [docs/language-architecture.md](docs/language-architecture.md) and [docs/roadmap.md](docs/roadmap.md).

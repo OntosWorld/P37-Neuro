@@ -11,6 +11,8 @@ REQUIRED = (
     "docs/data-contract.md",
     "docs/safety.md",
     "docs/roadmap.md",
+    "docs/language-architecture.md",
+    "runtime_cpp/CMakeLists.txt",
 )
 
 

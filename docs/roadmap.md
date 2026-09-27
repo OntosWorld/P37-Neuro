@@ -1,68 +1,123 @@
 # Research and Engineering Roadmap
 
+P37 Neuro has two completion states for every stage:
+
+- **platform complete** — the software, contracts and execution path exist and are tested;
+- **capability validated** — trained checkpoints meet held-out simulation and/or physical hardware gates.
+
+This distinction prevents infrastructure from being mistaken for learned intelligence.
+
 ## P37-E0 — Foundation
+
+**Platform:** implemented.
 
 - [x] package skeleton
 - [x] embodiment schema
 - [x] observation/action/episode schema
 - [x] policy interfaces
-- [x] deterministic joint safety envelope
+- [x] deterministic safety envelope
 - [x] simulator protocol
-- [ ] config loader + schema validation
-- [ ] URDF importer
-- [ ] MJCF importer
+- [x] versioned config loader
+- [x] URDF importer
+- [x] MJCF importer
+- [x] RLDS-like record normalizer
+- [x] checksummed episode serialization
+- [x] deterministic replay harness
+- [x] artifact registry
 - [ ] USD importer
-- [ ] RLDS importer
-- [ ] episode serialization format
-- [ ] deterministic replay harness
-- [ ] experiment/checkpoint registry
 
 ## P37-E1 — Cross-morphology locomotion
 
-- [ ] Isaac Lab environment family
-- [ ] procedural morphology generator
-- [ ] domain-randomization registry
-- [ ] baseline PPO locomotion teacher
-- [ ] cross-morphology policy
-- [ ] long-context adaptation
-- [ ] held-out-body benchmark
-- [ ] payload / actuator-fault benchmark
+**Platform:** implemented baseline contracts and benchmark tooling. **Capability:** training pending.
+
+- [x] procedural morphology generator
+- [x] domain-randomization registry
+- [x] framework-neutral trainer contract
+- [x] held-out-body locomotion metrics
+- [ ] Isaac Lab task package
+- [ ] trained cross-morphology locomotion checkpoint
+- [ ] long-context adaptation checkpoint
+- [ ] physical locomotion validation
 
 ## P37-E2 — Cross-embodiment manipulation
 
-- [ ] public manipulation dataset adapters
-- [ ] teleoperation ingestion
-- [ ] action-space normalization
-- [ ] single-arm baseline
-- [ ] multi-arm / mobile-manipulator training
-- [ ] cross-body transfer benchmark
+**Platform:** implemented baseline contracts and dataset normalization. **Capability:** training pending.
+
+- [x] embodiment-neutral Cartesian command
+- [x] robot-specific action projector contract
+- [x] teleoperation sample contract
+- [x] RLDS-like dataset adapter
+- [x] manipulation transfer benchmark
+- [ ] public dataset production adapters
+- [ ] trained multi-embodiment manipulation checkpoint
+- [ ] physical transfer benchmark
 
 ## P37-E3 — Demonstration conditioning
 
-- [ ] demonstration-video pipeline
-- [ ] temporal visual encoder baseline
-- [ ] demonstration/task context API
-- [ ] one-shot task-composition benchmark
+**Platform:** implemented context and deterministic temporal sampling. **Capability:** model training pending.
+
+- [x] demonstration-video reference contract
+- [x] language/goal/demo context contract
+- [x] deterministic frame-time sampling
+- [ ] temporal vision encoder
+- [ ] demonstration-conditioned action model
+- [ ] one-shot unseen-task benchmark
 
 ## P37-E4 — Long horizon
 
-- [ ] recurrent task memory
-- [ ] progress representation
-- [ ] recovery policy curriculum
-- [ ] multi-minute evaluation suite
+**Platform:** implemented bounded context memory, explicit task progress and benchmark records. **Capability:** training pending.
+
+- [x] cross-trial context window
+- [x] task-progress representation
+- [x] failure history
+- [x] long-horizon evaluation record
+- [ ] recurrent/long-context learned policy
+- [ ] recovery curriculum
+- [ ] multi-minute physical benchmark
 
 ## P37-E5 — RL post-training
 
-- [ ] offline evaluation gate
-- [ ] simulation RL post-training
+**Platform:** implemented training manifests and promotion gates. **Capability:** compute runs pending.
+
+- [x] post-training run manifest
+- [x] offline evaluation gate
+- [x] safety/latency promotion thresholds
+- [ ] Isaac Lab RL post-training runner
 - [ ] adversarial disturbance curriculum
-- [ ] physical transfer gate
+- [ ] physical transfer gate execution
 
-## P37-E6 — Data flywheel
+## P37-E6 — Continuous real-world learning
 
-- [ ] fleet episode logger
-- [ ] automated quality scoring
-- [ ] review queue
-- [ ] dataset lineage
-- [ ] model registry
-- [ ] deployment promotion / rollback
+**Platform:** implemented baseline deployment-data lifecycle. **Capability:** fleet integration pending.
+
+- [x] append-only fleet event logger
+- [x] dataset lineage record
+- [x] artifact registry
+- [x] candidate/staging/production lifecycle
+- [x] rollback state machine
+- [ ] live robot episode uploader
+- [ ] automated quality scoring service
+- [ ] human review queue
+- [ ] production model storage/signing integration
+
+## Real-time deployment plane
+
+- [x] independent C++20 runtime library
+- [x] actuator safety envelope in C++
+- [x] inference-engine ABI
+- [x] independent CMake/CTest build
+- [ ] ROS 2 hardware bridge
+- [ ] TensorRT engine implementation
+- [ ] hardware-in-the-loop validation
+
+## Product completion definition
+
+P37 Neuro becomes a validated full robot brain only when one release has passed all of the following:
+
+1. one shared checkpoint operates materially different held-out embodiments;
+2. unseen task demonstrations can condition behavior without per-task gradient updates;
+3. multi-stage tasks preserve progress and recover from selected failures;
+4. deterministic runtime safety gates every actuator command;
+5. real robot deployments feed versioned experience back into training;
+6. a candidate can be promoted, observed and rolled back through the E6 release path;
+7. held-out simulation and physical benchmarks are published with the checkpoint.
