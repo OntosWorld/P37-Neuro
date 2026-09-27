@@ -1,0 +1,41 @@
+name: E5 PPO Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ml/src/p37_neuro_ml/e5_ppo_smoke.py"
+      - "ml/src/p37_neuro_ml/on_policy.py"
+      - "ml/src/p37_neuro_ml/ppo.py"
+      - "ml/tests/test_e5_ppo_smoke.py"
+      - ".github/workflows/e5-ppo-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ppo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --all-groups
+      - name: Run on-policy self-improvement smoke
+        run: uv run python -m p37_neuro_ml.e5_ppo_smoke --updates 60 --output artifacts/e5-ppo-smoke
+      - name: Show metrics
+        run: cat artifacts/e5-ppo-smoke/metrics.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p37-e5-ppo-smoke
+          path: |
+            ml/artifacts/e5-ppo-smoke/metrics.json
+            ml/artifacts/e5-ppo-smoke/checkpoint/manifest.json
+          if-no-files-found: error
