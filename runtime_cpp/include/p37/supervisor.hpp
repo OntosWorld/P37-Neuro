@@ -12,12 +12,14 @@ namespace p37 {
 
 enum class RuntimeStatus : std::uint8_t {
   allowed,
+  no_observation,
   stale_observation,
   clock_error,
   inference_error,
   shape_mismatch,
   invalid_normalized_action,
   unsafe_command,
+  io_error,
 };
 
 struct RuntimeDecision {

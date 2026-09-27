@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<package format="3">
+  <name>p37_runtime</name>
+  <version>0.2.0</version>
+  <description>P37 Neuro deterministic real-time runtime and optional ROS 2 bridge.</description>
+  <maintainer email="engineering@ontos.ws">Ontos World</maintainer>
+  <license>Proprietary</license>
+
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <depend>rclcpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+
+  <export>
+    <build_type>cmake</build_type>
+  </export>
+</package>
