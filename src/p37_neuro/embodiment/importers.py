@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from math import isfinite, radians
 from pathlib import Path
 from xml.etree import ElementTree
 
@@ -123,4 +124,100 @@ def load_mjcf(path: str | Path, *, embodiment_id: str | None = None) -> Embodime
         family="mjcf",
         joints=tuple(joints),
         metadata={"source_format": "mjcf", "source_path": str(source)},
+    )
+
+
+def load_usd(path: str | Path, *, embodiment_id: str | None = None) -> EmbodimentSpec:
+    """Load OpenUSD Physics revolute/prismatic joints.
+
+    OpenUSD revolute limits are authored in degrees and are converted to radians.
+    Prismatic limits are authored in stage distance units and converted to metres.
+    The importer is intentionally lazy so the core package remains usable outside
+    Isaac/OpenUSD environments.
+    """
+    source = Path(path)
+    try:
+        from pxr import Usd, UsdGeom, UsdPhysics
+    except ImportError as exc:
+        raise RobotDescriptionError(
+            "OpenUSD Python bindings are required to import USD robot descriptions"
+        ) from exc
+
+    stage = Usd.Stage.Open(str(source))
+    if stage is None:
+        raise RobotDescriptionError(f"unable to open USD stage: {source}")
+
+    metres_per_unit = float(UsdGeom.GetStageMetersPerUnit(stage))
+    joints: list[JointSpec] = []
+
+    for prim in stage.Traverse():
+        joint_type: JointType | None = None
+        lower: float | None = None
+        upper: float | None = None
+
+        if prim.IsA(UsdPhysics.RevoluteJoint):
+            schema = UsdPhysics.RevoluteJoint(prim)
+            joint_type = JointType.REVOLUTE
+            raw_lower = schema.GetLowerLimitAttr().Get()
+            raw_upper = schema.GetUpperLimitAttr().Get()
+            if raw_lower is not None and raw_upper is not None:
+                lower = radians(float(raw_lower))
+                upper = radians(float(raw_upper))
+        elif prim.IsA(UsdPhysics.PrismaticJoint):
+            schema = UsdPhysics.PrismaticJoint(prim)
+            joint_type = JointType.PRISMATIC
+            raw_lower = schema.GetLowerLimitAttr().Get()
+            raw_upper = schema.GetUpperLimitAttr().Get()
+            if raw_lower is not None and raw_upper is not None:
+                lower = float(raw_lower) * metres_per_unit
+                upper = float(raw_upper) * metres_per_unit
+
+        if joint_type is None:
+            continue
+
+        name = str(prim.GetName()).strip()
+        if not name:
+            raise RobotDescriptionError("USD physics joint has no name")
+
+        bounded = (
+            lower is not None
+            and upper is not None
+            and isfinite(lower)
+            and isfinite(upper)
+        )
+        if not bounded:
+            if joint_type is JointType.REVOLUTE:
+                joints.append(
+                    JointSpec(
+                        name=name,
+                        joint_type=JointType.CONTINUOUS,
+                        control_mode=ControlMode.VELOCITY,
+                    )
+                )
+                continue
+            raise RobotDescriptionError(
+                f"USD prismatic joint {name!r} requires finite lower/upper limits"
+            )
+
+        joints.append(
+            JointSpec(
+                name=name,
+                joint_type=joint_type,
+                control_mode=ControlMode.POSITION,
+                position=NumericRange(lower, upper),
+            )
+        )
+
+    if not joints:
+        raise RobotDescriptionError("USD stage contains no supported physics joints")
+
+    return EmbodimentSpec(
+        embodiment_id=embodiment_id or source.stem,
+        family="usd",
+        joints=tuple(joints),
+        metadata={
+            "source_format": "usd",
+            "source_path": str(source),
+            "metres_per_unit": str(metres_per_unit),
+        },
     )
