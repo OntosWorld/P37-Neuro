@@ -148,6 +148,7 @@ class GcpKmsReleaseSigner:
                 google_crc32c: Any = import_module("google_crc32c")
             except ModuleNotFoundError as exc:
                 raise RuntimeError("CRC32C support is optional; install p37-neuro[cloud]") from exc
+
             def crc32c(data: bytes) -> int:
                 return int(google_crc32c.value(data))
 
