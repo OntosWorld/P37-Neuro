@@ -1,0 +1,24 @@
+name: Research task
+description: Propose a measurable research experiment.
+title: "research: "
+labels: [research]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: Research question
+    validations:
+      required: true
+  - type: textarea
+    id: hypothesis
+    attributes:
+      label: Hypothesis
+    validations:
+      required: true
+  - type: textarea
+    id: evaluation
+    attributes:
+      label: Evaluation and holdout
+      description: Define metric, baseline, holdout and success/failure criteria before running.
+    validations:
+      required: true
