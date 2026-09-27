@@ -73,7 +73,7 @@ def test_episode_round_trip_and_replay(tmp_path: Path) -> None:
     write_episode(path, _episode())
     loaded = read_episode(path)
     assert loaded.episode_id == "e1"
-    assert list(EpisodeReplay(loaded))[0].reward == 1.0
+    assert next(iter(EpisodeReplay(loaded))).reward == 1.0
 
 
 def test_artifact_registry_is_append_only(tmp_path: Path) -> None:
