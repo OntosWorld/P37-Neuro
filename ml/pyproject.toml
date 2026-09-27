@@ -6,6 +6,7 @@ build-backend = "hatchling.build"
 name = "p37-neuro-ml"
 version = "0.2.0"
 description = "Trainable hierarchical robot brain for P37 Neuro."
+license = "Apache-2.0"
 requires-python = ">=3.12,<3.14"
 dependencies = [
   "p37-neuro",

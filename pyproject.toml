@@ -7,12 +7,14 @@ name = "p37-neuro"
 version = "0.4.0"
 description = "Core contracts and runtime foundations for the P37 Neuro general-purpose robot intelligence program."
 readme = "README.md"
+license = "Apache-2.0"
 requires-python = ">=3.12,<3.14"
 authors = [{ name = "Ontos World" }]
 keywords = ["robotics", "physical-ai", "reinforcement-learning", "embodied-ai", "robot-learning"]
 classifiers = [
   "Development Status :: 2 - Pre-Alpha",
   "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
@@ -22,6 +24,12 @@ dependencies = [
   "PyYAML>=6.0",
   "cryptography>=45,<47",
 ]
+
+[project.urls]
+Homepage = "https://github.com/OntosWorld/P37-Neuro"
+Documentation = "https://github.com/OntosWorld/P37-Neuro/blob/main/docs/README.md"
+Repository = "https://github.com/OntosWorld/P37-Neuro"
+Issues = "https://github.com/OntosWorld/P37-Neuro/issues"
 
 [project.scripts]
 p37-neuro = "p37_neuro.cli:main"

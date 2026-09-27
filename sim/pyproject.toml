@@ -6,6 +6,7 @@ build-backend = "hatchling.build"
 name = "p37-neuro-sim"
 version = "0.1.0"
 description = "MuJoCo simulation adapter for P37 Neuro."
+license = "Apache-2.0"
 requires-python = ">=3.12,<3.14"
 dependencies = [
   "p37-neuro",
