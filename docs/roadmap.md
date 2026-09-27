@@ -32,9 +32,11 @@ This distinction prevents infrastructure from being mistaken for learned intelli
 
 - [x] procedural morphology generator
 - [x] domain-randomization registry
+- [x] executable multi-embodiment behavior-cloning lifecycle
 - [x] framework-neutral trainer contract
 - [x] held-out-body locomotion metrics
-- [ ] Isaac Lab task package
+- [x] Isaac Lab launch integration
+- [ ] P37-specific Isaac Lab task package
 - [ ] trained cross-morphology locomotion checkpoint
 - [ ] long-context adaptation checkpoint
 - [ ] physical locomotion validation
@@ -54,51 +56,57 @@ This distinction prevents infrastructure from being mistaken for learned intelli
 
 ## P37-E3 — Demonstration conditioning
 
-**Platform:** implemented context and deterministic temporal sampling. **Capability:** model training pending.
+**Platform:** learned baseline implemented. **Capability:** large-scale training pending.
 
 - [x] demonstration-video reference contract
 - [x] language/goal/demo context contract
 - [x] deterministic frame-time sampling
-- [ ] temporal vision encoder
-- [ ] demonstration-conditioned action model
-- [ ] one-shot unseen-task benchmark
+- [x] temporal visual encoder baseline
+- [x] demonstration-conditioned action model
+- [x] deployment export surface preserves demonstration/task inputs
+- [ ] one-shot unseen-task benchmark execution
 
 ## P37-E4 — Long horizon
 
-**Platform:** implemented bounded context memory, explicit task progress and benchmark records. **Capability:** training pending.
+**Platform:** learned baseline implemented. **Capability:** training pending.
 
 - [x] cross-trial context window
 - [x] task-progress representation
 - [x] failure history
 - [x] long-horizon evaluation record
-- [ ] recurrent/long-context learned policy
+- [x] recurrent learned policy core
+- [x] recurrent memory reset across terminated vector environments
 - [ ] recovery curriculum
 - [ ] multi-minute physical benchmark
 
 ## P37-E5 — RL post-training
 
-**Platform:** implemented training manifests and promotion gates. **Capability:** compute runs pending.
+**Platform:** executable PPO collection/training primitives implemented. **Capability:** compute runs pending.
 
 - [x] post-training run manifest
 - [x] offline evaluation gate
 - [x] safety/latency promotion thresholds
-- [ ] Isaac Lab RL post-training runner
+- [x] vectorized on-policy PPO rollout collector
+- [x] Isaac Lab training launcher
 - [ ] adversarial disturbance curriculum
 - [ ] physical transfer gate execution
 
 ## P37-E6 — Continuous real-world learning
 
-**Platform:** implemented baseline deployment-data lifecycle. **Capability:** fleet integration pending.
+**Platform:** deployment-data and release lifecycle implemented. **Capability:** fleet integration pending.
 
 - [x] append-only fleet event logger
 - [x] dataset lineage record
 - [x] artifact registry
 - [x] candidate/staging/production lifecycle
 - [x] rollback state machine
-- [ ] live robot episode uploader
-- [ ] automated quality scoring service
-- [ ] human review queue
-- [ ] production model storage/signing integration
+- [x] live robot episode uploader
+- [x] automated quality scoring
+- [x] human review queue
+- [x] content-addressed production artifact store
+- [x] Ed25519 signed release manifests
+- [ ] remote production object-store backend
+- [ ] fleet signing-key/KMS integration
 
 ## Real-time deployment plane
 
