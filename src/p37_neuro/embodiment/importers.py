@@ -56,7 +56,11 @@ def load_urdf(path: str | Path, *, embodiment_id: str | None = None) -> Embodime
             JointSpec(
                 name=name,
                 joint_type=joint_type,
-                control_mode=ControlMode.POSITION,
+                control_mode=(
+                    ControlMode.VELOCITY
+                    if joint_type is JointType.CONTINUOUS
+                    else ControlMode.POSITION
+                ),
                 position=position,
                 velocity_limit=velocity,
                 effort_limit=effort,
@@ -99,6 +103,10 @@ def load_mjcf(path: str | Path, *, embodiment_id: str | None = None) -> Embodime
             if len(pieces) != 2:
                 raise RobotDescriptionError(f"invalid MJCF range for {name!r}")
             position = NumericRange(float(pieces[0]), float(pieces[1]))
+        else:
+            raise RobotDescriptionError(
+                f"MJCF joint {name!r} requires an explicit range for position control"
+            )
 
         joints.append(
             JointSpec(
