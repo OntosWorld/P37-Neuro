@@ -10,6 +10,7 @@ import torch
 from p37_neuro.core.types import ControlMode, JointType
 from p37_neuro.data.schema import Episode
 from p37_neuro.embodiment.schema import EmbodimentSpec, JointSpec
+
 from p37_neuro_ml.trainer import BrainBatch
 
 JOINT_FEATURE_DIM = 10

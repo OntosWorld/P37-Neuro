@@ -5,11 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import torch
-from torch import Tensor
 
 from p37_neuro.data.schema import Action, Observation
 from p37_neuro.embodiment.schema import EmbodimentSpec
 from p37_neuro.runtime.safety import JointSafetyEnvelope
+from torch import Tensor
+
 from p37_neuro_ml.dataset import denormalize_action, joint_features
 from p37_neuro_ml.model import P37Neuro
 

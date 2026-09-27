@@ -10,7 +10,6 @@ from xml.etree import ElementTree
 import mujoco
 import numpy as np
 from numpy.typing import NDArray
-
 from p37_neuro.core.types import ControlMode
 from p37_neuro.data.schema import Action, Observation
 from p37_neuro.embodiment.importers import load_mjcf

@@ -1,8 +1,8 @@
 from pathlib import Path
 
 import pytest
-
 from p37_neuro.data.schema import Action
+
 from p37_neuro_sim.mujoco_adapter import MuJoCoAdapter, MuJoCoConfigurationError
 
 XML = """

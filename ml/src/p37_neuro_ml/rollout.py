@@ -6,6 +6,7 @@ from collections.abc import Callable
 
 from p37_neuro.data.schema import Action, Episode, EpisodeStep, Observation
 from p37_neuro.simulation.base import SimulatorAdapter
+
 from p37_neuro_ml.inference import InferenceSession
 
 RewardFunction = Callable[[Observation, Action, Observation], float]
