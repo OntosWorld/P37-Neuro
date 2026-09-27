@@ -1,9 +1,6 @@
 """Repository-level sanity checks that require no third-party dependencies."""
 
-from __future__ import annotations
-
 from pathlib import Path
-
 
 REQUIRED = (
     "README.md",
