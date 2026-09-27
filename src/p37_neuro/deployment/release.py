@@ -66,18 +66,15 @@ class SignedRelease:
     signer_fingerprint: str
 
     def to_json(self) -> str:
-        return (
-            json.dumps(
-                {
-                    "manifest": asdict(self.manifest),
-                    "signature_b64": self.signature_b64,
-                    "signer_fingerprint": self.signer_fingerprint,
-                },
-                indent=2,
-                sort_keys=True,
-            )
-            + chr(10)
-        )
+        return json.dumps(
+            {
+                "manifest": asdict(self.manifest),
+                "signature_b64": self.signature_b64,
+                "signer_fingerprint": self.signer_fingerprint,
+            },
+            indent=2,
+            sort_keys=True,
+        ) + chr(10)
 
     @classmethod
     def from_json(cls, text: str) -> SignedRelease:
