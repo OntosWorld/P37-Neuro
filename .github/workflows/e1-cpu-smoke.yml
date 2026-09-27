@@ -1,0 +1,39 @@
+name: E1 CPU Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ml/**"
+      - "src/p37_neuro/simulation/morphology.py"
+      - ".github/workflows/e1-cpu-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cross-morphology-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --all-groups
+      - name: Train and evaluate held-out morphologies
+        run: uv run python -m p37_neuro_ml.e1_smoke --epochs 40 --output artifacts/e1-cpu-smoke
+      - name: Show metrics
+        run: cat artifacts/e1-cpu-smoke/metrics.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p37-e1-cpu-smoke
+          path: |
+            ml/artifacts/e1-cpu-smoke/metrics.json
+            ml/artifacts/e1-cpu-smoke/checkpoint/manifest.json
+          if-no-files-found: error
