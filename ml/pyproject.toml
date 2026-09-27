@@ -4,13 +4,23 @@ build-backend = "hatchling.build"
 
 [project]
 name = "p37-neuro-ml"
-version = "0.1.0"
+version = "0.2.0"
 description = "Trainable hierarchical robot brain for P37 Neuro."
 requires-python = ">=3.12,<3.14"
 dependencies = [
   "p37-neuro",
+  "PyYAML>=6.0",
   "torch>=2.8,<3",
 ]
+
+[project.optional-dependencies]
+export = [
+  "onnx>=1.17",
+  "onnxscript>=0.2",
+]
+
+[project.scripts]
+p37-neuro-ml = "p37_neuro_ml.cli:main"
 
 [tool.uv.sources]
 p37-neuro = { path = "..", editable = true }
