@@ -52,3 +52,45 @@ cmake --build runtime_cpp/build-ros --parallel
 ```
 
 The ROS bridge does not replace a certified emergency stop, controller watchdog or robot-manufacturer safety system.
+
+## TensorRT inference
+
+The optional TensorRT backend executes the exact deployment surface exported by
+`p37-neuro-ml export-onnx`.
+
+It binds these inputs:
+
+```text
+joint_features
+joint_state
+joint_mask
+task_features
+demonstration_images
+memory
+```
+
+and these outputs:
+
+```text
+action
+high_level
+value
+next_memory
+```
+
+`joint_features`, `joint_mask`, task features and demonstration frames are
+loaded as static deployment context. `joint_state` is supplied by the runtime
+loop every tick. The backend retains `next_memory` and feeds it back as
+`memory` on the next tick; `reset()` clears that recurrent state.
+
+Build it only on a CUDA/TensorRT host:
+
+```bash
+cmake -S runtime_cpp -B runtime_cpp/build-trt \
+  -DP37_BUILD_TENSORRT=ON
+cmake --build runtime_cpp/build-trt --parallel
+```
+
+The TensorRT backend intentionally requires fixed tensor shapes. Export a graph
+specialized for the robot's padded joint count and selected context sizes.
+TensorRT/CUDA compilation and latency validation remain hardware-specific gates.

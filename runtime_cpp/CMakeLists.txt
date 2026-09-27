@@ -21,6 +21,39 @@ add_executable(p37_loop_test tests/loop_test.cpp)
 target_link_libraries(p37_loop_test PRIVATE p37_runtime)
 target_compile_options(p37_loop_test PRIVATE -Wall -Wextra -Wpedantic -Werror)
 
+option(P37_BUILD_TENSORRT "Build the optional TensorRT inference engine" OFF)
+if(P37_BUILD_TENSORRT)
+  find_package(CUDAToolkit REQUIRED)
+  find_path(
+    TENSORRT_INCLUDE_DIR
+    NvInfer.h
+    HINTS "$ENV{TENSORRT_ROOT}/include"
+    PATHS /usr/include /usr/include/x86_64-linux-gnu /usr/local/include
+  )
+  find_library(
+    TENSORRT_NVINFER_LIBRARY
+    nvinfer
+    HINTS "$ENV{TENSORRT_ROOT}/lib" "$ENV{TENSORRT_ROOT}/lib64"
+    PATHS /usr/lib /usr/lib/x86_64-linux-gnu /usr/local/lib
+  )
+  if(NOT TENSORRT_INCLUDE_DIR OR NOT TENSORRT_NVINFER_LIBRARY)
+    message(FATAL_ERROR "TensorRT headers/library not found")
+  endif()
+
+  add_library(p37_tensorrt_engine STATIC tensorrt/src/tensorrt_engine.cpp)
+  target_include_directories(
+    p37_tensorrt_engine
+    PUBLIC include tensorrt/include
+    PRIVATE "${TENSORRT_INCLUDE_DIR}"
+  )
+  target_link_libraries(
+    p37_tensorrt_engine
+    PUBLIC p37_runtime
+    PRIVATE CUDA::cudart "${TENSORRT_NVINFER_LIBRARY}"
+  )
+  target_compile_options(p37_tensorrt_engine PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()
+
 option(P37_BUILD_ROS2_BRIDGE "Build the optional ROS 2 joint bridge" OFF)
 if(P37_BUILD_ROS2_BRIDGE)
   find_package(ament_cmake REQUIRED)
