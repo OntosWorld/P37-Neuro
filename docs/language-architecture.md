@@ -10,10 +10,11 @@ Python owns:
 - robot-description importers;
 - simulation orchestration;
 - training and post-training;
-- evaluation and benchmarks;
+- evaluation and qualification gates;
 - demonstration conditioning;
 - long-context research;
-- fleet learning, artifact registry and deployment metadata.
+- fleet learning, artifact registry and deployment metadata;
+- release signing and production artifact publication.
 
 This keeps the model/research loop compatible with the robotics ML ecosystem.
 
@@ -25,13 +26,31 @@ C++ owns:
 - low-latency inference integration;
 - ROS 2 / hardware adapters;
 - deterministic watchdogs and command timing;
-- TensorRT/CUDA integration when deployment profiling requires it.
+- the fail-closed control loop;
+- accelerator-specific inference backends.
 
 The C++ runtime has no Python dependency and is built/tested independently.
 
-## CUDA / TensorRT — optimization, not architecture
+## CUDA / TensorRT — optional optimized inference
 
-Custom CUDA/Triton kernels or TensorRT-specific code should be introduced only after profiling identifies a bottleneck. Model and runtime contracts must not depend on one accelerator vendor.
+The repository now contains an optional TensorRT backend behind the C++ inference-engine ABI. It binds the same deployment tensors exported by the ML package and carries recurrent memory between control ticks.
+
+TensorRT remains an optimization/deployment backend rather than an architecture dependency:
+
+- the normal runtime builds without CUDA or TensorRT;
+- the learned-model contract is accelerator-neutral;
+- target-GPU compilation, latency and memory profiling are release gates;
+- custom CUDA/Triton kernels should be added only after profiling identifies a measured bottleneck.
+
+## Cloud backends
+
+Production release infrastructure is also optional:
+
+- S3/S3-compatible object storage publishes immutable content-addressed model artifacts;
+- Google Cloud KMS can hold the EC_SIGN_ED25519 release private key so key material does not enter the P37 process;
+- local filesystem storage and injected Ed25519 keys remain available for development and CI.
+
+Cloud credentials, IAM policy and production key provisioning are deployment concerns and are not stored in source control.
 
 ## Why not add Rust now?
 

@@ -283,20 +283,22 @@ The repository will grow by adding adapters and learned implementations behind t
 
 ## Development status
 
-P37 Neuro is in active early-stage development. The current repository establishes **P37-E0**, the engineering foundation required before large model training begins.
+P37 Neuro is in active research and validation. The repository now contains the **software path from P37-E0 through P37-E6** rather than only the E0 contracts.
 
-The first implementation includes:
+Implemented platform pieces include:
 
-- typed observation and action contracts;
-- robot embodiment definitions and validation;
-- canonical episode metadata;
-- policy interfaces;
-- deterministic joint-safety enforcement;
-- simulator interfaces;
-- test infrastructure;
-- CI and repository quality controls.
+- URDF, MJCF and OpenUSD robot ingestion;
+- canonical multi-robot episode/data contracts plus LeRobot v3 ingestion;
+- a trainable variable-morphology recurrent robot-brain baseline;
+- behavior cloning, PPO collection/training primitives and recovery/disturbance curricula;
+- MuJoCo execution plus a P37-specific Isaac Lab locomotion task and launcher;
+- demonstration/task conditioning and one-shot leakage-controlled evaluation;
+- content-addressed artifacts, signed releases, S3-compatible publication and KMS-backed signing;
+- a fail-closed C++20 actuator runtime, optional ROS 2 bridge and optional TensorRT recurrent inference backend.
 
-These are intentionally small, auditable building blocks. Large training frameworks will be introduced behind them as the research program moves into E1 and E2.
+What is **not** complete is the capability evidence: large-scale training runs, held-out embodiment results, target-GPU TensorRT profiling, multi-robot physical validation, long-duration task recovery, and live production fleet rollout.
+
+See [docs/roadmap.md](docs/roadmap.md) for the exact platform-versus-capability status.
 
 ## Local development
 
@@ -337,14 +339,14 @@ P37 Neuro is one continuous program from **P37-E0 through P37-E6**. The reposito
 
 | Stage | Product responsibility | Platform status |
 | --- | --- | --- |
-| **E0** | robot/config ingestion, canonical episodes, replay, artifact registry | implemented |
-| **E1** | morphology generation, domain randomization, locomotion training/evaluation contracts | implemented baseline |
-| **E2** | cross-embodiment manipulation, teleoperation/data normalization | implemented baseline |
-| **E3** | demonstration/video-conditioned task context | implemented baseline |
-| **E4** | long-context memory, progress and recovery state | implemented baseline |
-| **E5** | RL post-training plans and offline/physical promotion gates | implemented baseline |
-| **E6** | fleet logging, dataset lineage, model promotion and rollback | implemented baseline |
-| **Runtime** | independent actuator-facing deployment path | C++20 runtime implemented |
+| **E0** | robot/config ingestion, canonical episodes, replay, artifact registry | platform complete |
+| **E1** | morphology generation, Isaac locomotion task, locomotion training/evaluation | platform complete baseline |
+| **E2** | cross-embodiment manipulation, teleoperation/data normalization | platform complete baseline |
+| **E3** | demonstration/video-conditioned task context and one-shot qualification | platform complete baseline |
+| **E4** | long-context memory, progress and recovery curricula | platform complete baseline |
+| **E5** | PPO post-training, disturbance curriculum and promotion gates | platform complete baseline |
+| **E6** | fleet data, signed releases, remote artifacts, KMS, promotion/rollback | platform complete baseline |
+| **Runtime** | fail-closed C++ runtime, ROS 2 and optional TensorRT | implemented; hardware qualification pending |
 
 "Implemented baseline" means the executable product contract exists and is tested. It does **not** mean a frontier-quality checkpoint has already been trained. Training, simulation-scale evaluation and physical validation remain measurable release work.
 
