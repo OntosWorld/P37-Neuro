@@ -1,0 +1,81 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-27",
+  "classification": "synthetic_smoke_only",
+  "capability_evidence": false,
+  "e1": {
+    "commit": "4648a39d5139f45d5640d9d4e12deb4bd656c39c",
+    "workflow_run_id": 36331317500,
+    "epochs": 40,
+    "train_joint_counts": [2, 3, 4, 5],
+    "heldout_joint_counts": [6, 7],
+    "initial_train_action_mse": 0.10801125317811966,
+    "final_train_action_mse": 0.0043895966373384,
+    "initial_heldout_action_mse": 0.13958506286144257,
+    "final_heldout_action_mse": 0.009138483554124832
+  },
+  "e2": {
+    "commit": "b8fdac885446d74118d1ec49fc53fa3635740d29",
+    "workflow_run_id": 36331667953,
+    "epochs": 60,
+    "train_joint_counts": [3, 4, 5],
+    "heldout_joint_counts": [6, 7],
+    "initial_heldout_action_mse": 0.07471438497304916,
+    "final_heldout_action_mse": 0.043050337582826614,
+    "heldout_success_rate": 0.5
+  },
+  "e3": {
+    "commit": "d7317426035e2624b574670eeddd4f5b12d1d479",
+    "workflow_run_id": 36331728252,
+    "epochs": 80,
+    "training_tasks": 12,
+    "heldout_tasks": 6,
+    "demonstrations_per_task": 1,
+    "gradient_updates_during_evaluation": 0,
+    "initial_heldout_action_mse": 0.12241155654191971,
+    "final_heldout_action_mse": 0.025805864483118057,
+    "qualifying_trials": 6,
+    "one_shot_success_rate": 1.0
+  },
+  "e4": {
+    "commit": "562d96205e066c7a1c07f75406b34bd4a8845a20",
+    "workflow_run_id": 36331994952,
+    "epochs": 200,
+    "train_joint_counts": [3, 4, 5],
+    "heldout_joint_count": 6,
+    "recovery_mse_with_memory": 0.004569536540657282,
+    "recovery_mse_after_memory_reset": 0.6361575722694397,
+    "memory_advantage": 0.6315880357287824
+  },
+  "e5": {
+    "commit": "c3935ec45d8e623067fce0afcea1beb187257711",
+    "workflow_run_id": 36331799447,
+    "updates": 60,
+    "environments": 32,
+    "joints": 3,
+    "initial_mean_reward": 0.8502154350280762,
+    "final_mean_reward": 0.9913151860237122,
+    "reward_improvement": 0.141099750995636
+  },
+  "e6": {
+    "commit": "d9aefc7df0a3f88c474a408e817e327cce618932",
+    "workflow_run_id": 36331488115,
+    "feedback_events_sent": 1,
+    "episode_quality_score": 0.75,
+    "initial_quality_decision": "review",
+    "human_review_completed": true,
+    "release_signature_verified": true,
+    "reached_staging": true,
+    "reached_production": true,
+    "rollback_target": "p37-stable-v0",
+    "final_channel": "rolled_back"
+  },
+  "infrastructure": {
+    "commit": "4d5a0dab903251c64b0f0ce3cbc7fcf1e93bdd34",
+    "terraform_workflow_run_id": 36331413160,
+    "format_check": true,
+    "init_without_backend": true,
+    "validate": true,
+    "resources_applied": false
+  }
+}

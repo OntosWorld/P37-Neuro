@@ -44,6 +44,7 @@ A checked platform item means the implementation exists in the repository and is
 - [x] Isaac Lab launch integration
 - [x] P37-specific Isaac Lab manager-based locomotion task
 - [x] external-task registration through Isaac Lab's maintained trainer
+- [x] synthetic CPU cross-morphology smoke: train 2–5 joints, hold out 6–7 joints
 - [ ] trained cross-morphology locomotion checkpoint
 - [ ] long-context adaptation checkpoint
 - [ ] held-out morphology scale run
@@ -59,6 +60,7 @@ A checked platform item means the implementation exists in the repository and is
 - [x] RLDS-like dataset adapter
 - [x] LeRobot v3 production adapter with explicit field/joint mapping
 - [x] manipulation transfer benchmark
+- [x] synthetic CPU manipulation-transfer smoke across held-out 6/7-DOF arms
 - [ ] trained multi-embodiment manipulation checkpoint
 - [ ] physical transfer benchmark across materially different robots
 
@@ -73,7 +75,8 @@ A checked platform item means the implementation exists in the repository and is
 - [x] demonstration-conditioned action model
 - [x] deployment export surface preserves demonstration/task inputs
 - [x] one-shot qualification harness with held-out-task and zero-gradient checks
-- [ ] one-shot unseen-task benchmark execution on a trained checkpoint
+- [x] synthetic one-shot smoke with one demonstration and zero evaluation updates
+- [ ] one-shot unseen-task benchmark execution on a production-scale trained checkpoint
 
 ## P37-E4 — Long horizon
 
@@ -86,6 +89,7 @@ A checked platform item means the implementation exists in the repository and is
 - [x] recurrent learned policy core
 - [x] recurrent memory reset across terminated vector environments
 - [x] progressive retry/recover/replan curriculum
+- [x] synthetic chunked recovery-memory smoke with a held-out morphology
 - [ ] trained long-horizon recovery checkpoint
 - [ ] multi-minute physical benchmark
 
@@ -99,6 +103,7 @@ A checked platform item means the implementation exists in the repository and is
 - [x] vectorized on-policy PPO rollout collector
 - [x] Isaac Lab training launcher
 - [x] progressive randomized/adversarial disturbance curriculum
+- [x] synthetic on-policy PPO self-improvement smoke
 - [ ] large-scale PPO/self-improvement run
 - [ ] physical transfer gate execution
 
@@ -118,8 +123,10 @@ A checked platform item means the implementation exists in the repository and is
 - [x] S3/S3-compatible content-addressed production artifact backend
 - [x] Ed25519 signed release manifests
 - [x] Google Cloud KMS EC_SIGN_ED25519 release signer with integrity verification
-- [ ] production bucket/KMS provisioning and IAM policy validation
-- [ ] live fleet feedback and rollback exercise
+- [x] Terraform configuration validates S3/KMS/IAM production infrastructure
+- [x] simulated fleet feedback → review → signed candidate → staging → production → rollback exercise
+- [ ] production bucket/KMS provisioning and live IAM validation
+- [ ] live physical-fleet feedback and rollback exercise
 
 ## Real-time deployment plane
 

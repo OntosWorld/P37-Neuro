@@ -298,7 +298,7 @@ Implemented platform pieces include:
 
 What is **not** complete is the capability evidence: large-scale training runs, held-out embodiment results, target-GPU TensorRT profiling, multi-robot physical validation, long-duration task recovery, and live production fleet rollout.
 
-See [docs/roadmap.md](docs/roadmap.md) for the exact platform-versus-capability status.
+See [docs/roadmap.md](docs/roadmap.md) for the exact platform-versus-capability status and [docs/validation/2026-09-27-cpu-smoke.md](docs/validation/2026-09-27-cpu-smoke.md) for the first executable smoke results.
 
 ## Local development
 
