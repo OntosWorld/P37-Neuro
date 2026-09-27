@@ -16,7 +16,7 @@ class P37RoughPPORunnerCfg(RslRlOnPolicyRunnerCfg):
     max_iterations = 2000
     save_interval = 50
     experiment_name = "p37_neuro_locomotion_rough"
-    obs_groups = {"actor": ["policy"], "critic": ["policy"]}
+    obs_groups = {"actor": ["policy"], "critic": ["policy"]}  # noqa: RUF012
     actor = RslRlMLPModelCfg(
         hidden_dims=[512, 256, 128],
         activation="elu",
