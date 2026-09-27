@@ -56,10 +56,7 @@ def _joint_map(
             f"{label} length {len(values)} does not match "
             f"{len(embodiment.joints)} controllable joints"
         )
-    return {
-        joint.name: values[index]
-        for index, joint in enumerate(embodiment.joints)
-    }
+    return {joint.name: values[index] for index, joint in enumerate(embodiment.joints)}
 
 
 def from_frames(
@@ -81,9 +78,7 @@ def from_frames(
         try:
             episode_index = int(frame[resolved_mapping.episode_index_key])
         except (KeyError, TypeError, ValueError) as exc:
-            raise LeRobotAdapterError(
-                f"frame {frame_index} has no valid episode index"
-            ) from exc
+            raise LeRobotAdapterError(f"frame {frame_index} has no valid episode index") from exc
         grouped.setdefault(episode_index, []).append(frame)
 
     episodes: list[Episode] = []
@@ -118,10 +113,7 @@ def from_frames(
                 ) from exc
 
             velocities: dict[str, float] = {}
-            if (
-                resolved_mapping.velocity_key is not None
-                and resolved_mapping.velocity_key in row
-            ):
+            if resolved_mapping.velocity_key is not None and resolved_mapping.velocity_key in row:
                 velocities = _joint_map(
                     _vector(
                         row[resolved_mapping.velocity_key],
@@ -131,24 +123,15 @@ def from_frames(
                     label="velocity",
                 )
 
-            if (
-                resolved_mapping.task_key in row
-                and str(row[resolved_mapping.task_key]).strip()
-            ):
+            if resolved_mapping.task_key in row and str(row[resolved_mapping.task_key]).strip():
                 task_id = str(row[resolved_mapping.task_key]).strip()
 
             reward = None
-            if (
-                resolved_mapping.reward_key is not None
-                and resolved_mapping.reward_key in row
-            ):
+            if resolved_mapping.reward_key is not None and resolved_mapping.reward_key in row:
                 reward = float(row[resolved_mapping.reward_key])
 
             terminal = step_index == len(rows) - 1
-            if (
-                resolved_mapping.terminal_key is not None
-                and resolved_mapping.terminal_key in row
-            ):
+            if resolved_mapping.terminal_key is not None and resolved_mapping.terminal_key in row:
                 terminal = bool(row[resolved_mapping.terminal_key])
 
             steps.append(
@@ -198,9 +181,7 @@ def load_dataset(
     try:
         from lerobot.datasets import LeRobotDataset
     except ImportError as exc:
-        raise RuntimeError(
-            "LeRobot support is optional; install p37-neuro[data]"
-        ) from exc
+        raise RuntimeError("LeRobot support is optional; install p37-neuro[data]") from exc
 
     dataset = LeRobotDataset(
         repo_id,

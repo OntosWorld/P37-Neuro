@@ -179,12 +179,7 @@ def load_usd(path: str | Path, *, embodiment_id: str | None = None) -> Embodimen
         if not name:
             raise RobotDescriptionError("USD physics joint has no name")
 
-        bounded = (
-            lower is not None
-            and upper is not None
-            and isfinite(lower)
-            and isfinite(upper)
-        )
+        bounded = lower is not None and upper is not None and isfinite(lower) and isfinite(upper)
         if not bounded:
             if joint_type is JointType.REVOLUTE:
                 joints.append(

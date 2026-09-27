@@ -70,9 +70,7 @@ class IsaacLabRunner:
 
     def run(self, spec: IsaacLabRun, *, cwd: str | Path | None = None) -> None:
         if not self.available():
-            raise IsaacLabUnavailableError(
-                f"Isaac Lab executable not found: {self.executable}"
-            )
+            raise IsaacLabUnavailableError(f"Isaac Lab executable not found: {self.executable}")
         subprocess.run(
             spec.command(self.executable),
             cwd=None if cwd is None else Path(cwd),
