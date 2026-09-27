@@ -308,19 +308,21 @@ P37 is tested in stages: software checks → synthetic smoke tests → MuJoCo �
 
 External testers should start with [docs/testing.md](docs/testing.md). It defines held-out rules, commands, simulation strategy, required ablations, evidence requirements and release qualification criteria. Reusable templates are in [docs/testing/](docs/testing/).
 
-## Local development
+## Quickstart
 
 P37 Neuro uses Python 3.12 as the primary development target.
 
 ```bash
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install --upgrade pip
-pip install -e ".[dev]"
-pytest
+git clone https://github.com/OntosWorld/P37-Neuro.git
+cd P37-Neuro
+uv sync --all-groups
+uv run p37-neuro info
+uv run pytest
 ```
 
-Run all local quality checks:
+For the full installation, first learning experiment, simulation checks and optional integrations, see [QUICKSTART.md](QUICKSTART.md).
+
+Run all local quality checks, including the C++20 runtime:
 
 ```bash
 make check
@@ -338,7 +340,7 @@ Security or safety-sensitive issues should follow [SECURITY.md](SECURITY.md).
 
 ## License
 
-No public software license has been granted yet. Unless and until a license file is added, all rights are reserved by Ontos World.
+P37 Neuro is licensed under the **Apache License 2.0**. See [LICENSE](LICENSE).
 
 
 ## End-to-end product implementation
