@@ -27,5 +27,4 @@ class ActionProjector(Protocol):
         command: CartesianCommand,
         observation: Observation,
         embodiment: EmbodimentSpec,
-    ) -> Action:
-        ...
+    ) -> Action: ...
