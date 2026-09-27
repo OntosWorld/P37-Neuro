@@ -28,6 +28,9 @@ class IsaacLabRun:
     rl_library: str = "rsl_rl"
     headless: bool = True
     checkpoint: Path | None = None
+    external_callback: str | None = (
+        "p37_neuro_sim.isaac_tasks.registration.register_from_isaac_cli"
+    )
     extra_args: tuple[str, ...] = ()
 
     def __post_init__(self) -> None:
@@ -53,6 +56,8 @@ class IsaacLabRun:
         ]
         if self.headless:
             command.append("--headless")
+        if self.external_callback is not None:
+            command.extend(("--external_callback", self.external_callback))
         if self.checkpoint is not None:
             command.extend(("--checkpoint", str(self.checkpoint)))
         command.extend(self.extra_args)
