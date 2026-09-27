@@ -300,6 +300,8 @@ What is **not** complete is the capability evidence: large-scale training runs, 
 
 See [docs/roadmap.md](docs/roadmap.md) for the exact platform-versus-capability status and [docs/validation/2026-09-27-cpu-smoke.md](docs/validation/2026-09-27-cpu-smoke.md) for the first executable smoke results.
 
+See [docs/overview.md](docs/overview.md) for the canonical product/technical description and [docs/README.md](docs/README.md) for the documentation index.
+
 ## Testing and qualification
 
 P37 is tested in stages: software checks → synthetic smoke tests → MuJoCo → Isaac Lab → hardware-in-the-loop → physical robots → fleet/release validation.

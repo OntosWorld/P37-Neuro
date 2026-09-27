@@ -1,5 +1,7 @@
 # Architecture
 
+For the canonical product definition, scope and maturity model, see [overview.md](overview.md).
+
 ## Design objective
 
 P37 Neuro should support increasingly capable learned policies without forcing robot-vendor details, simulation APIs or deployment transport into model code.
