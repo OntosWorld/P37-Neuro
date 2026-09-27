@@ -72,6 +72,7 @@ def test_behavior_cloning_step_updates_model() -> None:
             joint_features=features,
             joint_state=state,
             joint_mask=mask,
+            time_mask=torch.ones(2, 3, dtype=torch.bool),
             target_actions=torch.zeros(2, 3, 5),
         )
     )

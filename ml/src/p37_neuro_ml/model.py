@@ -224,6 +224,7 @@ class P37Neuro(nn.Module):
         joint_features: Tensor,
         joint_state: Tensor,
         joint_mask: Tensor,
+        time_mask: Tensor | None = None,
         scene_images: Tensor | None = None,
         demonstration_images: Tensor | None = None,
         task_features: Tensor | None = None,
@@ -235,6 +236,7 @@ class P37Neuro(nn.Module):
         joint_features: [B, J, F]
         joint_state: [B, T, J, S]
         joint_mask: [B, J], True for real joints
+        time_mask: optional [B, T], True for recorded timesteps
         scene_images: optional [B, T, C, H, W]
         demonstration_images: optional [B, D, C, H, W]
         task_features: optional [B, K, task_feature_dim]
@@ -251,6 +253,15 @@ class P37Neuro(nn.Module):
             raise ValueError("every embodiment needs at least one active joint")
 
         steps = joint_state.shape[1]
+        if time_mask is None:
+            time_mask = torch.ones(batch, steps, dtype=torch.bool, device=joint_state.device)
+        if time_mask.shape != (batch, steps):
+            raise ValueError("time_mask shape mismatch")
+        if not torch.all(time_mask.any(dim=1)):
+            raise ValueError("every sequence needs at least one valid timestep")
+        transitions = time_mask[:, 1:].to(torch.int8) - time_mask[:, :-1].to(torch.int8)
+        if torch.any(transitions > 0):
+            raise ValueError("time_mask must contain a contiguous valid prefix")
         padding_mask = ~joint_mask.bool()
         joint_tokens = self.joint_feature_projection(joint_features)
         joint_tokens = self.embodiment_encoder(joint_tokens, src_key_padding_mask=padding_mask)
@@ -281,8 +292,16 @@ class P37Neuro(nn.Module):
             torch.cat((body_state, visual_state, context_sequence, embodiment_sequence), dim=-1)
         )
 
-        temporal, next_memory = self.temporal_core(fused, memory)
+        lengths = time_mask.sum(dim=1).to(torch.int64).cpu()
+        packed = nn.utils.rnn.pack_padded_sequence(
+            fused, lengths, batch_first=True, enforce_sorted=False
+        )
+        packed_temporal, next_memory = self.temporal_core(packed, memory)
+        temporal, _ = nn.utils.rnn.pad_packed_sequence(
+            packed_temporal, batch_first=True, total_length=steps
+        )
         temporal = self.temporal_norm(temporal)
+        temporal = temporal.masked_fill(~time_mask[:, :, None], 0.0)
         high_level = self.high_level_head(temporal)
         value = self.value_head(temporal).squeeze(-1)
 
@@ -290,9 +309,12 @@ class P37Neuro(nn.Module):
         joint_sequence = joint_tokens[:, None, :, :].expand(batch, steps, joints, -1)
         action_input = torch.cat((temporal_joint, joint_sequence, state_tokens), dim=-1)
         action_mean = self.action_head(action_input).squeeze(-1)
-        action_mean = action_mean.masked_fill(~state_mask, 0.0)
+        valid_action = state_mask & time_mask[:, :, None]
+        action_mean = action_mean.masked_fill(~valid_action, 0.0)
         log_std = self.action_log_std_parameter.expand_as(action_mean)
-        log_std = log_std.masked_fill(~state_mask, 0.0)
+        log_std = log_std.masked_fill(~valid_action, 0.0)
+        high_level = high_level.masked_fill(~time_mask[:, :, None], 0.0)
+        value = value.masked_fill(~time_mask, 0.0)
 
         return P37Output(
             high_level=high_level,
