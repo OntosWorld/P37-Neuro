@@ -125,8 +125,7 @@ def _batch_indices(count: int, batch_size: int, *, seed: int) -> tuple[tuple[int
     indices = list(range(count))
     random.Random(seed).shuffle(indices)
     return tuple(
-        tuple(indices[start : start + batch_size])
-        for start in range(0, len(indices), batch_size)
+        tuple(indices[start : start + batch_size]) for start in range(0, len(indices), batch_size)
     )
 
 

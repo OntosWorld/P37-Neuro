@@ -110,9 +110,7 @@ class OnPolicyCollector:
                     joint_mask=state.joint_mask,
                     time_mask=time_mask,
                     scene_images=(
-                        state.scene_images[:, None, ...]
-                        if state.scene_images is not None
-                        else None
+                        state.scene_images[:, None, ...] if state.scene_images is not None else None
                     ),
                     demonstration_images=state.demonstration_images,
                     task_features=state.task_features,
