@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
-from typing import Mapping, Protocol, Sequence
+from typing import Protocol
 
 from p37_neuro.data.schema import Action, Observation
 from p37_neuro.embodiment.schema import EmbodimentSpec
