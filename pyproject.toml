@@ -18,10 +18,14 @@ classifiers = [
   "Programming Language :: Python :: 3.13",
   "Typing :: Typed",
 ]
-dependencies = []
+dependencies = ["PyYAML>=6.0"]
 
 [project.scripts]
 p37-neuro = "p37_neuro.cli:main"
+
+[project.optional-dependencies]
+sim = ["mujoco>=3.3"]
+train = ["torch>=2.8"]
 
 [dependency-groups]
 dev = [
