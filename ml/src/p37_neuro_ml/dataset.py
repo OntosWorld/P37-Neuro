@@ -135,3 +135,23 @@ def collate_episodes(
         target_actions=actions,
         target_values=values,
     )
+
+
+def denormalize_action(joint: JointSpec, value: float) -> float:
+    """Convert a normalized model action back to physical joint command units."""
+    normalized = max(-1.0, min(1.0, value))
+    if joint.control_mode is ControlMode.POSITION:
+        if joint.position is None:
+            raise ValueError(f"position joint {joint.name!r} has no bounded range")
+        midpoint = (joint.position.minimum + joint.position.maximum) / 2.0
+        half_range = (joint.position.maximum - joint.position.minimum) / 2.0
+        return midpoint + normalized * half_range
+    if joint.control_mode is ControlMode.VELOCITY:
+        if joint.velocity_limit is None:
+            raise ValueError(f"velocity joint {joint.name!r} has no limit")
+        return normalized * joint.velocity_limit
+    if joint.control_mode is ControlMode.EFFORT:
+        if joint.effort_limit is None:
+            raise ValueError(f"effort joint {joint.name!r} has no limit")
+        return normalized * joint.effort_limit
+    raise ValueError(f"unsupported control mode: {joint.control_mode}")
