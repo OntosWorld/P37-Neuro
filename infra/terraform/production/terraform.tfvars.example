@@ -1,0 +1,11 @@
+aws_region           = "us-east-1"
+artifact_bucket_name = "replace-with-globally-unique-p37-artifacts"
+
+gcp_project_id          = "replace-with-project-id"
+gcp_region              = "us-central1"
+gcp_kms_location        = "global"
+gcp_kms_key_ring_name   = "p37-releases"
+gcp_kms_crypto_key_name = "p37-release-signing"
+
+# Prefer a dedicated workload identity/service account in production.
+kms_signer_member = "serviceAccount:replace-me@replace-with-project-id.iam.gserviceaccount.com"
