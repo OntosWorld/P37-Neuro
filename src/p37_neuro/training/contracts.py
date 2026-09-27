@@ -24,5 +24,4 @@ class Trainer(Protocol):
         self,
         episodes: tuple[Episode, ...],
         embodiments: tuple[EmbodimentSpec, ...],
-    ) -> TrainMetrics:
-        ...
+    ) -> TrainMetrics: ...
