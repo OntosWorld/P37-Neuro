@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "p37-neuro"
+version = "0.1.0"
+description = "Core contracts and runtime foundations for the P37 Neuro general-purpose robot intelligence program."
+readme = "README.md"
+requires-python = ">=3.12,<3.14"
+authors = [{ name = "Ontos World" }]
+keywords = ["robotics", "physical-ai", "reinforcement-learning", "embodied-ai", "robot-learning"]
+classifiers = [
+  "Development Status :: 2 - Pre-Alpha",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Typing :: Typed",
+]
+dependencies = []
+
+[project.scripts]
+p37-neuro = "p37_neuro.cli:main"
+
+[dependency-groups]
+dev = [
+  "mypy>=1.15",
+  "pytest>=8.3",
+  "pytest-cov>=6.0",
+  "ruff>=0.11",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/p37_neuro"]
+
+[tool.pytest.ini_options]
+addopts = "-ra --strict-config --strict-markers --cov=p37_neuro --cov-report=term-missing"
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+packages = ["p37_neuro"]
+warn_unreachable = true
+show_error_codes = true

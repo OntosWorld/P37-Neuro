@@ -1,0 +1,22 @@
+schema_version: 1
+embodiment_id: example-arm-6dof
+family: manipulator
+control_frequency_hz: 100
+joints:
+  - name: joint_1
+    type: revolute
+    control_mode: position
+    position_rad: [-3.14159, 3.14159]
+    velocity_limit_rad_s: 2.0
+    effort_limit_nm: 80.0
+  - name: joint_2
+    type: revolute
+    control_mode: position
+    position_rad: [-2.4, 2.4]
+    velocity_limit_rad_s: 2.0
+    effort_limit_nm: 80.0
+end_effectors:
+  - gripper
+sensors:
+  - wrist_rgb
+  - joint_state
