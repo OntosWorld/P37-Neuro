@@ -28,7 +28,7 @@ jobs:
           enable-cache: true
       - run: uv sync --all-groups
       - name: Train long-horizon recovery memory
-        run: uv run python -m p37_neuro_ml.e4_recovery_smoke --epochs 120 --output artifacts/e4-recovery-smoke
+        run: uv run python -m p37_neuro_ml.e4_recovery_smoke --epochs 200 --output artifacts/e4-recovery-smoke
       - name: Show metrics
         run: cat artifacts/e4-recovery-smoke/metrics.json
       - uses: actions/upload-artifact@v4

@@ -14,7 +14,6 @@ from p37_neuro.simulation.morphology import MorphologyRange, generate_morphology
 from p37_neuro_ml.checkpoint import save_checkpoint
 from p37_neuro_ml.dataset import EpisodeExample, collate_episodes
 from p37_neuro_ml.model import NeuroConfig, P37Neuro
-from p37_neuro_ml.trainer import BehaviorCloningTrainer
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,9 +45,9 @@ def _episode(body, cue: int, variant: int) -> Episode:
         velocities = {joint.name: 0.0 for joint in body.joints}
 
         if step == 0:
-            first = body.joints[0]
-            assert first.position is not None
-            positions[first.name] = cue * 0.8 * first.position.maximum
+            for joint in body.joints:
+                assert joint.position is not None
+                positions[joint.name] = cue * 0.55 * joint.position.maximum
         if step == 4:
             velocities[body.joints[0].name] = 0.5
 
@@ -132,15 +131,15 @@ def run_e4_recovery_smoke(
     output_dir: str | Path,
     *,
     seed: int = 151,
-    epochs: int = 120,
+    epochs: int = 200,
 ) -> E4SmokeResult:
     """Train recovery memory and compare preserved-memory vs reset inference."""
     if epochs <= 0:
         raise ValueError("epochs must be positive")
     torch.manual_seed(seed)
 
-    train_joint_counts = (3, 4)
-    heldout_joint_count = 5
+    train_joint_counts = (3, 4, 5)
+    heldout_joint_count = 6
     train_examples = _examples(seed, train_joint_counts)
     heldout_examples = _examples(seed + 2000, (heldout_joint_count,))
     train_batch = collate_episodes(train_examples)
@@ -157,14 +156,26 @@ def run_e4_recovery_smoke(
             dropout=0.0,
         )
     )
-    trainer = BehaviorCloningTrainer(
-        model,
-        learning_rate=2e-3,
-        weight_decay=0.0,
-        max_gradient_norm=5.0,
+    optimizer = torch.optim.AdamW(model.parameters(), lr=2e-3, weight_decay=0.0)
+    recovery_mask = train_batch.joint_mask[:, None, :].expand_as(
+        train_batch.target_actions[:, 5:, :]
     )
     for _ in range(epochs):
-        trainer.step(train_batch)
+        model.train()
+        optimizer.zero_grad(set_to_none=True)
+        output = model(
+            joint_features=train_batch.joint_features,
+            joint_state=train_batch.joint_state,
+            joint_mask=train_batch.joint_mask,
+            time_mask=train_batch.time_mask,
+        )
+        error = (
+            output.action_mean[:, 5:, :] - train_batch.target_actions[:, 5:, :]
+        ).square()
+        loss = error.masked_fill(~recovery_mask, 0.0).sum() / recovery_mask.sum().clamp_min(1)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
+        optimizer.step()
 
     with_memory = _recovery_mse(model, heldout_examples, preserve_memory=True)
     reset_memory = _recovery_mse(model, heldout_examples, preserve_memory=False)
@@ -203,7 +214,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(prog="p37-e4-recovery-smoke")
     parser.add_argument("--output", type=Path, default=Path("artifacts/e4-recovery-smoke"))
     parser.add_argument("--seed", type=int, default=151)
-    parser.add_argument("--epochs", type=int, default=120)
+    parser.add_argument("--epochs", type=int, default=200)
     args = parser.parse_args()
     result = run_e4_recovery_smoke(args.output, seed=args.seed, epochs=args.epochs)
     print(json.dumps(asdict(result), sort_keys=True))
