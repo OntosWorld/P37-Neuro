@@ -38,14 +38,14 @@
     "one_shot_success_rate": 1.0
   },
   "e4": {
-    "commit": "562d96205e066c7a1c07f75406b34bd4a8845a20",
-    "workflow_run_id": 36331994952,
+    "commit": "8f4b7eb6ae23932e96a0936bafd0c390af219ab1",
+    "workflow_run_id": 36332064189,
     "epochs": 200,
     "train_joint_counts": [3, 4, 5],
     "heldout_joint_count": 6,
-    "recovery_mse_with_memory": 0.004569536540657282,
-    "recovery_mse_after_memory_reset": 0.6361575722694397,
-    "memory_advantage": 0.6315880357287824
+    "recovery_mse_with_memory": 0.004569373559206724,
+    "recovery_mse_after_memory_reset": 0.636157214641571,
+    "memory_advantage": 0.6315878410823643
   },
   "e5": {
     "commit": "c3935ec45d8e623067fce0afcea1beb187257711",
