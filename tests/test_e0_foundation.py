@@ -83,3 +83,16 @@ def test_artifact_registry_is_append_only(tmp_path: Path) -> None:
     assert registry.list()[0].artifact_id == "m1"
     with pytest.raises(ValueError):
         registry.register(record)
+
+
+def test_urdf_continuous_joint_uses_velocity_control(tmp_path: Path) -> None:
+    path = tmp_path / "wheel.urdf"
+    path.write_text(
+        '<robot name="wheel"><joint name="spin" type="continuous">'
+        '<limit velocity="4" effort="5"/>'
+        "</joint></robot>",
+        encoding="utf-8",
+    )
+    body = load_urdf(path)
+    assert body.joints[0].control_mode.value == "velocity"
+    assert body.joints[0].position is None
