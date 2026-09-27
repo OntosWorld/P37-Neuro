@@ -99,9 +99,7 @@ def collate_episodes(
         joint_mask[batch_index, : len(joints)] = True
         time_mask[batch_index, : len(example.episode.steps)] = True
         for joint_index, joint in enumerate(joints):
-            features[batch_index, joint_index] = torch.tensor(
-                joint_features(joint), device=device
-            )
+            features[batch_index, joint_index] = torch.tensor(joint_features(joint), device=device)
 
         discounted_return = 0.0
         return_values = [0.0] * len(example.episode.steps)

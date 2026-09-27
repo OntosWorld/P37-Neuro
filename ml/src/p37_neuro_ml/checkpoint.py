@@ -53,9 +53,7 @@ def load_checkpoint(
 ) -> tuple[P37Neuro, dict[str, Any]]:
     """Verify and load a checkpoint directory."""
     root = Path(directory)
-    manifest: dict[str, Any] = json.loads(
-        (root / "manifest.json").read_text(encoding="utf-8")
-    )
+    manifest: dict[str, Any] = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
     weights = root / "model.pt"
     actual = _sha256(weights)
     if actual != manifest["sha256"]:
