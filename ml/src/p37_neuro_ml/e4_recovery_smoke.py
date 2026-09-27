@@ -169,9 +169,7 @@ def run_e4_recovery_smoke(
             joint_mask=train_batch.joint_mask,
             time_mask=train_batch.time_mask,
         )
-        error = (
-            output.action_mean[:, 5:, :] - train_batch.target_actions[:, 5:, :]
-        ).square()
+        error = (output.action_mean[:, 5:, :] - train_batch.target_actions[:, 5:, :]).square()
         loss = error.masked_fill(~recovery_mask, 0.0).sum() / recovery_mask.sum().clamp_min(1)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 5.0)
