@@ -1,0 +1,41 @@
+name: E2 Manipulation Smoke
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ml/src/p37_neuro_ml/e2_manipulation_smoke.py"
+      - "ml/tests/test_e2_manipulation_smoke.py"
+      - "src/p37_neuro/benchmarks/manipulation.py"
+      - "src/p37_neuro/manipulation/**"
+      - ".github/workflows/e2-manipulation-smoke.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  manipulation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - run: uv sync --all-groups
+      - name: Train and evaluate held-out manipulation embodiments
+        run: uv run python -m p37_neuro_ml.e2_manipulation_smoke --epochs 60 --output artifacts/e2-manipulation-smoke
+      - name: Show metrics
+        run: cat artifacts/e2-manipulation-smoke/metrics.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p37-e2-manipulation-smoke
+          path: |
+            ml/artifacts/e2-manipulation-smoke/metrics.json
+            ml/artifacts/e2-manipulation-smoke/checkpoint/manifest.json
+          if-no-files-found: error
