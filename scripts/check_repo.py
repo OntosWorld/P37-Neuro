@@ -4,9 +4,14 @@ from pathlib import Path
 
 REQUIRED = (
     "README.md",
+    "QUICKSTART.md",
+    "LICENSE",
     "pyproject.toml",
     "SECURITY.md",
     "CONTRIBUTING.md",
+    "docs/README.md",
+    "docs/overview.md",
+    "docs/testing.md",
     "docs/architecture.md",
     "docs/data-contract.md",
     "docs/safety.md",

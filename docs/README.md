@@ -6,6 +6,9 @@ Documentation is organized by responsibility. Each document should have one clea
 
 ## Start here
 
+New users should begin with the repository [Quickstart](../QUICKSTART.md).
+
+
 | Document | Audience | Purpose |
 | --- | --- | --- |
 | [Product and Technical Overview](overview.md) | engineers, researchers, partners | canonical definition of P37 Neuro, system scope, maturity and product boundary |
