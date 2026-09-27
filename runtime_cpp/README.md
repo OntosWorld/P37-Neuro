@@ -94,3 +94,7 @@ cmake --build runtime_cpp/build-trt --parallel
 The TensorRT backend intentionally requires fixed tensor shapes. Export a graph
 specialized for the robot's padded joint count and selected context sizes.
 TensorRT/CUDA compilation and latency validation remain hardware-specific gates.
+
+## Runtime qualification
+
+The runtime must pass independently of model quality. See [../docs/testing.md](../docs/testing.md) for fail-closed runtime, TensorRT, ROS 2, HIL and physical-hardware qualification requirements.

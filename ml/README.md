@@ -64,3 +64,7 @@ Export uses PyTorch's current `torch.export`-based ONNX path. The training check
 ## Important
 
 A successful training command produces a model artifact, not a validated general-purpose robot brain. Promotion still requires the held-out simulation, safety and physical gates defined by the root project.
+
+## Testing learned capability
+
+A lower training loss is not enough to qualify P37. Use [../docs/testing.md](../docs/testing.md) for held-out embodiment/task rules, one-shot constraints, memory ablations and PPO before/after evaluation.

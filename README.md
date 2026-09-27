@@ -300,6 +300,12 @@ What is **not** complete is the capability evidence: large-scale training runs, 
 
 See [docs/roadmap.md](docs/roadmap.md) for the exact platform-versus-capability status and [docs/validation/2026-09-27-cpu-smoke.md](docs/validation/2026-09-27-cpu-smoke.md) for the first executable smoke results.
 
+## Testing and qualification
+
+P37 is tested in stages: software checks → synthetic smoke tests → MuJoCo → Isaac Lab → hardware-in-the-loop → physical robots → fleet/release validation.
+
+External testers should start with [docs/testing.md](docs/testing.md). It defines held-out rules, commands, simulation strategy, required ablations, evidence requirements and release qualification criteria. Reusable templates are in [docs/testing/](docs/testing/).
+
 ## Local development
 
 P37 Neuro uses Python 3.12 as the primary development target.

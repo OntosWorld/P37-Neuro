@@ -28,3 +28,7 @@ IsaacLabRunner().run(run)
 The launcher is intentionally usable only when Isaac Lab is installed in the execution environment. Normal repository CI validates the launch specification without requiring an Omniverse/Isaac installation.
 
 For P37-specific tasks, register the environment with Isaac Lab and keep reward, observation, action, event/domain-randomization, termination and curriculum configuration in the task package. The P37 ML collector consumes normalized vector observations through its own model contracts.
+
+## Qualification protocol
+
+For held-out morphology rules, Isaac/MuJoCo test levels, ablations and required evidence, see [../docs/testing.md](../docs/testing.md).
