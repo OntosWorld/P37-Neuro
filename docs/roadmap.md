@@ -9,7 +9,7 @@ This distinction prevents infrastructure from being mistaken for learned intelli
 
 ## Current program state
 
-The repository now contains the software path from E0 through E6. The remaining work is primarily **capability work**: large-scale training, target-GPU validation, real robot transfer, fleet deployment and published benchmark evidence.
+The repository now contains the software path from E0 through E6. The current program focus is **capability qualification**: large-scale training, target-GPU validation, real robot transfer, fleet deployment and published benchmark evidence.
 
 A checked platform item means the implementation exists in the repository and is covered by the applicable normal CI path. It does not mean that a learned checkpoint has passed the physical product gate.
 
@@ -34,7 +34,7 @@ A checked platform item means the implementation exists in the repository and is
 
 ## P37-E1 — Cross-morphology locomotion
 
-**Platform:** complete baseline. **Capability:** training and physical validation pending.
+**Platform:** complete baseline. **Capability qualification:** in progress — large-scale training and physical validation.
 
 - [x] procedural morphology generator
 - [x] domain-randomization registry
@@ -52,7 +52,7 @@ A checked platform item means the implementation exists in the repository and is
 
 ## P37-E2 — Cross-embodiment manipulation
 
-**Platform:** complete baseline. **Capability:** training and physical transfer pending.
+**Platform:** complete baseline. **Capability qualification:** in progress — multi-embodiment training and physical transfer.
 
 - [x] embodiment-neutral Cartesian command
 - [x] robot-specific action projector contract
@@ -66,7 +66,7 @@ A checked platform item means the implementation exists in the repository and is
 
 ## P37-E3 — Demonstration conditioning
 
-**Platform:** complete baseline. **Capability:** held-out execution pending.
+**Platform:** complete baseline. **Capability qualification:** in progress — production-scale held-out execution.
 
 - [x] demonstration-video reference contract
 - [x] language/goal/demo context contract
@@ -80,7 +80,7 @@ A checked platform item means the implementation exists in the repository and is
 
 ## P37-E4 — Long horizon
 
-**Platform:** complete baseline. **Capability:** long-duration training and physical validation pending.
+**Platform:** complete baseline. **Capability qualification:** in progress — long-duration training and physical validation.
 
 - [x] cross-trial context window
 - [x] task-progress representation
@@ -95,7 +95,7 @@ A checked platform item means the implementation exists in the repository and is
 
 ## P37-E5 — RL post-training
 
-**Platform:** complete baseline. **Capability:** compute and transfer runs pending.
+**Platform:** complete baseline. **Capability qualification:** in progress — large-scale compute and physical transfer.
 
 - [x] post-training run manifest
 - [x] offline evaluation gate
@@ -109,7 +109,7 @@ A checked platform item means the implementation exists in the repository and is
 
 ## P37-E6 — Continuous real-world learning
 
-**Platform:** complete baseline. **Capability:** production fleet rollout pending.
+**Platform:** complete baseline. **Capability qualification:** in progress — production fleet validation.
 
 - [x] append-only fleet event logger
 - [x] dataset lineage record
@@ -130,7 +130,7 @@ A checked platform item means the implementation exists in the repository and is
 
 ## Real-time deployment plane
 
-**Platform:** implemented. **Hardware qualification:** pending.
+**Platform:** implemented. **Hardware qualification:** in progress.
 
 - [x] independent C++20 runtime library
 - [x] actuator safety envelope in C++
@@ -151,7 +151,7 @@ A P37 release is only considered a validated full robot brain when evidence show
 
 1. one shared checkpoint operates materially different held-out embodiments;
 2. unseen task demonstrations condition behavior without per-task gradient updates;
-3. multi-stage tasks preserve progress and recover from selected failures;
+3. multi-stage tasks preserve progress and recover from selected disturbance and recovery scenarios;
 4. deterministic runtime safety gates every actuator command;
 5. real robot deployments feed versioned experience back into training;
 6. a candidate can be promoted, observed and rolled back through the E6 release path;
