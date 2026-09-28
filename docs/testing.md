@@ -7,7 +7,7 @@ The goal is not only to prove that the code runs. A valid P37 test should answer
 - can one checkpoint operate more than one embodiment?
 - can it transfer to a body excluded from training?
 - can a demonstration condition a new task without fine-tuning?
-- can memory improve behavior after a failure?
+- can memory improve behavior after a disturbance or unsuccessful attempt?
 - can reinforcement learning improve a policy under reward?
 - does the deterministic runtime reject unsafe or stale commands?
 - can a candidate move through the release lifecycle and be rolled back safely?
@@ -45,7 +45,7 @@ Before training or evaluation, record:
 7. held-out tasks;
 8. random seeds;
 9. simulator and version;
-10. test metric and pass/fail threshold;
+10. test metric and qualification threshold;
 11. checkpoint/artifact ID;
 12. hardware used.
 
@@ -75,7 +75,7 @@ For an unseen-task test:
 
 - evaluation tasks must be excluded from the training task set;
 - task demonstrations may be supplied only according to the declared protocol;
-- test examples must not be moved into training after a failed run without creating a new benchmark version.
+- test examples must not be moved into training after a non-qualifying run without creating a new benchmark version.
 
 ### One-shot demonstration rule
 
@@ -114,7 +114,7 @@ Or:
 make check
 ```
 
-A failure at T0 blocks higher-level testing.
+A T0 check that does not pass blocks higher-level testing.
 
 T0 verifies contracts, serialization, replay, deterministic safety, release state machines, the C++ runtime, ML unit tests and simulator adapters. It does **not** show that the brain has learned a useful physical skill.
 
@@ -270,7 +270,7 @@ For each robot:
 5. confirm replay gives the same result within declared tolerance;
 6. execute the learned policy;
 7. inject one perturbation at a time;
-8. save the episode and failure markers.
+8. save the episode and outcome/recovery markers.
 
 Do not use a visually successful rollout as the metric. Record task success, error, interventions, safety rejections and recovery behavior.
 
@@ -328,7 +328,7 @@ Record success, progress and intervention count.
 
 ### E4 long horizon
 
-Create multi-stage tasks where earlier events matter later. Inject failures such as failed grasps, dropped objects, moved targets, blocked paths or degraded actuators.
+Create multi-stage tasks where earlier events matter later. Inject disturbance and recovery scenarios such as unsuccessful grasps, dropped objects, moved targets, blocked paths or degraded actuators.
 
 Always include a memory ablation:
 
@@ -384,9 +384,9 @@ A strong result should prove that the claimed mechanism matters.
 | memory helps | recurrent state preserved vs reset |
 | PPO improves policy | frozen pre-PPO checkpoint vs post-PPO checkpoint |
 | domain randomization helps | fixed physics vs randomized training on the same held-out set |
-| recovery works | nominal run vs injected failure with recovery metrics |
+| recovery works | nominal run vs injected disturbance with recovery metrics |
 
-If the ablation does not support the mechanism, report the experiment as failed or inconclusive.
+If the ablation does not support the mechanism, report the experiment as **non-qualifying** or **inconclusive**.
 
 ---
 
@@ -417,7 +417,7 @@ cmake --build runtime_cpp/build --parallel
 ctest --test-dir runtime_cpp/build --output-on-failure
 ```
 
-A policy that succeeds at a task but bypasses or breaks the deterministic safety boundary fails qualification.
+A policy that succeeds at a task but bypasses or breaks the deterministic safety boundary does not qualify.
 
 ---
 
@@ -443,7 +443,7 @@ Record:
 - warm-up count;
 - p50/p95/p99 inference latency;
 - peak GPU memory;
-- failure rate;
+- runtime error rate;
 - numerical comparison against the reference model.
 
 Do not use desktop-GPU latency as evidence for a different deployment target.
@@ -552,7 +552,7 @@ The simulated E6 exercise proves the state machine. Production qualification req
 
 - primary metric;
 - secondary metrics;
-- failure count;
+- unsuccessful episode count;
 - intervention count;
 - safety rejection count;
 - latency where relevant;
@@ -566,7 +566,7 @@ The simulated E6 exercise proves the state machine. Production qualification req
 - episode IDs;
 - videos when useful;
 - simulator configuration;
-- failure examples.
+- representative unsuccessful/recovery cases.
 
 ### Classification
 
@@ -583,21 +583,21 @@ Do not collapse these into a single word such as "validated."
 
 ---
 
-## 15. Failure reporting
+## 15. Non-qualifying and inconclusive results
 
-Failed experiments are part of P37.
+Non-qualifying and inconclusive experiments are part of P37's evidence record.
 
-When a test fails:
+When a test does not meet its qualification threshold:
 
 1. keep the checkpoint and configuration;
-2. retain failed episodes;
-3. classify the failure;
+2. retain unsuccessful and interrupted episodes;
+3. classify the reason the result did not qualify;
 4. do not modify the test set in place;
 5. create a new experiment/run ID for the next attempt;
 6. record whether the change was model, data, reward, simulator or runtime;
 7. rerun the original evaluation set.
 
-Useful failure categories include perception/state error, task misunderstanding, embodiment mismatch, motor/control error, contact failure, memory/progress failure, recovery failure, unsafe-command rejection and runtime/infrastructure failure.
+Useful diagnostic categories include perception/state error, task misunderstanding, embodiment mismatch, motor/control error, contact issue, memory/progress issue, recovery issue, unsafe-command rejection and runtime/infrastructure error.
 
 ---
 
