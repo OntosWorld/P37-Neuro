@@ -26,7 +26,7 @@ C++ owns:
 - low-latency inference integration;
 - ROS 2 / hardware adapters;
 - deterministic watchdogs and command timing;
-- the fail-closed control loop;
+- the deterministic reject-on-error control loop;
 - accelerator-specific inference backends.
 
 The C++ runtime has no Python dependency and is built/tested independently.
