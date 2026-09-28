@@ -84,7 +84,7 @@ A checked platform item means the implementation exists in the repository and is
 
 - [x] cross-trial context window
 - [x] task-progress representation
-- [x] failure history
+- [x] attempt and recovery history
 - [x] long-horizon evaluation record
 - [x] recurrent learned policy core
 - [x] recurrent memory reset across terminated vector environments
@@ -135,7 +135,7 @@ A checked platform item means the implementation exists in the repository and is
 - [x] independent C++20 runtime library
 - [x] actuator safety envelope in C++
 - [x] inference-engine ABI
-- [x] fail-closed deterministic control loop
+- [x] deterministic reject-on-error control loop
 - [x] independent CMake/CTest build
 - [x] optional ROS 2 joint-state / command / stop bridge
 - [x] optional TensorRT recurrent inference engine matching the ML export tensor surface
