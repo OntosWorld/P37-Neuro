@@ -151,7 +151,7 @@ A valid one-shot evaluation requires a held-out task, exactly one demonstration 
 
 ### Physical memory
 
-P37 maintains recurrent context across control windows so earlier observations, failed attempts and changing machine state can affect later action.
+P37 maintains recurrent context across control windows so earlier observations, unsuccessful attempts and changing machine state can affect later action.
 
 Memory claims must be evaluated with an ablation: preserved recurrent state versus reset recurrent state under the same task and seed.
 
@@ -163,7 +163,7 @@ P37 includes behavior cloning and on-policy PPO infrastructure. RL is used as a 
 
 Safety enforcement is outside the neural policy.
 
-The actuator-facing runtime is implemented in C++20 and includes fail-closed behavior for invalid commands, stale observations, inference errors and I/O failures. Hardware-specific safety systems remain independent.
+The actuator-facing runtime is implemented in C++20 and deterministically rejects invalid commands, stale observations, inference errors and I/O errors. Hardware-specific safety systems remain independent.
 
 ---
 
@@ -232,7 +232,7 @@ The repository has executable synthetic evidence that:
 - one variable-morphology policy can train across multiple joint counts and reduce held-out synthetic error;
 - manipulation conditioning can transfer partially to held-out arm sizes;
 - one-demo conditioning can affect held-out synthetic tasks without evaluation-time weight updates;
-- recurrent memory can materially affect post-failure behavior;
+- recurrent memory can materially affect behavior after a disturbance or unsuccessful attempt;
 - on-policy PPO can improve a policy under reward;
 - the E6 feedback, signing, promotion and rollback lifecycle can execute end to end;
 - the production Terraform configuration validates.
@@ -316,7 +316,7 @@ P37 follows these system-level principles:
 3. **One canonical learning contract spans robot vendors.**
 4. **Evaluation uses held-out bodies, tasks and environments.**
 5. **Adaptation must be distinguished from retraining.**
-6. **Failures are retained as useful data.**
+6. **Unsuccessful attempts and recovery events are retained as useful data.**
 7. **Simulation provides scale; hardware provides truth.**
 8. **Experiments must be reproducible.**
 9. **Heavy integrations remain optional at the core boundary.**
