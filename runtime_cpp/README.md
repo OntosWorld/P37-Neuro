@@ -10,7 +10,7 @@ The core library provides:
 - deterministic joint safety constraints;
 - stale-observation rejection;
 - recurrent inference-engine ABI;
-- a fail-closed runtime loop;
+- a deterministic reject-on-error runtime loop;
 - observation-source and command-sink interfaces.
 
 Build and test without ROS:
@@ -97,4 +97,4 @@ TensorRT/CUDA compilation and latency validation remain hardware-specific gates.
 
 ## Runtime qualification
 
-The runtime must pass independently of model quality. See [../docs/testing.md](../docs/testing.md) for fail-closed runtime, TensorRT, ROS 2, HIL and physical-hardware qualification requirements.
+The runtime must pass independently of model quality. See [../docs/testing.md](../docs/testing.md) for deterministic runtime safety, TensorRT, ROS 2, HIL and physical-hardware qualification requirements.
