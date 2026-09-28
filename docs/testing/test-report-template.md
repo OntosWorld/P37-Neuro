@@ -62,7 +62,7 @@ Link to or reproduce the pre-run test plan.
 
 - result:
 - required threshold:
-- pass/fail:
+- qualification result: qualifies / does not qualify / inconclusive:
 
 ### Secondary metrics
 
@@ -90,9 +90,9 @@ Do not report only an aggregate.
 - ablated result:
 - interpretation:
 
-## Failures
+## Observed issues and recovery cases
 
-List representative failure modes and episode IDs.
+List representative issues, unsuccessful attempts, recovery cases and episode IDs.
 
 ## Evidence
 
