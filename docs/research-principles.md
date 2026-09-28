@@ -6,7 +6,7 @@ A system is not cross-embodiment if evaluation uses only body variants seen duri
 
 ## Do not optimize for demos
 
-Demos are useful communication artifacts, not the benchmark. Maintain fixed evaluation suites with failure taxonomy and intervention counts.
+Demos are useful communication artifacts, not the benchmark. Maintain fixed evaluation suites with outcome/error taxonomy and intervention counts.
 
 ## Separate adaptation from retraining
 
@@ -14,7 +14,7 @@ When measuring in-context adaptation, model weights must remain unchanged during
 
 ## Track negative results
 
-Record architecture, dataset and control approaches that fail. Repeating an expensive negative result is a process failure.
+Record architecture, dataset and control approaches that do not meet their target criteria. Repeating an expensive negative result without learning from it is a process problem.
 
 ## Reproduce before scaling
 
