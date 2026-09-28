@@ -16,7 +16,7 @@ Every episode must identify:
 - observations;
 - actions;
 - outcome and termination reason;
-- intervention and failure markers;
+- intervention, outcome and recovery markers;
 - dataset/provenance metadata.
 
 ## Physical units
@@ -39,6 +39,6 @@ Images, video, point clouds and large tensor streams should live in content-addr
 
 Published dataset versions are immutable. Corrections produce a new version with lineage back to the source version.
 
-## Failure preservation
+## Outcome and recovery preservation
 
-A failed rollout is not automatically bad data. Failure type, intervention, unsafe-command rejection and recovery attempts should be retained when consent/provenance requirements allow.
+An unsuccessful rollout is not automatically bad data. Outcome type, intervention, unsafe-command rejection and recovery attempts should be retained when consent/provenance requirements allow.
