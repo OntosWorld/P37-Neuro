@@ -6,7 +6,7 @@ The long-term goal is simple to state and hard to achieve:
 
 > **A new robot body or a new task should not automatically require a new model.**
 
-P37 Neuro is being built as a full physical-intelligence stack rather than a single vision-language model. It separates high-level task intelligence from fast motor control, represents robot bodies explicitly, keeps deterministic safety outside the learned policy, and treats every successful or failed episode as training data.
+P37 Neuro is being built as a full physical-intelligence stack rather than a single vision-language model. It separates high-level task intelligence from fast motor control, represents robot bodies explicitly, keeps deterministic safety outside the learned policy, and treats successful and unsuccessful episodes as useful learning data.
 
 ## What P37 Neuro is
 
@@ -134,7 +134,7 @@ This layer is where broad morphology randomization, reinforcement learning and s
 
 ### 5. Long-context physical memory
 
-P37 Neuro is designed around the idea that a robot should be able to use **previous attempts as context**. A failed grasp, a changed payload or a blocked joint should be information, not simply discarded history.
+P37 Neuro is designed around the idea that a robot should be able to use **previous attempts as context**. An unsuccessful grasp attempt, a changed payload or a blocked joint should be useful context, not discarded history.
 
 Memory therefore spans more than a short control window. The research roadmap includes cross-trial context, recurrent attention and explicit task-progress representations.
 
@@ -167,7 +167,7 @@ Planned data sources include:
 - Ontos teleoperation;
 - human demonstration video;
 - autonomous robot episodes;
-- failures, interventions and recovery attempts.
+- unsuccessful attempts, interventions and recovery attempts.
 
 All sources are normalized into a canonical episode model so data from different robots can be trained together.
 
@@ -274,7 +274,7 @@ The repository will grow by adding adapters and learned implementations behind t
 2. **Embodiment is data.** Robot morphology should be represented explicitly and learned over, not hidden in per-robot code.
 3. **One canonical learning contract.** Manufacturer-specific integration happens at the edge.
 4. **Simulation provides scale; hardware provides truth.**
-5. **Failures are training data.** Recovery and adaptation require failed episodes to remain observable.
+5. **Unsuccessful attempts are learning data.** Recovery and adaptation require those episodes to remain observable.
 6. **Evaluation comes before demos.** Every capability needs held-out tasks, bodies and environments.
 7. **Reproducibility is mandatory.** Experiments must record code, configuration, data and model versions.
 8. **Heavy dependencies stay optional.** The framework core remains testable without requiring a simulator or ROS installation.
@@ -294,9 +294,9 @@ Implemented platform pieces include:
 - MuJoCo execution plus a P37-specific Isaac Lab locomotion task and launcher;
 - demonstration/task conditioning and one-shot leakage-controlled evaluation;
 - content-addressed artifacts, signed releases, S3-compatible publication and KMS-backed signing;
-- a fail-closed C++20 actuator runtime, optional ROS 2 bridge and optional TensorRT recurrent inference backend.
+- a deterministic C++20 actuator-safety runtime, optional ROS 2 bridge and optional TensorRT recurrent inference backend.
 
-What is **not** complete is the capability evidence: large-scale training runs, held-out embodiment results, target-GPU TensorRT profiling, multi-robot physical validation, long-duration task recovery, and live production fleet rollout.
+Capability qualification is the current workstream: large-scale training, held-out embodiment evaluation, target-GPU TensorRT profiling, multi-robot physical validation, long-duration task recovery and live production fleet qualification.
 
 See [docs/roadmap.md](docs/roadmap.md) for the exact platform-versus-capability status and [docs/validation/2026-09-27-cpu-smoke.md](docs/validation/2026-09-27-cpu-smoke.md) for the first executable smoke results.
 
@@ -350,15 +350,15 @@ P37 Neuro is one continuous program from **P37-E0 through P37-E6**. The reposito
 | Stage | Product responsibility | Platform status |
 | --- | --- | --- |
 | **E0** | robot/config ingestion, canonical episodes, replay, artifact registry | platform complete |
-| **E1** | morphology generation, Isaac locomotion task, locomotion training/evaluation | platform complete baseline |
-| **E2** | cross-embodiment manipulation, teleoperation/data normalization | platform complete baseline |
-| **E3** | demonstration/video-conditioned task context and one-shot qualification | platform complete baseline |
-| **E4** | long-context memory, progress and recovery curricula | platform complete baseline |
-| **E5** | PPO post-training, disturbance curriculum and promotion gates | platform complete baseline |
-| **E6** | fleet data, signed releases, remote artifacts, KMS, promotion/rollback | platform complete baseline |
-| **Runtime** | fail-closed C++ runtime, ROS 2 and optional TensorRT | implemented; hardware qualification pending |
+| **E1** | morphology generation, Isaac locomotion task, locomotion training/evaluation | platform complete; capability qualification in progress |
+| **E2** | cross-embodiment manipulation, teleoperation/data normalization | platform complete; capability qualification in progress |
+| **E3** | demonstration/video-conditioned task context and one-shot qualification | platform complete; capability qualification in progress |
+| **E4** | long-context memory, progress and recovery curricula | platform complete; capability qualification in progress |
+| **E5** | PPO post-training, disturbance curriculum and promotion gates | platform complete; capability qualification in progress |
+| **E6** | fleet data, signed releases, remote artifacts, KMS, promotion/rollback | platform complete; capability qualification in progress |
+| **Runtime** | deterministic C++ safety runtime, ROS 2 and optional TensorRT | implemented; hardware qualification in progress |
 
-"Implemented baseline" means the executable product contract exists and is tested. It does **not** mean a frontier-quality checkpoint has already been trained. Training, simulation-scale evaluation and physical validation remain measurable release work.
+"Platform complete" means the executable product contract exists and is tested. Capability qualification continues through training, simulation-scale evaluation and physical validation.
 
 ### Language boundaries
 
