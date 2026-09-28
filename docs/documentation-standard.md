@@ -87,6 +87,14 @@ The required software path for that stage exists end to end.
 
 A specific controlled experiment produced the documented result.
 
+### Qualification in progress
+
+The software path exists and the defined capability gates are still being evaluated. Use this for active maturity work instead of describing unfinished qualification as a failure.
+
+### Non-qualifying / inconclusive result
+
+Use these terms in validation reports when a completed experiment does not meet a predefined threshold or does not support a clear conclusion. Reserve **failure**, **failure mode** and **fail-closed** for operational errors, safety behavior and diagnostic taxonomy where those terms are technically precise.
+
 ### Simulation validated
 
 The capability passed a predefined held-out physics-simulation protocol.
