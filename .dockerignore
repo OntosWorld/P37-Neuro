@@ -1,0 +1,14 @@
+.git
+.github
+.venv
+__pycache__
+artifacts
+build
+dist
+ml
+sim
+runtime_cpp/build
+datasets
+checkpoints
+runs
+wandb

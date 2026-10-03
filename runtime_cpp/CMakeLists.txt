@@ -5,8 +5,15 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include(GNUInstallDirs)
+
 add_library(p37_runtime STATIC src/runtime.cpp src/supervisor.cpp src/loop.cpp)
-target_include_directories(p37_runtime PUBLIC include)
+target_include_directories(
+  p37_runtime
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
+)
 target_compile_options(p37_runtime PRIVATE -Wall -Wextra -Wpedantic -Werror)
 
 add_executable(p37_runtime_test tests/runtime_test.cpp)
@@ -75,3 +82,11 @@ enable_testing()
 add_test(NAME p37_runtime_test COMMAND p37_runtime_test)
 add_test(NAME p37_supervisor_test COMMAND p37_supervisor_test)
 add_test(NAME p37_loop_test COMMAND p37_loop_test)
+
+install(
+  TARGETS p37_runtime
+  ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+)
+install(DIRECTORY include/p37 DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})

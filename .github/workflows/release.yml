@@ -1,0 +1,77 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+  attestations: write
+  artifact-metadata: write
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          python-version: "3.12"
+          version: "latest-known"
+          enable-cache: true
+      - run: uv sync --all-groups
+      - run: uv run pytest
+      - name: Build Python distributions
+        run: uv build --out-dir dist
+      - name: Build native runtime
+        run: |
+          cmake -S runtime_cpp -B runtime_cpp/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build runtime_cpp/build --parallel
+          ctest --test-dir runtime_cpp/build --output-on-failure
+          cmake --install runtime_cpp/build --prefix package/runtime
+          tar -C package -czf dist/p37-runtime-linux-x86_64.tar.gz runtime
+      - name: Generate checksums
+        run: |
+          cd dist
+          sha256sum p37_neuro-* p37-runtime-linux-x86_64.tar.gz > SHA256SUMS
+      - name: Generate SPDX SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          path: .
+          format: spdx-json
+          output-file: dist/p37-neuro.spdx.json
+      - name: Attest release artifacts
+        uses: actions/attest@v4
+        with:
+          subject-path: "dist/*"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p37-release-${{ github.ref_name }}
+          path: dist/
+          if-no-files-found: error
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --generate-notes --verify-tag
+      - name: Publish to PyPI with trusted publishing
+        if: vars.P37_PYPI_PUBLISH == 'true'
+        run: uv publish --trusted-publishing always dist/*.whl dist/*.tar.gz
+
+  container:
+    runs-on: ubuntu-24.04
+    needs: package
+    steps:
+      - uses: actions/checkout@v7
+      - name: Authenticate to GHCR
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+      - name: Build and publish CLI image
+        run: |
+          image="ghcr.io/ontosworld/p37-neuro"
+          docker build -t "$image:$GITHUB_REF_NAME" -t "$image:latest" .
+          docker push "$image:$GITHUB_REF_NAME"
+          docker push "$image:latest"
