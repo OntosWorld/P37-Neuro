@@ -130,9 +130,9 @@ def write_qualification_report(
         encoding="utf-8",
     )
 
-    gate_lines = ["- none"] if not report.unmet_gates else [
-        f"- {gate}" for gate in report.unmet_gates
-    ]
+    gate_lines = (
+        ["- none"] if not report.unmet_gates else [f"- {gate}" for gate in report.unmet_gates]
+    )
     robot_lines = ["Not supplied."]
     if report.robot_integration is not None:
         robot_lines = [
