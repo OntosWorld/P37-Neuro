@@ -16,8 +16,7 @@ class DeploymentTarget:
     robot_ids: tuple[str, ...]
 
     def __post_init__(self) -> None:
-        if not self.organization_id.strip() or not self.site_id.strip() or not self.fleet_id.strip():
-            raise ValueError("organization_id, site_id and fleet_id are required")
+        if (\n            not self.organization_id.strip()\n            or not self.site_id.strip()\n            or not self.fleet_id.strip()\n        ):\n            raise ValueError("organization_id, site_id and fleet_id are required")
         if not self.robot_ids:
             raise ValueError("at least one robot is required")
         if len(self.robot_ids) != len(set(self.robot_ids)):
