@@ -9,6 +9,7 @@ from p37_neuro import __version__
 from p37_neuro.config import load_config
 from p37_neuro.data.storage import read_episode
 from p37_neuro.embodiment.importers import load_mjcf, load_urdf
+from p37_neuro.integration import create_robot_manifest_template, validate_robot_integration
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -24,6 +25,14 @@ def _build_parser() -> argparse.ArgumentParser:
 
     replay = subparsers.add_parser("inspect-episode", help="verify and summarize an episode")
     replay.add_argument("path", type=Path)
+
+    robot_group = subparsers.add_parser("robot", help="create and validate robot integrations")
+    robot_commands = robot_group.add_subparsers(dest="robot_command", required=True)
+    robot_init = robot_commands.add_parser("init", help="create a robot integration manifest")
+    robot_init.add_argument("name")
+    robot_init.add_argument("--output", type=Path, default=Path("robots"))
+    robot_validate = robot_commands.add_parser("validate", help="validate a robot integration")
+    robot_validate.add_argument("path", type=Path)
     return parser
 
 
@@ -42,6 +51,18 @@ def main() -> None:
     elif args.command == "inspect-episode":
         episode = read_episode(args.path)
         print(f"valid episode: {episode.episode_id} ({len(episode.steps)} steps)")
+    elif args.command == "robot" and args.robot_command == "init":
+        path = create_robot_manifest_template(args.name, args.output / args.name)
+        print(f"created robot manifest: {path}")
+        print("set description.path to the real URDF/MJCF/USD file, then run:")
+        print(f"p37 robot validate {path}")
+    elif args.command == "robot" and args.robot_command == "validate":
+        result = validate_robot_integration(args.path)
+        print(f"qualified integration contract: {result.robot_id}")
+        print(f"controllable joints: {result.action_dimension}")
+        print(f"control frequency: {result.control_frequency_hz:g} Hz")
+        if result.warnings:
+            print("warnings: " + "; ".join(result.warnings))
 
 
 if __name__ == "__main__":

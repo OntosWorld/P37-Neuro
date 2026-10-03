@@ -32,6 +32,7 @@ Repository = "https://github.com/OntosWorld/P37-Neuro"
 Issues = "https://github.com/OntosWorld/P37-Neuro/issues"
 
 [project.scripts]
+p37 = "p37_neuro.cli:main"
 p37-neuro = "p37_neuro.cli:main"
 
 [project.optional-dependencies]
