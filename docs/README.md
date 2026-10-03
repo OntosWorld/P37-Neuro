@@ -16,6 +16,17 @@ New users should begin with the repository [Quickstart](../QUICKSTART.md).
 | [Testing and Qualification](testing.md) | researchers, validation engineers, external testers | complete validation protocol from CI through physical robots |
 | [Roadmap](roadmap.md) | engineering/research leads | implementation versus capability-validation status |
 
+## Enterprise integration
+
+| Document | Purpose |
+| --- | --- |
+| [Robot Integration Kit](integration-kit.md) | declarative robot adapters and integration boundary |
+| [Enterprise Deployment](enterprise-deployment.md) | fleet targeting, canary rollout and rollback plans |
+| [Observability](observability.md) | runtime metrics and monitoring boundary |
+| [Data Governance](data-governance.md) | customer/site/region-aware data-use policy |
+| [API Stability](api-stability.md) | public interfaces, versioning and deprecation |
+| [Compatibility](../COMPATIBILITY.md) | supported software and deployment targets |
+
 ## Engineering reference
 
 | Document | Purpose |

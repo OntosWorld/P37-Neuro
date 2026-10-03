@@ -37,7 +37,7 @@ This creates the local environment and installs the Python core plus development
 ## 3. Verify the CLI
 
 ```bash
-uv run p37-neuro info
+uv run p37 info
 ```
 
 Expected output starts with:
@@ -95,7 +95,23 @@ uv run pytest -q
 
 The simulation package contains the MuJoCo integration and the P37 Isaac Lab task/launcher interfaces. Isaac Lab itself is an optional external installation and requires a compatible NVIDIA environment.
 
-## 7. Choose your next path
+## 7. Connect a robot
+
+Create a declarative integration:
+
+```bash
+p37 robot init my-robot
+```
+
+After pointing the generated manifest at the real URDF/MJCF/USD description:
+
+```bash
+p37 robot validate robots/my-robot/robot.yaml
+```
+
+Reference integration layouts are under `examples/`.
+
+## 8. Choose your next path
 
 ### Test P37 capability
 

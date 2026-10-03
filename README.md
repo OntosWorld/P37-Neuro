@@ -316,7 +316,7 @@ P37 Neuro uses Python 3.12 as the primary development target.
 git clone https://github.com/OntosWorld/P37-Neuro.git
 cd P37-Neuro
 uv sync --all-groups
-uv run p37-neuro info
+uv run p37 info
 uv run pytest
 ```
 
@@ -329,6 +329,25 @@ make check
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes.
+
+## Enterprise integration
+
+P37 includes a productization layer for robot integration and controlled deployment:
+
+```bash
+p37 robot init my-robot
+p37 robot validate robots/my-robot/robot.yaml
+p37 qualify --evidence evidence.yaml --robot robots/my-robot/robot.yaml
+p37 deploy --artifact p37-v2 --previous p37-v1 \
+  --organization acme --site factory-1 --fleet picking \
+  --robots robot-1,robot-2 --qualification-report artifacts/qualification/qualification.json
+p37 status --plan artifacts/rollout.json
+p37 rollback --plan artifacts/rollout.json
+```
+
+The CLI creates and validates integration, qualification and rollout artifacts; it does not bypass robot-controller or site approval systems.
+
+See [Robot Integration Kit](docs/integration-kit.md), [Enterprise Deployment](docs/enterprise-deployment.md), [Compatibility](COMPATIBILITY.md), [API Stability](docs/api-stability.md), [Observability](docs/observability.md), [Data Governance](docs/data-governance.md) and [Support](SUPPORT.md).
 
 ## Security and physical safety
 
