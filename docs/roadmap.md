@@ -143,6 +143,30 @@ A checked platform item means the implementation exists in the repository and is
 - [ ] ros2_control/controller-specific integration for selected physical robots
 - [ ] hardware-in-the-loop validation
 
+## Enterprise productization
+
+**Platform:** implemented baseline. **Deployment qualification:** environment-specific.
+
+- [x] declarative Robot Integration Kit
+- [x] `p37 robot init` / `p37 robot validate`
+- [x] executable qualification reports
+- [x] runtime observability contracts and C++ diagnostics counters
+- [x] customer/site/region-aware data-governance policy
+- [x] organization → site → fleet → robot rollout contracts
+- [x] canary/batched rollout and deterministic rollback plans
+- [x] compatibility and API/deprecation policy
+- [x] native runtime install bundle and Python release artifacts
+- [x] OCI distribution for the non-real-time CLI/control plane
+- [x] SBOM and artifact-attestation release path
+- [x] CodeQL, dependency review and OpenSSF Scorecard workflows
+- [x] tabletop-arm, mobile-manipulator and quadruped reference integrations
+- [ ] live enterprise fleet transport integration
+- [ ] customer-specific SSO/RBAC integration
+- [ ] target-site observability backend validation
+- [ ] production retention/deletion backend integration
+
+These unchecked items depend on the customer's deployment environment; they do not change the core robot-brain architecture.
+
 ## Release qualification gate
 
 The repository includes a release qualification gate so software completion cannot be confused with robot-brain capability completion.

@@ -36,6 +36,8 @@ New users should begin with the repository [Quickstart](../QUICKSTART.md).
 | [Safety](safety.md) | deterministic runtime safety principles and release constraints |
 | [Research Principles](research-principles.md) | rules for holdouts, adaptation claims, negative results and scaling |
 | [Documentation Standard](documentation-standard.md) | conventions for writing and maintaining P37 documentation |
+| [Release Engineering](release.md) | software/runtime artifacts and publishing process |
+| [Supply-Chain Security](supply-chain-security.md) | scanning, SBOM, attestations and artifact trust |
 
 ## Testing resources
 

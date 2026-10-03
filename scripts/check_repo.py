@@ -25,6 +25,10 @@ REQUIRED = (
     "docs/safety.md",
     "docs/roadmap.md",
     "docs/language-architecture.md",
+    "Dockerfile",
+    "examples/README.md",
+    "docs/release.md",
+    "docs/supply-chain-security.md",
     "runtime_cpp/CMakeLists.txt",
 )
 
