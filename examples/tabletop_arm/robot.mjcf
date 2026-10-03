@@ -1,0 +1,20 @@
+<mujoco model="p37_reference_tabletop_arm">
+  <option timestep="0.01"/>
+  <worldbody>
+    <body name="base">
+      <geom type="box" size="0.10 0.10 0.05"/>
+      <body name="link_1" pos="0 0 0.10">
+        <joint name="shoulder" type="hinge" range="-2.0 2.0"/>
+        <geom type="capsule" size="0.025 0.15" pos="0 0 0.15"/>
+        <body name="link_2" pos="0 0 0.30">
+          <joint name="elbow" type="hinge" range="-2.0 2.0"/>
+          <geom type="capsule" size="0.02 0.12" pos="0 0 0.12"/>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <actuator>
+    <position name="shoulder_position" joint="shoulder" ctrlrange="-2.0 2.0"/>
+    <position name="elbow_position" joint="elbow" ctrlrange="-2.0 2.0"/>
+  </actuator>
+</mujoco>

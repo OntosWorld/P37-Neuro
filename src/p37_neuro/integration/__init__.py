@@ -18,4 +18,13 @@ __all__ = [
     "create_robot_manifest_template",
     "load_robot_manifest",
     "validate_robot_integration",
+    "SimulationPreflightError",
+    "SimulationPreflightResult",
+    "run_mujoco_preflight",
 ]
+
+from p37_neuro.integration.simulate import (
+    SimulationPreflightError,
+    SimulationPreflightResult,
+    run_mujoco_preflight,
+)

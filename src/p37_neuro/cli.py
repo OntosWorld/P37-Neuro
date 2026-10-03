@@ -16,7 +16,11 @@ from p37_neuro.deployment import (
     write_rollout_plan,
 )
 from p37_neuro.embodiment.importers import load_mjcf, load_urdf
-from p37_neuro.integration import create_robot_manifest_template, validate_robot_integration
+from p37_neuro.integration import (
+    create_robot_manifest_template,
+    run_mujoco_preflight,
+    validate_robot_integration,
+)
 from p37_neuro.qualification import (
     build_qualification_report,
     load_qualification_evidence,
@@ -48,6 +52,12 @@ def _build_parser() -> argparse.ArgumentParser:
     robot_init.add_argument("--output", type=Path, default=Path("robots"))
     robot_validate = robot_commands.add_parser("validate", help="validate a robot integration")
     robot_validate.add_argument("path", type=Path)
+
+    simulate = subparsers.add_parser("simulate", help="run a simulator integration preflight")
+    simulate.add_argument("--robot", type=Path, required=True)
+    simulate.add_argument("--backend", choices=("mujoco",), default="mujoco")
+    simulate.add_argument("--steps", type=int, default=10)
+    simulate.add_argument("--seed", type=int, default=0)
 
     qualify = subparsers.add_parser("qualify", help="generate a release qualification report")
     qualify.add_argument("--evidence", type=Path, required=True)
@@ -103,6 +113,13 @@ def main() -> None:
         print(f"control frequency: {result.control_frequency_hz:g} Hz")
         if result.warnings:
             print("warnings: " + "; ".join(result.warnings))
+    elif args.command == "simulate":
+        result = run_mujoco_preflight(args.robot, steps=args.steps, seed=args.seed)
+        print(f"simulation preflight: {result.robot_id}")
+        print(f"backend: {result.backend}")
+        print(f"steps: {result.steps}")
+        print(f"controllable joints: {result.action_dimension}")
+        print(f"final simulation time: {result.final_time_s:.6f} s")
     elif args.command == "qualify":
         evidence = load_qualification_evidence(args.evidence)
         report = build_qualification_report(evidence, robot_manifest=args.robot)

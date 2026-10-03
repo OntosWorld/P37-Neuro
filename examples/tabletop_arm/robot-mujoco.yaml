@@ -1,0 +1,18 @@
+schema_version: 1
+robot_id: reference-tabletop-arm-mujoco
+family: manipulator
+description:
+  format: mjcf
+  path: robot.mjcf
+runtime:
+  transport: replay
+  control_frequency_hz: 100
+safety:
+  max_observation_age_s: 0.1
+  require_external_estop: true
+  require_controller_watchdog: true
+sensors:
+  joint_state: mujoco/joint_state
+metadata:
+  example: "true"
+  qualification: simulation-preflight-only
