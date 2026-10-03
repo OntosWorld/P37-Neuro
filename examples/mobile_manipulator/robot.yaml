@@ -1,0 +1,23 @@
+schema_version: 1
+robot_id: reference-mobile-manipulator
+family: mobile-manipulator
+description:
+  format: urdf
+  path: robot.urdf
+runtime:
+  transport: ros2
+  control_frequency_hz: 100
+  state_topic: /mobile_manipulator/joint_states
+  command_topic: /mobile_manipulator/p37_commands
+  stop_topic: /mobile_manipulator/p37_stop
+safety:
+  max_observation_age_s: 0.1
+  require_external_estop: true
+  require_controller_watchdog: true
+sensors:
+  joint_state: /mobile_manipulator/joint_states
+  front_rgb: /mobile_manipulator/front/image
+  base_imu: /mobile_manipulator/imu
+metadata:
+  example: "true"
+  qualification: reference-integration-only

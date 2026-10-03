@@ -1,0 +1,23 @@
+<robot name="p37_reference_quadruped">
+  <link name="body"/>
+  <link name="front_left_leg"/>
+  <link name="front_right_leg"/>
+  <link name="rear_left_leg"/>
+  <link name="rear_right_leg"/>
+  <joint name="front_left_hip" type="revolute">
+    <parent link="body"/><child link="front_left_leg"/>
+    <limit lower="-1.2" upper="1.2" velocity="6.0" effort="45"/>
+  </joint>
+  <joint name="front_right_hip" type="revolute">
+    <parent link="body"/><child link="front_right_leg"/>
+    <limit lower="-1.2" upper="1.2" velocity="6.0" effort="45"/>
+  </joint>
+  <joint name="rear_left_hip" type="revolute">
+    <parent link="body"/><child link="rear_left_leg"/>
+    <limit lower="-1.2" upper="1.2" velocity="6.0" effort="45"/>
+  </joint>
+  <joint name="rear_right_hip" type="revolute">
+    <parent link="body"/><child link="rear_right_leg"/>
+    <limit lower="-1.2" upper="1.2" velocity="6.0" effort="45"/>
+  </joint>
+</robot>

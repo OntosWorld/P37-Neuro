@@ -1,0 +1,18 @@
+<robot name="p37_reference_tabletop_arm">
+  <link name="base"/>
+  <link name="link_1"/>
+  <link name="link_2"/>
+  <link name="tool"/>
+  <joint name="shoulder" type="revolute">
+    <parent link="base"/><child link="link_1"/>
+    <limit lower="-2.8" upper="2.8" velocity="2.0" effort="80"/>
+  </joint>
+  <joint name="elbow" type="revolute">
+    <parent link="link_1"/><child link="link_2"/>
+    <limit lower="-2.4" upper="2.4" velocity="2.0" effort="60"/>
+  </joint>
+  <joint name="wrist" type="revolute">
+    <parent link="link_2"/><child link="tool"/>
+    <limit lower="-3.14" upper="3.14" velocity="3.0" effort="25"/>
+  </joint>
+</robot>

@@ -1,0 +1,23 @@
+<robot name="p37_reference_mobile_manipulator">
+  <link name="base"/>
+  <link name="left_wheel"/>
+  <link name="right_wheel"/>
+  <link name="arm_link"/>
+  <link name="tool"/>
+  <joint name="left_wheel_joint" type="continuous">
+    <parent link="base"/><child link="left_wheel"/>
+    <limit velocity="8.0" effort="25"/>
+  </joint>
+  <joint name="right_wheel_joint" type="continuous">
+    <parent link="base"/><child link="right_wheel"/>
+    <limit velocity="8.0" effort="25"/>
+  </joint>
+  <joint name="arm_lift" type="revolute">
+    <parent link="base"/><child link="arm_link"/>
+    <limit lower="-1.5" upper="1.5" velocity="1.5" effort="70"/>
+  </joint>
+  <joint name="wrist" type="revolute">
+    <parent link="arm_link"/><child link="tool"/>
+    <limit lower="-2.5" upper="2.5" velocity="2.0" effort="30"/>
+  </joint>
+</robot>

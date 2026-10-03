@@ -1,0 +1,22 @@
+schema_version: 1
+robot_id: reference-tabletop-arm
+family: manipulator
+description:
+  format: urdf
+  path: robot.urdf
+runtime:
+  transport: ros2
+  control_frequency_hz: 100
+  state_topic: /tabletop_arm/joint_states
+  command_topic: /tabletop_arm/p37_commands
+  stop_topic: /tabletop_arm/p37_stop
+safety:
+  max_observation_age_s: 0.1
+  require_external_estop: true
+  require_controller_watchdog: true
+sensors:
+  joint_state: /tabletop_arm/joint_states
+  wrist_rgb: /tabletop_arm/wrist/image
+metadata:
+  example: "true"
+  qualification: reference-integration-only
