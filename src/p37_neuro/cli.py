@@ -9,8 +9,7 @@ from p37_neuro import __version__
 from p37_neuro.config import load_config
 from p37_neuro.data.storage import read_episode
 from p37_neuro.embodiment.importers import load_mjcf, load_urdf
-from p37_neuro.integration import create_robot_manifest_template, validate_robot_integration
-
+from p37_neuro.integration import create_robot_manifest_template, validate_robot_integration\nfrom p37_neuro.qualification import (\n    build_qualification_report,\n    load_qualification_evidence,\n    write_qualification_report,\n)\n
 
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="p37-neuro")
@@ -32,9 +31,7 @@ def _build_parser() -> argparse.ArgumentParser:
     robot_init.add_argument("name")
     robot_init.add_argument("--output", type=Path, default=Path("robots"))
     robot_validate = robot_commands.add_parser("validate", help="validate a robot integration")
-    robot_validate.add_argument("path", type=Path)
-    return parser
-
+    robot_validate.add_argument("path", type=Path)\n\n    qualify = subparsers.add_parser("qualify", help="generate a release qualification report")\n    qualify.add_argument("--evidence", type=Path, required=True)\n    qualify.add_argument("--robot", type=Path)\n    qualify.add_argument("--output", type=Path, default=Path("artifacts/qualification"))\n    return parser\n
 
 def main() -> None:
     """Run the P37 Neuro command-line interface."""
@@ -61,9 +58,7 @@ def main() -> None:
         print(f"qualified integration contract: {result.robot_id}")
         print(f"controllable joints: {result.action_dimension}")
         print(f"control frequency: {result.control_frequency_hz:g} Hz")
-        if result.warnings:
-            print("warnings: " + "; ".join(result.warnings))
-
+        if result.warnings:\n            print("warnings: " + "; ".join(result.warnings))\n    elif args.command == "qualify":\n        evidence = load_qualification_evidence(args.evidence)\n        report = build_qualification_report(evidence, robot_manifest=args.robot)\n        json_path, md_path = write_qualification_report(report, args.output)\n        print(f"qualification result: {report.status.value}")\n        print(f"json: {json_path}")\n        print(f"report: {md_path}")\n
 
 if __name__ == "__main__":
     main()
