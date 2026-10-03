@@ -31,7 +31,7 @@ jobs:
         run: uv run python -m p37_neuro_ml.e1_smoke --epochs 40 --output artifacts/e1-cpu-smoke
       - name: Show metrics
         run: cat artifacts/e1-cpu-smoke/metrics.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: p37-e1-cpu-smoke
           path: |
