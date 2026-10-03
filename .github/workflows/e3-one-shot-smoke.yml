@@ -32,7 +32,7 @@ jobs:
         run: uv run python -m p37_neuro_ml.e3_one_shot_smoke --epochs 80 --output artifacts/e3-one-shot-smoke
       - name: Show metrics
         run: cat artifacts/e3-one-shot-smoke/metrics.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: p37-e3-one-shot-smoke
           path: |
