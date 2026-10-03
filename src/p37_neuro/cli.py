@@ -5,8 +5,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from p37_neuro import __version__
-from p37_neuro.config import load_config
+from p37_neuro import __version__\nfrom p37_neuro.deployment import (\n    DeploymentTarget,\n    RolloutPlan,\n    build_rollback_plan,\n    load_rollout_plan,\n    write_rollout_plan,\n)\nfrom p37_neuro.config import load_config
 from p37_neuro.data.storage import read_episode
 from p37_neuro.embodiment.importers import load_mjcf, load_urdf
 from p37_neuro.integration import create_robot_manifest_template, validate_robot_integration\nfrom p37_neuro.qualification import (\n    build_qualification_report,\n    load_qualification_evidence,\n    write_qualification_report,\n)\n
