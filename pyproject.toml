@@ -22,7 +22,7 @@ classifiers = [
 ]
 dependencies = [
   "PyYAML>=6.0",
-  "cryptography>=45,<47",
+  "cryptography>=45,<51",
 ]
 
 [project.urls]
