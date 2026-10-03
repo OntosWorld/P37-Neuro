@@ -9,7 +9,7 @@ from p37_neuro.observability.metrics import (
 
 __all__ = [
     "JsonlMetricExporter",
-    "RuntimeMetrics",
     "RuntimeMetricSnapshot",
+    "RuntimeMetrics",
     "prometheus_text",
 ]
