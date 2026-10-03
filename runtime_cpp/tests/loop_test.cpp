@@ -56,6 +56,9 @@ int main() {
   auto missing = loop.tick(100);
   assert(missing.status == p37::RuntimeStatus::no_observation);
   assert(sink.stopped);
+  assert(loop.diagnostics().ticks == 1);
+  assert(loop.diagnostics().rejected_commands == 1);
+  assert(loop.diagnostics().stop_requests == 1);
 
   sink.stopped = false;
   source.frame = p37::ObservationFrame{{0.0}, 100};
@@ -63,9 +66,20 @@ int main() {
   assert(allowed.allowed());
   assert(!sink.stopped);
   assert(sink.commands.size() == 1);
+  assert(loop.diagnostics().ticks == 2);
+  assert(loop.diagnostics().allowed_commands == 1);
 
   sink.fail_write = true;
-  auto failed = loop.tick(100);
-  assert(failed.status == p37::RuntimeStatus::io_error);
+  auto rejected = loop.tick(100);
+  assert(rejected.status == p37::RuntimeStatus::io_error);
   assert(sink.stopped);
+  assert(loop.diagnostics().ticks == 3);
+  assert(loop.diagnostics().rejected_commands == 2);
+  assert(loop.diagnostics().io_errors == 1);
+  assert(loop.diagnostics().last_status == p37::RuntimeStatus::io_error);
+
+  loop.reset_diagnostics();
+  assert(loop.diagnostics().ticks == 0);
+  assert(loop.diagnostics().allowed_commands == 0);
 }
+

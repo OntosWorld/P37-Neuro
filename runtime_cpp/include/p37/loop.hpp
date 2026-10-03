@@ -14,6 +14,15 @@ struct ObservationFrame {
   std::int64_t timestamp_ns{0};
 };
 
+struct RuntimeDiagnostics {
+  std::uint64_t ticks{0};
+  std::uint64_t allowed_commands{0};
+  std::uint64_t rejected_commands{0};
+  std::uint64_t stop_requests{0};
+  std::uint64_t io_errors{0};
+  RuntimeStatus last_status{RuntimeStatus::no_observation};
+};
+
 class ObservationSource {
  public:
   virtual ~ObservationSource() = default;
@@ -33,11 +42,16 @@ class RuntimeLoop final {
       : supervisor_(supervisor), source_(source), sink_(sink) {}
 
   [[nodiscard]] RuntimeDecision tick(std::int64_t now_ns) noexcept;
+  [[nodiscard]] const RuntimeDiagnostics& diagnostics() const noexcept { return diagnostics_; }
+  void reset_diagnostics() noexcept { diagnostics_ = {}; }
 
  private:
+  void record_rejection(RuntimeStatus status, bool io_error = false) noexcept;
+
   RuntimeSupervisor& supervisor_;
   ObservationSource& source_;
   CommandSink& sink_;
+  RuntimeDiagnostics diagnostics_;
 };
 
 }  // namespace p37
