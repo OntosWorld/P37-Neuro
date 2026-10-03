@@ -90,9 +90,7 @@ def policy_from_episode(episode: Episode) -> DataGovernancePolicy:
             metadata.get(prefix + "classification", DataClassification.CONFIDENTIAL.value)
         ),
         training_allowed=metadata.get(prefix + "training_allowed", "false").lower() == "true",
-        raw_sensor_retention_hours=int(
-            metadata.get(prefix + "raw_sensor_retention_hours", "24")
-        ),
+        raw_sensor_retention_hours=int(metadata.get(prefix + "raw_sensor_retention_hours", "24")),
         contains_personal_data=(
             metadata.get(prefix + "contains_personal_data", "false").lower() == "true"
         ),
