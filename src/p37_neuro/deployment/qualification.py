@@ -115,6 +115,7 @@ def _require_release_report_shape(raw: dict[str, Any]) -> None:
     if int(raw.get("schema_version", 0)) != 1:
         raise DeploymentQualificationError("unsupported qualification report schema")
 
+
     required = {
         "artifact_id",
         "status",
