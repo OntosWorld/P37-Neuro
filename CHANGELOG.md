@@ -7,7 +7,7 @@ The project follows Semantic Versioning for published releases. Capability evide
 ## Unreleased
 
 ### Added
-- enterprise Robot Integration Kit with declarative robot manifests;\n- robot manifest schema v2 with explicit joint/controller mappings, sensor requirements, canonical observation mappings, end effectors, adapter capabilities and per-joint safety overrides;\n- executable robot I/O mapping plus a manifest-backed adapter for translating vendor/controller observations and commands at runtime;
+- enterprise Robot Integration Kit with declarative robot manifests;\n- robot manifest schema v2 with explicit joint/controller mappings, sensor requirements, canonical observation mappings, end effectors, adapter capabilities and per-joint safety overrides;\n- executable robot I/O mapping plus a manifest-backed adapter for translating vendor/controller observations and commands at runtime;\n- deployment qualification verification that requires a passing release report for the exact artifact plus a trusted SHA-256 digest before rollout planning;
 - `p37 robot init` and `p37 robot validate`;
 - executable staged qualification via `p37 qualify --level integration|simulation|hil|physical|fleet`;
 - evidence-based release qualification reports via `p37 qualify --evidence`;
