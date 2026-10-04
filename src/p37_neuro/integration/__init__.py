@@ -7,8 +7,14 @@ from p37_neuro.integration.kit import (
     validate_robot_integration,
 )
 from p37_neuro.integration.manifest import (
+    AdapterCapabilities,
+    EndEffectorMapping,
+    JointMapping,
+    JointSafetyOverride,
     RobotIntegrationManifest,
     RobotManifestError,
+    SensorMapping,
+    SensorRequirement,
     load_robot_manifest,
 )
 from p37_neuro.integration.simulate import (
@@ -18,11 +24,17 @@ from p37_neuro.integration.simulate import (
 )
 
 __all__ = [
+    "AdapterCapabilities",
     "AdapterHealth",
+    "EndEffectorMapping",
     "IntegrationValidation",
+    "JointMapping",
+    "JointSafetyOverride",
     "RobotAdapter",
     "RobotIntegrationManifest",
     "RobotManifestError",
+    "SensorMapping",
+    "SensorRequirement",
     "SimulationPreflightError",
     "SimulationPreflightResult",
     "create_robot_manifest_template",
