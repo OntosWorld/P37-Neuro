@@ -1,6 +1,6 @@
-import pytest
-
 from pathlib import Path
+
+import pytest
 
 from p37_neuro.core.types import ControlMode
 from p37_neuro.data.schema import Action
