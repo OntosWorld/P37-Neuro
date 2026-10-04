@@ -128,6 +128,22 @@ class SensorMapping:
 
 
 @dataclass(frozen=True, slots=True)
+class ObservationMapping:
+    target: str
+    source: str
+    unit: str | None = None
+    scale: float = 1.0
+    offset: float = 0.0
+    required: bool = True
+
+    def __post_init__(self) -> None:
+        if not self.target.strip() or not self.source.strip():
+            raise RobotManifestError("observation target and source are required")
+        if self.scale == 0:
+            raise RobotManifestError("observation mapping scale cannot be zero")
+
+
+@dataclass(frozen=True, slots=True)
 class EndEffectorMapping:
     name: str
     link: str
@@ -181,6 +197,7 @@ class RobotIntegrationManifest:
     metadata: dict[str, str] = field(default_factory=dict)
     joints: tuple[JointMapping, ...] = ()
     sensor_mappings: tuple[SensorMapping, ...] = ()
+    observation_mappings: tuple[ObservationMapping, ...] = ()
     end_effectors: tuple[EndEffectorMapping, ...] = ()
     capabilities: AdapterCapabilities = AdapterCapabilities()
 
@@ -197,6 +214,9 @@ class RobotIntegrationManifest:
         sensor_names = [mapping.name for mapping in self.sensor_mappings]
         if len(sensor_names) != len(set(sensor_names)):
             raise RobotManifestError("sensor mappings must use unique names")
+        observation_targets = [mapping.target for mapping in self.observation_mappings]
+        if len(observation_targets) != len(set(observation_targets)):
+            raise RobotManifestError("observation mappings must use unique canonical targets")
         end_effector_names = [mapping.name for mapping in self.end_effectors]
         if len(end_effector_names) != len(set(end_effector_names)):
             raise RobotManifestError("end-effector mappings must use unique names")
@@ -208,6 +228,7 @@ class RobotIntegrationManifest:
         if self.schema_version == 1:
             value.pop("joints", None)
             value.pop("sensor_mappings", None)
+            value.pop("observation_mappings", None)
             value.pop("end_effectors", None)
             value.pop("capabilities", None)
             return value
@@ -282,6 +303,21 @@ def _load_sensor_mapping(raw: Any) -> SensorMapping:
         raise RobotManifestError(f"missing sensor mapping field: {exc.args[0]}") from exc
 
 
+def _load_observation_mapping(raw: Any) -> ObservationMapping:
+    item = _mapping(raw, "observation_mappings[]")
+    try:
+        return ObservationMapping(
+            target=str(item["target"]),
+            source=str(item["source"]),
+            unit=_optional_string(item.get("unit")),
+            scale=float(item.get("scale", 1.0)),
+            offset=float(item.get("offset", 0.0)),
+            required=bool(item.get("required", True)),
+        )
+    except KeyError as exc:
+        raise RobotManifestError(f"missing observation mapping field: {exc.args[0]}") from exc
+
+
 def _load_end_effector(raw: Any) -> EndEffectorMapping:
     item = _mapping(raw, "end_effectors[]")
     try:
@@ -339,6 +375,10 @@ def load_robot_manifest(path: str | Path) -> RobotIntegrationManifest:
         sensor_mappings=tuple(
             _load_sensor_mapping(item)
             for item in _sequence(root.get("sensor_mappings"), "sensor_mappings")
+        ),
+        observation_mappings=tuple(
+            _load_observation_mapping(item)
+            for item in _sequence(root.get("observation_mappings"), "observation_mappings")
         ),
         end_effectors=tuple(
             _load_end_effector(item)
