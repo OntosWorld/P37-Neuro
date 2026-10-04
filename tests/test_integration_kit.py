@@ -22,6 +22,11 @@ def _urdf(path: Path) -> None:
 def test_robot_manifest_validates_description_and_runtime(tmp_path: Path) -> None:
     _urdf(tmp_path / "robot.urdf")
     manifest_path = create_robot_manifest_template("enterprise-arm", tmp_path)
+    manifest = manifest_path.read_text(encoding="utf-8")
+    manifest = manifest.replace("replace_with_urdf_joint", "joint_1")
+    manifest = manifest.replace("replace_with_controller_command", "joint_1_position")
+    manifest = manifest.replace("replace_with_controller_state", "joint_1")
+    manifest_path.write_text(manifest, encoding="utf-8")
     result = validate_robot_integration(manifest_path)
     assert result.robot_id == "enterprise-arm"
     assert result.action_dimension == 1
