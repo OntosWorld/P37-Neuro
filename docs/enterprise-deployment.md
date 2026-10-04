@@ -13,7 +13,7 @@ organization
               └── robot IDs
 ```
 
-A rollout plan binds the candidate artifact, previous artifact, qualification-report URI, target robots, canary count, batch size and maximum unhealthy fraction.
+A rollout plan binds the candidate artifact, previous artifact, qualification-report URI, target robots, canary count, batch size, maximum unhealthy fraction, required approvals, optional maintenance window and rollback policy.
 
 ## Create a rollout plan
 
@@ -58,3 +58,26 @@ An enterprise deployment service should:
 8. record every promotion and rollback event.
 
 The repository implements the rollout contract and health/rollback policy. Live production fleet execution remains environment-specific qualification work.
+
+## Approval and maintenance controls
+
+A rollout can require named approval identities before execution:
+
+```bash
+p37 deploy \
+  --artifact p37-v2 \
+  --previous p37-v1 \
+  --organization acme \
+  --site factory-1 \
+  --fleet picking \
+  --robots robot-1,robot-2 \
+  --qualification-report s3://reports/p37-v2/qualification.json \
+  --required-approvals 2 \
+  --approval robotics-lead \
+  --approval site-ops \
+  --maintenance-window-utc "2026-10-05T01:00:00Z"
+```
+
+By default, the rollout policy requests rollback when the unhealthy fraction exceeds its configured limit. `--manual-rollback` disables that threshold-triggered automatic policy while preserving explicit stop-request rollback.
+
+The rollout contract records policy; a customer deployment service remains responsible for enforcing the maintenance window and approval identities against the customer's IAM/change-management system.

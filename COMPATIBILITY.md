@@ -13,8 +13,8 @@ A listed platform is **supported by the software contract** when the relevant co
 | C++ | C++20 | Required for the deterministic runtime |
 | CMake | 3.20+ | Runtime build baseline |
 | MuJoCo | 3.13+ in the simulation package | Local deterministic physics and integration work |
-| NVIDIA Isaac Lab / Isaac Sim | optional integration | GPU qualification is environment-specific |
-| ROS 2 | optional integration | Robot-specific controller mapping requires integration/HIL qualification |
+| NVIDIA Isaac Lab 3.x / Isaac Sim 6.x | integration target | Python 3.12; GPU qualification remains environment-specific |
+| ROS 2 Jazzy | integration baseline | Ubuntu 24.04 is the primary ROS 2 integration target; controller mapping requires HIL qualification |
 | TensorRT / CUDA | optional integration | Must be compiled and profiled on the deployment target |
 | S3-compatible storage | optional cloud backend | Immutable model artifacts |
 | Google Cloud KMS | optional signing backend | EC_SIGN_ED25519 release-signing path |
@@ -45,3 +45,9 @@ Before 1.0, intentional breaking changes to public interfaces must:
 Robot manifests, qualification reports, rollout plans, release manifests and canonical episode data use explicit schema versions. Readers must reject unsupported schema versions rather than guess.
 
 See `docs/api-stability.md`.
+
+## Version pinning for enterprise deployments
+
+Enterprise deployments should pin the exact P37 release, robot manifest schema, ROS distribution, simulator version, CUDA/TensorRT stack and compiler toolchain used during qualification.
+
+A newer compatible dependency is not automatically a qualified replacement. Dependency or driver changes that can affect timing, control, physics or inference must be re-evaluated at the appropriate qualification level.

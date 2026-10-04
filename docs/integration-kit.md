@@ -53,3 +53,19 @@ fleet rollout plan
 ```
 
 See `examples/` for reference layouts and `docs/testing.md` for qualification.
+
+## Stable adapter API
+
+Custom vendor integrations should implement `p37_neuro.integration.RobotAdapter`.
+
+The adapter boundary exposes only:
+
+- the canonical `EmbodimentSpec`;
+- normalized observation reads;
+- already-qualified action writes;
+- an explicit stop request;
+- controller/adapter health.
+
+`AdapterHealth` reports connection, state freshness, controller readiness, external E-stop availability and watchdog availability. This keeps manufacturer SDKs outside the learned-policy layer and gives enterprise teams one stable place to integrate proprietary controllers.
+
+Adapters should be packaged separately from P37 when they contain vendor SDKs, customer credentials or proprietary controller logic.
