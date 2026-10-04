@@ -55,6 +55,19 @@ sensor_mappings:
     modality: rgb
     requirement: optional
     frame: wrist_camera
+observation_mappings:
+  - target: proprioception.shoulder_position
+    source: shoulder
+    unit: rad
+  - target: proprioception.elbow_position
+    source: elbow
+    unit: rad
+  - target: proprioception.wrist_position
+    source: wrist
+    unit: rad
+  - target: vision.wrist_rgb
+    source: /tabletop_arm/wrist/image
+    required: false
 end_effectors:
   - name: tool
     link: tool
