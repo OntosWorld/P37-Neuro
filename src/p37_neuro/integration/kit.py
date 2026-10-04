@@ -135,6 +135,24 @@ def validate_robot_integration(path: str | Path) -> IntegrationValidation:
             ]
             if required_sensors:
                 checks.append("required_sensor_contract")
+
+        if not manifest.observation_mappings:
+            warnings.append("no canonical observation mappings declared")
+        else:
+            sensor_sources = {mapping.source for mapping in manifest.sensor_mappings}
+            joint_states = {mapping.state for mapping in manifest.joints}
+            allowed_sources = sensor_sources | joint_states
+            unknown_observation_sources = sorted(
+                mapping.source
+                for mapping in manifest.observation_mappings
+                if mapping.source not in allowed_sources
+            )
+            if unknown_observation_sources:
+                raise ValueError(
+                    "observation mappings reference unknown sources: "
+                    + ", ".join(unknown_observation_sources)
+                )
+            checks.append("observation_mapping_contract")
         if not all(
             (
                 manifest.capabilities.observation_read,
@@ -204,6 +222,7 @@ def create_robot_manifest_template(name: str, output: str | Path) -> Path:
                 requirement=SensorRequirement.REQUIRED,
             ),
         ),
+        observation_mappings=(),
         capabilities=AdapterCapabilities(
             observation_read=True,
             action_write=True,
