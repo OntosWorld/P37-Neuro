@@ -100,7 +100,11 @@ class JointMapping:
     safety: JointSafetyOverride = JointSafetyOverride()
 
     def __post_init__(self) -> None:
-        for name, value in (("joint", self.joint), ("command", self.command), ("state", self.state)):
+        for name, value in (
+            ("joint", self.joint),
+            ("command", self.command),
+            ("state", self.state),
+        ):
             if not value.strip():
                 raise RobotManifestError(f"joint mapping {name} cannot be empty")
         if not self.unit.strip():
