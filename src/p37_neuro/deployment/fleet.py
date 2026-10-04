@@ -146,7 +146,9 @@ def load_rollout_plan(path: str | Path) -> RolloutPlan:
         required_approvals=int(raw.get("required_approvals", 1)),
         approvals=tuple(str(value) for value in raw.get("approvals", [])),
         maintenance_window_utc=(
-            None if raw.get("maintenance_window_utc") is None else str(raw["maintenance_window_utc"])
+            None
+            if raw.get("maintenance_window_utc") is None
+            else str(raw["maintenance_window_utc"])
         ),
         automatic_rollback=bool(raw.get("automatic_rollback", True)),
     )
