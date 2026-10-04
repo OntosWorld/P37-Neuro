@@ -1,5 +1,6 @@
 from dataclasses import replace
 
+from p37_neuro.core.types import ControlMode, JointType, NumericRange
 from p37_neuro.data.schema import Action, Observation
 from p37_neuro.deployment import (
     DeploymentTarget,
@@ -9,7 +10,6 @@ from p37_neuro.deployment import (
     rollout_requires_rollback,
 )
 from p37_neuro.embodiment.schema import EmbodimentSpec, JointSpec
-from p37_neuro.core.types import ControlMode, JointType, NumericRange
 from p37_neuro.integration import AdapterHealth, validate_adapter
 from p37_neuro.observability import (
     RuntimeHealthState,
