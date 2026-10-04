@@ -341,7 +341,9 @@ p37 qualify --level simulation --robot examples/tabletop_arm/robot-mujoco.yaml -
 p37 qualify --evidence evidence.yaml --robot robots/my-robot/robot.yaml
 p37 deploy --artifact p37-v2 --previous p37-v1 \
   --organization acme --site factory-1 --fleet picking \
-  --robots robot-1,robot-2 --qualification-report artifacts/qualification/qualification.json
+  --robots robot-1,robot-2 \
+  --qualification-report artifacts/qualification/qualification.json \
+  --qualification-sha256 <trusted-sha256>
 p37 status --plan artifacts/rollout.json
 p37 rollback --plan artifacts/rollout.json
 ```
