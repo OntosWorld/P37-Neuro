@@ -1,15 +1,15 @@
+"""Runtime observability interfaces."""
+
 from p37_neuro.observability.health import (
     RuntimeHealthReport,
     RuntimeHealthState,
     RuntimeHealthThresholds,
     evaluate_runtime_health,
 )
-"""Runtime observability interfaces."""
-
 from p37_neuro.observability.metrics import (
     JsonlMetricExporter,
-    RuntimeMetrics,
     RuntimeMetricSnapshot,
+    RuntimeMetrics,
     prometheus_text,
 )
 
