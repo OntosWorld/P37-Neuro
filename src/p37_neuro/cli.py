@@ -14,6 +14,7 @@ from p37_neuro.deployment import (
     build_rollback_plan,
     load_rollout_plan,
     rollout_ready,
+    sha256_file,
     verify_qualification_for_deployment,
     write_rollout_plan,
 )
@@ -155,6 +156,7 @@ def main() -> None:
             json_path, md_path = write_qualification_report(report, args.output)
             print(f"qualification result: {report.status.value}")
             print(f"json: {json_path}")
+            print(f"sha256: {sha256_file(json_path)}")
             print(f"report: {md_path}")
         else:
             if args.robot is None:
@@ -186,6 +188,7 @@ def main() -> None:
             previous_artifact_id=args.previous,
             target=DeploymentTarget(args.organization, args.site, args.fleet, robot_ids),
             qualification_report_uri=str(verified_qualification.report_path),
+            qualification_report_sha256=verified_qualification.sha256,
             canary_count=args.canary_count,
             batch_size=args.batch_size,
             maximum_unhealthy_fraction=args.max_unhealthy_fraction,
