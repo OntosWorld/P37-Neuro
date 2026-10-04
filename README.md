@@ -332,7 +332,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) before submitting changes.
 
 ## Enterprise integration
 
-P37 includes a productization layer for robot integration and controlled deployment:
+P37 includes a productization layer for robot integration and controlled deployment. New robot integrations use manifest schema v2 with explicit joint/controller mappings, sensor requirements, end effectors, adapter capabilities and safety overrides:
 
 ```bash
 p37 robot init my-robot
