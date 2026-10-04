@@ -83,17 +83,13 @@ def _validate_joint_mappings(
             and joint.velocity_limit is not None
             and override.velocity_limit > joint.velocity_limit
         ):
-            raise ValueError(
-                f"joint {mapping.joint} velocity safety override exceeds robot limit"
-            )
+            raise ValueError(f"joint {mapping.joint} velocity safety override exceeds robot limit")
         if (
             override.effort_limit is not None
             and joint.effort_limit is not None
             and override.effort_limit > joint.effort_limit
         ):
-            raise ValueError(
-                f"joint {mapping.joint} effort safety override exceeds robot limit"
-            )
+            raise ValueError(f"joint {mapping.joint} effort safety override exceeds robot limit")
         if joint.position is not None:
             if override.position_min is not None and override.position_min < joint.position.minimum:
                 raise ValueError(
