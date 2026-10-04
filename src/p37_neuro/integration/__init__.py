@@ -1,3 +1,4 @@
+from p37_neuro.integration.adapter import AdapterHealth, RobotAdapter, validate_adapter
 """Enterprise-facing robot integration interfaces."""
 
 from p37_neuro.integration.kit import (
@@ -12,11 +13,14 @@ from p37_neuro.integration.manifest import (
 )
 
 __all__ = [
+    "AdapterHealth",
     "IntegrationValidation",
+    "RobotAdapter",
     "RobotIntegrationManifest",
     "RobotManifestError",
     "create_robot_manifest_template",
     "load_robot_manifest",
+    "validate_adapter",
     "validate_robot_integration",
     "SimulationPreflightError",
     "SimulationPreflightResult",

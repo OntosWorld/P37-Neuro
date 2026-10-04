@@ -40,6 +40,10 @@ class RolloutPlan:
     canary_count: int = 1
     batch_size: int = 10
     maximum_unhealthy_fraction: float = 0.10
+    required_approvals: int = 1
+    approvals: tuple[str, ...] = ()
+    maintenance_window_utc: str | None = None
+    automatic_rollback: bool = True
 
     def __post_init__(self) -> None:
         if self.schema_version != 1:
@@ -54,6 +58,12 @@ class RolloutPlan:
             raise ValueError("batch_size must be positive")
         if not 0.0 <= self.maximum_unhealthy_fraction <= 1.0:
             raise ValueError("maximum_unhealthy_fraction must be in [0, 1]")
+        if self.required_approvals < 0:
+            raise ValueError("required_approvals cannot be negative")
+        if len(set(self.approvals)) != len(self.approvals):
+            raise ValueError("approvals must be unique")
+        if any(not approval.strip() for approval in self.approvals):
+            raise ValueError("approvals cannot contain empty values")
 
     def batches(self) -> tuple[tuple[str, ...], ...]:
         robots = self.target.robot_ids
@@ -66,6 +76,10 @@ class RolloutPlan:
             batches.append(robots[offset : offset + self.batch_size])
             offset += self.batch_size
         return tuple(batches)
+
+    @property
+    def approvals_satisfied(self) -> bool:
+        return len(self.approvals) >= self.required_approvals
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -91,7 +105,14 @@ class RolloutHealth:
 
 
 def rollout_requires_rollback(plan: RolloutPlan, health: RolloutHealth) -> bool:
+    if not plan.automatic_rollback:
+        return health.stop_requested
     return health.stop_requested or health.unhealthy_fraction > plan.maximum_unhealthy_fraction
+
+
+def rollout_ready(plan: RolloutPlan) -> bool:
+    """Return whether governance approvals allow rollout execution."""
+    return plan.approvals_satisfied
 
 
 def write_rollout_plan(plan: RolloutPlan, path: str | Path) -> Path:
@@ -122,6 +143,12 @@ def load_rollout_plan(path: str | Path) -> RolloutPlan:
         canary_count=int(raw["canary_count"]),
         batch_size=int(raw["batch_size"]),
         maximum_unhealthy_fraction=float(raw["maximum_unhealthy_fraction"]),
+        required_approvals=int(raw.get("required_approvals", 1)),
+        approvals=tuple(str(value) for value in raw.get("approvals", [])),
+        maintenance_window_utc=(
+            None if raw.get("maintenance_window_utc") is None else str(raw["maintenance_window_utc"])
+        ),
+        automatic_rollback=bool(raw.get("automatic_rollback", True)),
     )
 
 
@@ -135,4 +162,8 @@ def build_rollback_plan(plan: RolloutPlan) -> RolloutPlan:
         canary_count=0,
         batch_size=plan.batch_size,
         maximum_unhealthy_fraction=plan.maximum_unhealthy_fraction,
+        required_approvals=plan.required_approvals,
+        approvals=plan.approvals,
+        maintenance_window_utc=plan.maintenance_window_utc,
+        automatic_rollback=plan.automatic_rollback,
     )
