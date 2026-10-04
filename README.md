@@ -337,7 +337,7 @@ P37 includes a productization layer for robot integration and controlled deploym
 ```bash
 p37 robot init my-robot
 p37 robot validate robots/my-robot/robot.yaml
-p37 qualify --level simulation --robot robots/my-robot/robot.yaml --artifact p37-candidate
+p37 qualify --level simulation --robot examples/tabletop_arm/robot-mujoco.yaml --artifact p37-candidate
 p37 qualify --evidence evidence.yaml --robot robots/my-robot/robot.yaml
 p37 deploy --artifact p37-v2 --previous p37-v1 \
   --organization acme --site factory-1 --fleet picking \
