@@ -5,6 +5,9 @@ import pytest
 
 from p37_neuro.deployment import (
     DeploymentQualificationError,
+    DeploymentTarget,
+    RolloutPlan,
+    rollout_ready,
     sha256_file,
     verify_qualification_for_deployment,
 )
@@ -123,3 +126,29 @@ def test_rejects_staged_qualification_report(tmp_path: Path) -> None:
             artifact_id="p37-v2",
             expected_sha256=sha256_file(report),
         )
+
+
+def test_rollout_readiness_requires_verified_qualification_digest() -> None:
+    target = DeploymentTarget("acme", "factory-1", "picking", ("robot-1",))
+    unverified = RolloutPlan(
+        schema_version=1,
+        artifact_id="p37-v2",
+        previous_artifact_id="p37-v1",
+        target=target,
+        qualification_report_uri="/tmp/qualification.json",
+        required_approvals=1,
+        approvals=("robotics-lead",),
+    )
+    verified = RolloutPlan(
+        schema_version=1,
+        artifact_id="p37-v2",
+        previous_artifact_id="p37-v1",
+        target=target,
+        qualification_report_uri="/tmp/qualification.json",
+        qualification_report_sha256="a" * 64,
+        required_approvals=1,
+        approvals=("robotics-lead",),
+    )
+
+    assert not rollout_ready(unverified)
+    assert rollout_ready(verified)
