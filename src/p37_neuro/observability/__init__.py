@@ -8,8 +8,8 @@ from p37_neuro.observability.health import (
 )
 from p37_neuro.observability.metrics import (
     JsonlMetricExporter,
-    RuntimeMetricSnapshot,
     RuntimeMetrics,
+    RuntimeMetricSnapshot,
     prometheus_text,
 )
 
