@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 robot_id: reference-tabletop-arm-mujoco
 family: manipulator
 description:
@@ -11,8 +11,37 @@ safety:
   max_observation_age_s: 0.1
   require_external_estop: true
   require_controller_watchdog: true
-sensors:
-  joint_state: mujoco/joint_state
+joints:
+  - joint: shoulder
+    command: shoulder
+    state: shoulder
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -2.0
+      position_max: 2.0
+  - joint: elbow
+    command: elbow
+    state: elbow
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -2.0
+      position_max: 2.0
+sensor_mappings:
+  - name: joint_state
+    source: mujoco/joint_state
+    modality: proprioception
+    requirement: required
+capabilities:
+  observation_read: true
+  action_write: true
+  stop_request: true
+  health: true
+  position_control: true
+  velocity_control: false
+  effort_control: false
+  time_synchronized: true
 metadata:
   example: "true"
   qualification: simulation-preflight-only
