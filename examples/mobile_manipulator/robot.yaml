@@ -64,6 +64,24 @@ sensor_mappings:
     source: /mobile_manipulator/imu
     modality: imu
     requirement: required
+observation_mappings:
+  - target: proprioception.left_wheel_position
+    source: left_wheel_joint
+    unit: rad
+  - target: proprioception.right_wheel_position
+    source: right_wheel_joint
+    unit: rad
+  - target: proprioception.arm_lift_position
+    source: arm_lift
+    unit: rad
+  - target: proprioception.wrist_position
+    source: wrist
+    unit: rad
+  - target: base.imu
+    source: /mobile_manipulator/imu
+  - target: vision.front_rgb
+    source: /mobile_manipulator/front/image
+    required: false
 end_effectors:
   - name: tool
     link: tool
