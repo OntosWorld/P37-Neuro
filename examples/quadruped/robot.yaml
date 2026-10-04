@@ -68,6 +68,24 @@ sensor_mappings:
     source: /quadruped/front/image
     modality: rgb
     requirement: optional
+observation_mappings:
+  - target: proprioception.front_left_hip_position
+    source: front_left_hip
+    unit: rad
+  - target: proprioception.front_right_hip_position
+    source: front_right_hip
+    unit: rad
+  - target: proprioception.rear_left_hip_position
+    source: rear_left_hip
+    unit: rad
+  - target: proprioception.rear_right_hip_position
+    source: rear_right_hip
+    unit: rad
+  - target: base.imu
+    source: /quadruped/imu
+  - target: vision.front_rgb
+    source: /quadruped/front/image
+    required: false
 capabilities:
   observation_read: true
   action_write: true
