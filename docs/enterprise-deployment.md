@@ -25,7 +25,8 @@ p37 deploy \
   --site factory-1 \
   --fleet picking \
   --robots robot-1,robot-2,robot-3 \
-  --qualification-report s3://reports/p37-v2/qualification.json \
+  --qualification-report artifacts/qualification/qualification.json \
+  --qualification-sha256 <trusted-sha256> \
   --canary-count 1 \
   --batch-size 1 \
   --output artifacts/rollout.json
@@ -42,6 +43,12 @@ Create a deterministic rollback plan:
 ```bash
 p37 rollback --plan artifacts/rollout.json --output artifacts/rollback.json
 ```
+
+Before a rollout plan is created, `p37 deploy` now verifies the qualification report locally. The report must be a full release qualification, have status `qualifies`, contain no unmet gates, match the exact artifact being deployed, and match the trusted SHA-256 supplied on the command line.
+
+Staged integration/simulation/HIL/physical/fleet reports cannot authorize deployment.
+
+Remote report URIs are intentionally not accepted by the deployment gate yet. A remote report should only be supported once P37 has a trusted fetch-and-verification path rather than accepting an unverifiable string.
 
 These commands create auditable deployment plans. They do **not** bypass customer fleet-management, approval or robot-controller systems.
 
@@ -71,7 +78,8 @@ p37 deploy \
   --site factory-1 \
   --fleet picking \
   --robots robot-1,robot-2 \
-  --qualification-report s3://reports/p37-v2/qualification.json \
+  --qualification-report artifacts/qualification/qualification.json \
+  --qualification-sha256 <trusted-sha256> \
   --required-approvals 2 \
   --approval robotics-lead \
   --approval site-ops \
