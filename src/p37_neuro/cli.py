@@ -118,19 +118,19 @@ def main() -> None:
         print("set description.path to the real URDF/MJCF/USD file, then run:")
         print(f"p37 robot validate {path}")
     elif args.command == "robot" and args.robot_command == "validate":
-        result = validate_robot_integration(args.path)
-        print(f"qualified integration contract: {result.robot_id}")
-        print(f"controllable joints: {result.action_dimension}")
-        print(f"control frequency: {result.control_frequency_hz:g} Hz")
-        if result.warnings:
-            print("warnings: " + "; ".join(result.warnings))
+        integration_result = validate_robot_integration(args.path)
+        print(f"qualified integration contract: {integration_result.robot_id}")
+        print(f"controllable joints: {integration_result.action_dimension}")
+        print(f"control frequency: {integration_result.control_frequency_hz:g} Hz")
+        if integration_result.warnings:
+            print("warnings: " + "; ".join(integration_result.warnings))
     elif args.command == "simulate":
-        result = run_mujoco_preflight(args.robot, steps=args.steps, seed=args.seed)
-        print(f"simulation preflight: {result.robot_id}")
-        print(f"backend: {result.backend}")
-        print(f"steps: {result.steps}")
-        print(f"controllable joints: {result.action_dimension}")
-        print(f"final simulation time: {result.final_time_s:.6f} s")
+        simulation_result = run_mujoco_preflight(args.robot, steps=args.steps, seed=args.seed)
+        print(f"simulation preflight: {simulation_result.robot_id}")
+        print(f"backend: {simulation_result.backend}")
+        print(f"steps: {simulation_result.steps}")
+        print(f"controllable joints: {simulation_result.action_dimension}")
+        print(f"final simulation time: {simulation_result.final_time_s:.6f} s")
     elif args.command == "qualify":
         evidence = load_qualification_evidence(args.evidence)
         report = build_qualification_report(evidence, robot_manifest=args.robot)
