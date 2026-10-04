@@ -68,24 +68,24 @@ class RobotIOMapper:
     def map_observation(self, raw: RawRobotObservation) -> Observation:
         """Normalize vendor/controller state into the canonical P37 Observation."""
         joint_position: dict[str, float] = {}
-        for mapping in self._manifest.joints:
-            if mapping.state not in raw.values:
+        for joint_mapping in self._manifest.joints:
+            if joint_mapping.state not in raw.values:
                 raise RobotMappingError(
-                    f"missing required joint state source {mapping.state!r} "
-                    f"for canonical joint {mapping.joint!r}"
+                    f"missing required joint state source {joint_mapping.state!r} "
+                    f"for canonical joint {joint_mapping.joint!r}"
                 )
-            joint_position[mapping.joint] = self._from_controller(
-                raw.values[mapping.state],
-                mapping,
+            joint_position[joint_mapping.joint] = self._from_controller(
+                raw.values[joint_mapping.state],
+                joint_mapping,
             )
 
         joint_velocity: dict[str, float] = {}
         state: dict[str, float] = {}
         sensor_refs: dict[str, str] = {}
 
-        for mapping in self._manifest.observation_mappings:
+        for observation_mapping in self._manifest.observation_mappings:
             self._map_declared_observation(
-                mapping,
+                observation_mapping,
                 raw=raw,
                 joint_position=joint_position,
                 joint_velocity=joint_velocity,
