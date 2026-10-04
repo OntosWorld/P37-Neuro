@@ -1,3 +1,5 @@
+from dataclasses import replace
+
 from p37_neuro.data.schema import Action, Observation
 from p37_neuro.deployment import (
     DeploymentTarget,
@@ -71,9 +73,7 @@ def test_runtime_health_distinguishes_ready_and_not_ready() -> None:
         runtime_restarts=0,
     )
     assert evaluate_runtime_health(snapshot).state is RuntimeHealthState.READY
-    degraded = RuntimeMetricSnapshot(
-        **{**snapshot.__dict__, "control_loop_hz": 0.0}
-    )
+    degraded = replace(snapshot, control_loop_hz=0.0)
     report = evaluate_runtime_health(degraded)
     assert report.state is RuntimeHealthState.NOT_READY
     assert not report.safe_to_command
