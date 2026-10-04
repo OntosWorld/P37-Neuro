@@ -184,6 +184,83 @@ Schema v1 manifests remain readable for existing integrations, but validation em
 
 New integrations should use schema v2.
 
+## Runtime mapping
+
+The v2 manifest is executable, not only descriptive.
+
+`RobotIOMapper` translates raw controller/vendor I/O into the existing P37 learning/runtime contracts:
+
+~~~text
+vendor/controller observation
+            ↓
+RawRobotObservation
+            ↓
+RobotIOMapper
+            ↓
+P37 Observation
+
+P37 Action
+    ↓
+RobotIOMapper
+    ↓
+ControllerCommand
+    ↓
+vendor/controller
+~~~
+
+Joint mappings use one reversible conversion convention:
+
+~~~text
+controller_command = canonical_action * scale + offset
+canonical_joint_state = (controller_state - offset) / scale
+~~~
+
+Explicit `observation_mappings` use:
+
+~~~text
+canonical_observation = source_value * scale + offset
+~~~
+
+Required sources fail closed when they are missing. Optional observation sources may be absent.
+
+Manifest safety overrides are checked again before controller command conversion. This means a site/task-specific limit cannot be bypassed merely by calling the mapping layer directly.
+
+### Wrapping a vendor transport
+
+Most integrations should use `MappedRobotAdapter` instead of calling the mapper directly.
+
+The vendor-specific layer only implements `RawRobotTransport`:
+
+~~~python
+from p37_neuro.integration import (
+    AdapterHealth,
+    ControllerCommand,
+    MappedRobotAdapter,
+    RawRobotObservation,
+)
+
+
+class VendorTransport:
+    def read_observation(self) -> RawRobotObservation:
+        ...
+
+    def write_command(self, command: ControllerCommand) -> None:
+        ...
+
+    def request_stop(self, reason: str) -> None:
+        ...
+
+    def health(self) -> AdapterHealth:
+        ...
+
+
+adapter = MappedRobotAdapter("robots/acme-arm/robot.yaml", VendorTransport())
+~~~
+
+The resulting adapter satisfies the existing P37 robot boundary: canonical embodiment, normalized observations, canonical actions, stop requests and health.
+
+This keeps manufacturer SDKs, field names and controller command identifiers outside the policy and dataset layers.
+
 ## Integration boundary
 
 P37 owns normalized embodiment/state/action contracts and the deterministic runtime boundary. The customer/vendor adapter owns the last mapping to the manufacturer controller, safety PLC or robot-specific SDK.
