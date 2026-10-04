@@ -116,8 +116,8 @@ def rollout_requires_rollback(plan: RolloutPlan, health: RolloutHealth) -> bool:
 
 
 def rollout_ready(plan: RolloutPlan) -> bool:
-    """Return whether governance approvals allow rollout execution."""
-    return plan.approvals_satisfied
+    """Return whether qualification integrity and governance allow rollout execution."""
+    return plan.qualification_report_sha256 is not None and plan.approvals_satisfied
 
 
 def write_rollout_plan(plan: RolloutPlan, path: str | Path) -> Path:
