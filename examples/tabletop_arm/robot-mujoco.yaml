@@ -33,6 +33,13 @@ sensor_mappings:
     source: mujoco/joint_state
     modality: proprioception
     requirement: required
+observation_mappings:
+  - target: proprioception.shoulder_position
+    source: shoulder
+    unit: rad
+  - target: proprioception.elbow_position
+    source: elbow
+    unit: rad
 capabilities:
   observation_read: true
   action_write: true
