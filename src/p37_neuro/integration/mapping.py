@@ -126,9 +126,7 @@ class RobotIOMapper:
     def _from_controller(value: float, mapping: JointMapping) -> float:
         canonical = (value - mapping.offset) / mapping.scale
         if not isfinite(canonical):
-            raise RobotMappingError(
-                f"mapped observation for joint {mapping.joint!r} is not finite"
-            )
+            raise RobotMappingError(f"mapped observation for joint {mapping.joint!r} is not finite")
         return canonical
 
     @staticmethod
