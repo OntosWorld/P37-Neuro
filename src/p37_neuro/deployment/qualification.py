@@ -115,6 +115,10 @@ def _require_release_report_shape(raw: dict[str, Any]) -> None:
     if int(raw.get("schema_version", 0)) != 1:
         raise DeploymentQualificationError("unsupported qualification report schema")
 
+    if "level" in raw or "external_evidence_required" in raw:
+        raise DeploymentQualificationError(
+            "staged qualification reports cannot authorize deployment"
+        )
 
     required = {
         "artifact_id",
@@ -128,9 +132,4 @@ def _require_release_report_shape(raw: dict[str, Any]) -> None:
     if missing:
         raise DeploymentQualificationError(
             "not a release qualification report; missing fields: " + ", ".join(missing)
-        )
-
-    if "level" in raw or "external_evidence_required" in raw:
-        raise DeploymentQualificationError(
-            "staged qualification reports cannot authorize deployment"
         )
