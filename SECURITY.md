@@ -29,3 +29,9 @@ The repository assumes:
 - customer fleet systems retain independent authentication, authorization and emergency-stop authority.
 
 See `docs/safety.md` for the physical-system safety boundary.
+
+## Response expectations
+
+Reports are triaged by severity and physical-system impact. We will acknowledge a valid private report, preserve confidentiality during remediation, and coordinate disclosure when a fix is available.
+
+Do not include production credentials, raw customer sensor data, or information that could cause unsafe physical operation unless it is strictly necessary to reproduce the issue.
