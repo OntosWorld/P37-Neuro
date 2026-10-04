@@ -105,7 +105,9 @@ class RobotIOMapper:
         """Translate a canonical P37 action into controller/vendor command values."""
         unknown = sorted(set(action.joint_commands) - set(self._joints))
         if unknown:
-            raise RobotMappingError("action contains unmapped canonical joints: " + ", ".join(unknown))
+            raise RobotMappingError(
+                "action contains unmapped canonical joints: " + ", ".join(unknown)
+            )
 
         values: dict[str, float] = {}
         for joint_name, canonical_value in action.joint_commands.items():
