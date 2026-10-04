@@ -24,6 +24,11 @@ jobs:
           enable-cache: true
       - run: uv sync --all-groups
       - run: uv run pytest
+      - name: Verify release tag matches package version
+        run: |
+          package_version="$(uv run python -c 'import tomllib; print(tomllib.load(open("pyproject.toml", "rb"))["project"]["version"])')"
+          tag_version="${GITHUB_REF_NAME#v}"
+          test "$package_version" = "$tag_version"
       - name: Build Python distributions
         run: uv build --out-dir dist
       - name: Build native runtime

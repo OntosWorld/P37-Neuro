@@ -1,0 +1,53 @@
+name: Package CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/**"
+      - "runtime_cpp/**"
+      - "pyproject.toml"
+      - "Dockerfile"
+      - ".github/workflows/package-ci.yml"
+      - ".github/workflows/release.yml"
+  pull_request:
+    paths:
+      - "src/**"
+      - "runtime_cpp/**"
+      - "pyproject.toml"
+      - "Dockerfile"
+      - ".github/workflows/package-ci.yml"
+      - ".github/workflows/release.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.2.0
+        with:
+          python-version: "3.12"
+          version: "latest-known"
+          enable-cache: true
+      - name: Build Python distributions
+        run: uv build --out-dir dist
+      - name: Install built wheel in clean environment
+        run: |
+          python -m venv /tmp/p37-wheel
+          /tmp/p37-wheel/bin/pip install dist/*.whl
+          /tmp/p37-wheel/bin/p37 info
+      - name: Build installable C++ runtime
+        run: |
+          cmake -S runtime_cpp -B runtime_cpp/build -DCMAKE_BUILD_TYPE=Release
+          cmake --build runtime_cpp/build --parallel
+          ctest --test-dir runtime_cpp/build --output-on-failure
+          cmake --install runtime_cpp/build --prefix package/runtime
+          test -f package/runtime/lib/libp37_runtime.a
+          test -d package/runtime/include/p37
+      - name: Build control-plane container
+        run: |
+          docker build -t p37-neuro:ci .
+          docker run --rm p37-neuro:ci info
