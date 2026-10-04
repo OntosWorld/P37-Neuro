@@ -78,16 +78,22 @@ def _validate_joint_mappings(
                 f"joint {mapping.joint} uses unit {mapping.unit!r}; expected {expected_unit!r}"
             )
         override = mapping.safety
-        if override.velocity_limit is not None and joint.velocity_limit is not None:
-            if override.velocity_limit > joint.velocity_limit:
-                raise ValueError(
-                    f"joint {mapping.joint} velocity safety override exceeds robot limit"
-                )
-        if override.effort_limit is not None and joint.effort_limit is not None:
-            if override.effort_limit > joint.effort_limit:
-                raise ValueError(
-                    f"joint {mapping.joint} effort safety override exceeds robot limit"
-                )
+        if (
+            override.velocity_limit is not None
+            and joint.velocity_limit is not None
+            and override.velocity_limit > joint.velocity_limit
+        ):
+            raise ValueError(
+                f"joint {mapping.joint} velocity safety override exceeds robot limit"
+            )
+        if (
+            override.effort_limit is not None
+            and joint.effort_limit is not None
+            and override.effort_limit > joint.effort_limit
+        ):
+            raise ValueError(
+                f"joint {mapping.joint} effort safety override exceeds robot limit"
+            )
         if joint.position is not None:
             if override.position_min is not None and override.position_min < joint.position.minimum:
                 raise ValueError(
@@ -162,7 +168,8 @@ def validate_robot_integration(path: str | Path) -> IntegrationValidation:
             )
         ):
             raise ValueError(
-                "schema v2 adapter must support observation_read, action_write, stop_request and health"
+                "schema v2 adapter must support observation_read, action_write, "
+                "stop_request and health"
             )
         checks.append("adapter_capabilities")
     elif not manifest.sensors:
