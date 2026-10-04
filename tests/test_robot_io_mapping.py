@@ -1,3 +1,5 @@
+import pytest
+
 from p37_neuro.core.types import ControlMode
 from p37_neuro.data.schema import Action
 from p37_neuro.integration import (
@@ -9,6 +11,7 @@ from p37_neuro.integration import (
     RobotDescriptionFormat,
     RobotDescriptionRef,
     RobotIOMapper,
+    MappedRobotAdapter,
     RobotIntegrationManifest,
     RobotMappingError,
     RuntimeInterface,
@@ -98,24 +101,16 @@ def test_maps_canonical_action_into_controller_command() -> None:
 def test_mapping_rejects_missing_required_joint_state() -> None:
     mapper = RobotIOMapper(_manifest())
 
-    try:
+    with pytest.raises(RobotMappingError, match="axis_1_position"):
         mapper.map_observation(
             RawRobotObservation(timestamp_s=1.0, values={"payload_kg": 2.0})
         )
-    except RobotMappingError as exc:
-        assert "axis_1_position" in str(exc)
-    else:
-        raise AssertionError("expected RobotMappingError")
 
 
 def test_mapping_enforces_manifest_safety_before_controller_conversion() -> None:
     mapper = RobotIOMapper(_manifest())
 
-    try:
+    with pytest.raises(RobotMappingError, match="position_max"):
         mapper.map_action(
             Action(timestamp_s=5.0, joint_commands={"shoulder": 1.1})
         )
-    except RobotMappingError as exc:
-        assert "position_max" in str(exc)
-    else:
-        raise AssertionError("expected RobotMappingError")
