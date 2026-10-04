@@ -104,10 +104,7 @@ def run_staged_qualification(
             StageCheck(
                 "simulation_preflight",
                 True,
-                (
-                    f"{result.backend}: {result.steps} steps, "
-                    f"final_time={result.final_time_s:.6f}s"
-                ),
+                f"{result.backend}: {result.steps} steps, final_time={result.final_time_s:.6f}s",
             )
         )
     elif level is QualificationLevel.HIL:
