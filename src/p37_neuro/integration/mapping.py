@@ -142,9 +142,7 @@ class RobotIOMapper:
         if mapping.source in raw.values:
             value = raw.values[mapping.source] * mapping.scale + mapping.offset
             if not isfinite(value):
-                raise RobotMappingError(
-                    f"mapped observation {mapping.target!r} is not finite"
-                )
+                raise RobotMappingError(f"mapped observation {mapping.target!r} is not finite")
             if mapping.target.startswith("joint_position."):
                 joint_position[mapping.target.removeprefix("joint_position.")] = value
             elif mapping.target.startswith("joint_velocity."):
