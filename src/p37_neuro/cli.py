@@ -23,9 +23,12 @@ from p37_neuro.integration import (
     validate_robot_integration,
 )
 from p37_neuro.qualification import (
+    QualificationLevel,
     build_qualification_report,
     load_qualification_evidence,
+    run_staged_qualification,
     write_qualification_report,
+    write_staged_qualification_report,
 )
 
 
@@ -60,9 +63,17 @@ def _build_parser() -> argparse.ArgumentParser:
     simulate.add_argument("--steps", type=int, default=10)
     simulate.add_argument("--seed", type=int, default=0)
 
-    qualify = subparsers.add_parser("qualify", help="generate a release qualification report")
-    qualify.add_argument("--evidence", type=Path, required=True)
+    qualify = subparsers.add_parser("qualify", help="execute or evaluate qualification")
+    qualify_mode = qualify.add_mutually_exclusive_group(required=True)
+    qualify_mode.add_argument("--evidence", type=Path)
+    qualify_mode.add_argument(
+        "--level",
+        choices=tuple(level.value for level in QualificationLevel),
+    )
     qualify.add_argument("--robot", type=Path)
+    qualify.add_argument("--artifact")
+    qualify.add_argument("--steps", type=int, default=20)
+    qualify.add_argument("--seed", type=int, default=0)
     qualify.add_argument("--output", type=Path, default=Path("artifacts/qualification"))
 
     deploy = subparsers.add_parser("deploy", help="create a qualified fleet rollout plan")
@@ -132,12 +143,30 @@ def main() -> None:
         print(f"controllable joints: {simulation_result.action_dimension}")
         print(f"final simulation time: {simulation_result.final_time_s:.6f} s")
     elif args.command == "qualify":
-        evidence = load_qualification_evidence(args.evidence)
-        report = build_qualification_report(evidence, robot_manifest=args.robot)
-        json_path, md_path = write_qualification_report(report, args.output)
-        print(f"qualification result: {report.status.value}")
-        print(f"json: {json_path}")
-        print(f"report: {md_path}")
+        if args.evidence is not None:
+            evidence = load_qualification_evidence(args.evidence)
+            report = build_qualification_report(evidence, robot_manifest=args.robot)
+            json_path, md_path = write_qualification_report(report, args.output)
+            print(f"qualification result: {report.status.value}")
+            print(f"json: {json_path}")
+            print(f"report: {md_path}")
+        else:
+            if args.robot is None:
+                raise SystemExit("--robot is required with --level")
+            if args.artifact is None or not args.artifact.strip():
+                raise SystemExit("--artifact is required with --level")
+            stage_report = run_staged_qualification(
+                robot_manifest=args.robot,
+                artifact_id=args.artifact,
+                level=QualificationLevel(args.level),
+                simulation_steps=args.steps,
+                simulation_seed=args.seed,
+            )
+            json_path, md_path = write_staged_qualification_report(stage_report, args.output)
+            print(f"qualification level: {stage_report.level.value}")
+            print(f"qualification result: {stage_report.status.value}")
+            print(f"json: {json_path}")
+            print(f"report: {md_path}")
     elif args.command == "deploy":
         robot_ids = tuple(item.strip() for item in args.robots.split(",") if item.strip())
         plan = RolloutPlan(
