@@ -1,6 +1,5 @@
 #include "p37/runtime.hpp"
 
-#include <cassert>
 #include <vector>
 
 int main() {
@@ -16,8 +15,9 @@ int main() {
   });
 
   const auto safe = safety.apply(std::vector<JointCommand>{{"shoulder", 3.0}});
-  assert(safe.commands.at(0).value == 1.0);
-  assert(safe.clamped_joints.size() == 1);
+  if (safe.commands.at(0).value != 1.0 || safe.clamped_joints.size() != 1) {
+    return 1;
+  }
 
   bool rejected = false;
   try {
@@ -25,6 +25,8 @@ int main() {
   } catch (const UnsafeCommand&) {
     rejected = true;
   }
-  assert(rejected);
+  if (!rejected) {
+    return 2;
+  }
   return 0;
 }
