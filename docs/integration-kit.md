@@ -16,6 +16,7 @@ It declares:
 - control mode and units for every controllable joint;
 - per-joint safety overrides;
 - sensor sources, modalities and required/optional status;
+- canonical observation mappings with units/conversion;
 - end-effector mappings;
 - adapter capabilities;
 - deployment metadata.
@@ -81,6 +82,18 @@ sensor_mappings:
     requirement: optional
     frame: wrist_camera
 
+observation_mappings:
+  - target: proprioception.shoulder_position
+    source: axis_1_position
+    unit: rad
+    scale: 1.0
+    offset: 0.0
+    required: true
+
+  - target: vision.wrist_rgb
+    source: /acme/wrist/image
+    required: false
+
 end_effectors:
   - name: gripper
     link: tool0
@@ -124,6 +137,22 @@ A manifest cannot use a safety override to expand the physical limits declared b
 Each sensor declares a stable P37-facing name, vendor/transport source, modality, whether it is required or optional, and an optional coordinate frame.
 
 Required sensors become part of integration validation and later qualification evidence.
+
+## Observation mapping
+
+`observation_mappings` defines how controller- or sensor-side values become the stable P37 observation contract.
+
+Each mapping declares:
+
+- `target`: canonical P37 observation name;
+- `source`: a declared joint-state identifier or sensor source;
+- optional unit;
+- scale and offset conversion;
+- whether the observation is required.
+
+Validation rejects observation mappings that reference a source not declared by the joint or sensor integration contract. This keeps model-facing observations independent of manufacturer naming.
+
+For example, a vendor field such as `axis_1_position` can map to `proprioception.shoulder_position` without changing the policy or dataset contract.
 
 ## End effectors
 
