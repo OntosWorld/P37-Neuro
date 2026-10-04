@@ -31,7 +31,7 @@ jobs:
         run: uv run python -m p37_neuro.deployment.exercise --output artifacts/e6-lifecycle-smoke
       - name: Show report
         run: cat artifacts/e6-lifecycle-smoke/report.json
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: p37-e6-lifecycle-smoke
           path: |
