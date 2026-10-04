@@ -29,6 +29,7 @@ from p37_neuro.integration.manifest import (
     TransportKind,
     load_robot_manifest,
 )
+from p37_neuro.integration.runtime_adapter import MappedRobotAdapter, RawRobotTransport
 from p37_neuro.integration.simulate import (
     SimulationPreflightError,
     SimulationPreflightResult,
@@ -42,6 +43,7 @@ __all__ = [
     "EndEffectorMapping",
     "IntegrationValidation",
     "JointMapping",
+    "MappedRobotAdapter",
     "JointSafetyOverride",
     "ObservationMapping",
     "RawRobotObservation",
