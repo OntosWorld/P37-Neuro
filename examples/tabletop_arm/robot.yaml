@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 robot_id: reference-tabletop-arm
 family: manipulator
 description:
@@ -14,9 +14,61 @@ safety:
   max_observation_age_s: 0.1
   require_external_estop: true
   require_controller_watchdog: true
-sensors:
-  joint_state: /tabletop_arm/joint_states
-  wrist_rgb: /tabletop_arm/wrist/image
+joints:
+  - joint: shoulder
+    command: shoulder
+    state: shoulder
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -2.8
+      position_max: 2.8
+      velocity_limit: 2.0
+      effort_limit: 80.0
+  - joint: elbow
+    command: elbow
+    state: elbow
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -2.4
+      position_max: 2.4
+      velocity_limit: 2.0
+      effort_limit: 60.0
+  - joint: wrist
+    command: wrist
+    state: wrist
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -3.14
+      position_max: 3.14
+      velocity_limit: 3.0
+      effort_limit: 25.0
+sensor_mappings:
+  - name: joint_state
+    source: /tabletop_arm/joint_states
+    modality: proprioception
+    requirement: required
+  - name: wrist_rgb
+    source: /tabletop_arm/wrist/image
+    modality: rgb
+    requirement: optional
+    frame: wrist_camera
+end_effectors:
+  - name: tool
+    link: tool
+    command_group: arm
+    frame: tool
+capabilities:
+  observation_read: true
+  action_write: true
+  stop_request: true
+  health: true
+  position_control: true
+  velocity_control: false
+  effort_control: false
+  time_synchronized: true
 metadata:
   example: "true"
   qualification: reference-integration-only
