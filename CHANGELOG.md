@@ -10,11 +10,13 @@ The project follows Semantic Versioning for published releases. Capability evide
 - enterprise Robot Integration Kit with declarative robot manifests;
 - `p37 robot init` and `p37 robot validate`;
 - executable release qualification reports via `p37 qualify`;
-- runtime observability contracts and Prometheus/JSONL export;
+- stable vendor-neutral `RobotAdapter` contract and adapter health model;
+- runtime observability contracts, readiness health evaluation and Prometheus/JSONL export;
 - customer/site/region-aware data-governance policy;
-- fleet-scoped rollout plans with canary batches and rollback generation;
+- fleet-scoped rollout plans with canary batches, approvals, maintenance windows and rollback policy;
 - `p37 deploy`, `p37 status` and `p37 rollback`;
-- compatibility, API stability, enterprise deployment and support documentation.
+- compatibility, API stability, enterprise deployment, quality and support documentation;
+- CodeQL, dependency review, OpenSSF Scorecard, SBOM and build-provenance controls.
 
 ### Changed
 - enterprise-facing maturity language now uses qualification-focused terminology;
