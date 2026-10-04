@@ -37,6 +37,7 @@ class RolloutPlan:
     previous_artifact_id: str
     target: DeploymentTarget
     qualification_report_uri: str
+    qualification_report_sha256: str | None = None
     canary_count: int = 1
     batch_size: int = 10
     maximum_unhealthy_fraction: float = 0.10
@@ -52,6 +53,10 @@ class RolloutPlan:
             raise ValueError("artifact_id and previous_artifact_id are required")
         if not self.qualification_report_uri.strip():
             raise ValueError("qualification_report_uri is required")
+        if self.qualification_report_sha256 is not None:
+            digest = self.qualification_report_sha256.lower()
+            if len(digest) != 64 or any(ch not in "0123456789abcdef" for ch in digest):
+                raise ValueError("qualification_report_sha256 must be a SHA-256 hex digest")
         if self.canary_count < 0 or self.canary_count > len(self.target.robot_ids):
             raise ValueError("canary_count must be within the target robot count")
         if self.batch_size <= 0:
@@ -140,6 +145,11 @@ def load_rollout_plan(path: str | Path) -> RolloutPlan:
             robot_ids=tuple(str(robot) for robot in target["robot_ids"]),
         ),
         qualification_report_uri=str(raw["qualification_report_uri"]),
+        qualification_report_sha256=(
+            None
+            if raw.get("qualification_report_sha256") is None
+            else str(raw["qualification_report_sha256"])
+        ),
         canary_count=int(raw["canary_count"]),
         batch_size=int(raw["batch_size"]),
         maximum_unhealthy_fraction=float(raw["maximum_unhealthy_fraction"]),
@@ -161,6 +171,7 @@ def build_rollback_plan(plan: RolloutPlan) -> RolloutPlan:
         previous_artifact_id=plan.artifact_id,
         target=plan.target,
         qualification_report_uri=plan.qualification_report_uri,
+        qualification_report_sha256=plan.qualification_report_sha256,
         canary_count=0,
         batch_size=plan.batch_size,
         maximum_unhealthy_fraction=plan.maximum_unhealthy_fraction,
