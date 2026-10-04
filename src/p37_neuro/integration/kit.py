@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from p37_neuro.core.types import ControlMode, JointType
+from p37_neuro.embodiment.schema import EmbodimentSpec
 from p37_neuro.integration.manifest import (
     AdapterCapabilities,
     JointMapping,
@@ -37,7 +38,7 @@ def _validate_joint_mappings(
     manifest: RobotIntegrationManifest,
     *,
     body_joint_names: tuple[str, ...],
-    body: object,
+    body: EmbodimentSpec,
 ) -> tuple[list[str], list[str]]:
     checks: list[str] = []
     warnings: list[str] = []
