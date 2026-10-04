@@ -58,6 +58,10 @@ sensor_mappings:
     source: /joint_states
     modality: proprioception
     requirement: required
+observation_mappings:
+  - target: proprioception.joint_1_position
+    source: encoder_1
+    unit: rad
 end_effectors:
   - name: tool
     link: arm
@@ -85,8 +89,10 @@ def test_schema_v2_validates_explicit_robot_mapping(tmp_path: Path) -> None:
     assert manifest.schema_version == 2
     assert manifest.joints[0].command == "motor_1"
     assert manifest.sensor_mappings[0].name == "joint_state"
+    assert manifest.observation_mappings[0].target == "proprioception.joint_1_position"
     assert manifest.end_effectors[0].link == "arm"
     assert "joint_mapping_coverage" in result.checks
+    assert "observation_mapping_contract" in result.checks
     assert "adapter_capabilities" in result.checks
     assert result.warnings == ()
 
@@ -131,3 +137,16 @@ safety:
     result = validate_robot_integration(manifest)
 
     assert any("migrate to schema v2" in warning for warning in result.warnings)
+
+
+def test_schema_v2_rejects_unknown_observation_source(tmp_path: Path) -> None:
+    _write_urdf(tmp_path)
+    manifest_path = _write_v2(tmp_path)
+    content = manifest_path.read_text(encoding="utf-8").replace(
+        "source: encoder_1",
+        "source: missing_sensor",
+    )
+    manifest_path.write_text(content, encoding="utf-8")
+
+    with pytest.raises(ValueError, match="observation mappings reference unknown sources"):
+        validate_robot_integration(manifest_path)
