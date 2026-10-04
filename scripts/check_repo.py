@@ -9,6 +9,7 @@ REQUIRED = (
     "pyproject.toml",
     "SECURITY.md",
     "CONTRIBUTING.md",
+    "CODE_OF_CONDUCT.md",
     "SUPPORT.md",
     "COMPATIBILITY.md",
     "CHANGELOG.md",
@@ -21,6 +22,7 @@ REQUIRED = (
     "docs/observability.md",
     "docs/integration-kit.md",
     "docs/api-stability.md",
+    "docs/quality-declaration.md",
     "docs/data-contract.md",
     "docs/safety.md",
     "docs/roadmap.md",
@@ -29,6 +31,8 @@ REQUIRED = (
     "examples/README.md",
     "docs/release.md",
     "docs/supply-chain-security.md",
+    ".github/workflows/security.yml",
+    ".github/workflows/release.yml",
     "runtime_cpp/CMakeLists.txt",
 )
 
