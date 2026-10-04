@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 robot_id: reference-mobile-manipulator
 family: mobile-manipulator
 description:
@@ -14,10 +14,69 @@ safety:
   max_observation_age_s: 0.1
   require_external_estop: true
   require_controller_watchdog: true
-sensors:
-  joint_state: /mobile_manipulator/joint_states
-  front_rgb: /mobile_manipulator/front/image
-  base_imu: /mobile_manipulator/imu
+joints:
+  - joint: left_wheel_joint
+    command: left_wheel_joint
+    state: left_wheel_joint
+    control_mode: position
+    unit: rad
+    safety:
+      velocity_limit: 8.0
+      effort_limit: 25.0
+  - joint: right_wheel_joint
+    command: right_wheel_joint
+    state: right_wheel_joint
+    control_mode: position
+    unit: rad
+    safety:
+      velocity_limit: 8.0
+      effort_limit: 25.0
+  - joint: arm_lift
+    command: arm_lift
+    state: arm_lift
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -1.5
+      position_max: 1.5
+      velocity_limit: 1.5
+      effort_limit: 70.0
+  - joint: wrist
+    command: wrist
+    state: wrist
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -2.5
+      position_max: 2.5
+      velocity_limit: 2.0
+      effort_limit: 30.0
+sensor_mappings:
+  - name: joint_state
+    source: /mobile_manipulator/joint_states
+    modality: proprioception
+    requirement: required
+  - name: front_rgb
+    source: /mobile_manipulator/front/image
+    modality: rgb
+    requirement: optional
+  - name: base_imu
+    source: /mobile_manipulator/imu
+    modality: imu
+    requirement: required
+end_effectors:
+  - name: tool
+    link: tool
+    command_group: arm
+capabilities:
+  observation_read: true
+  action_write: true
+  stop_request: true
+  health: true
+  position_control: true
+  velocity_control: false
+  effort_control: false
+  time_synchronized: true
 metadata:
   example: "true"
   qualification: reference-integration-only
