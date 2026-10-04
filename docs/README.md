@@ -26,6 +26,7 @@ New users should begin with the repository [Quickstart](../QUICKSTART.md).
 | [Data Governance](data-governance.md) | customer/site/region-aware data-use policy |
 | [API Stability](api-stability.md) | public interfaces, versioning and deprecation |
 | [Compatibility](../COMPATIBILITY.md) | supported software and deployment targets |
+| [Quality Declaration](quality-declaration.md) | engineering, testing, security and support controls |
 
 ## Engineering reference
 
