@@ -46,6 +46,8 @@ p37 rollback --plan artifacts/rollout.json --output artifacts/rollback.json
 
 Before a rollout plan is created, `p37 deploy` now verifies the qualification report locally. The report must be a full release qualification, have status `qualifies`, contain no unmet gates, match the exact artifact being deployed, and match the trusted SHA-256 supplied on the command line.
 
+The expected digest should come from a trusted release/CI record or signed release metadata, not from the same untrusted location as the report. SHA-256 verifies report integrity against that trusted value; it does not by itself prove signer identity.
+
 Staged integration/simulation/HIL/physical/fleet reports cannot authorize deployment.
 
 Remote report URIs are intentionally not accepted by the deployment gate yet. A remote report should only be supported once P37 has a trusted fetch-and-verification path rather than accepting an unverifiable string.
