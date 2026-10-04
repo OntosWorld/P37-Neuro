@@ -13,6 +13,7 @@ from p37_neuro.deployment import (
     RolloutPlan,
     build_rollback_plan,
     load_rollout_plan,
+    rollout_ready,
     write_rollout_plan,
 )
 from p37_neuro.embodiment.importers import load_mjcf, load_urdf
@@ -75,6 +76,14 @@ def _build_parser() -> argparse.ArgumentParser:
     deploy.add_argument("--canary-count", type=int, default=1)
     deploy.add_argument("--batch-size", type=int, default=10)
     deploy.add_argument("--max-unhealthy-fraction", type=float, default=0.10)
+    deploy.add_argument("--required-approvals", type=int, default=1)
+    deploy.add_argument("--approval", action="append", default=[], help="approval identity; repeatable")
+    deploy.add_argument("--maintenance-window-utc")
+    deploy.add_argument(
+        "--manual-rollback",
+        action="store_true",
+        help="disable automatic rollback on unhealthy-fraction threshold",
+    )
     deploy.add_argument("--output", type=Path, default=Path("artifacts/rollout.json"))
 
     status = subparsers.add_parser("status", help="inspect a fleet rollout plan")
@@ -138,10 +147,16 @@ def main() -> None:
             canary_count=args.canary_count,
             batch_size=args.batch_size,
             maximum_unhealthy_fraction=args.max_unhealthy_fraction,
+            required_approvals=args.required_approvals,
+            approvals=tuple(args.approval),
+            maintenance_window_utc=args.maintenance_window_utc,
+            automatic_rollback=not args.manual_rollback,
         )
         path = write_rollout_plan(plan, args.output)
         print(f"created rollout plan: {path}")
         print(f"batches: {len(plan.batches())}")
+        print(f"approvals: {len(plan.approvals)}/{plan.required_approvals}")
+        print(f"rollout ready: {str(rollout_ready(plan)).lower()}")
     elif args.command == "status":
         plan = load_rollout_plan(args.plan)
         target = plan.target
@@ -149,6 +164,11 @@ def main() -> None:
         print(f"target: {target.organization_id}/{target.site_id}/{target.fleet_id}")
         print(f"robots: {len(target.robot_ids)}")
         print(f"batches: {len(plan.batches())}")
+        print(f"approvals: {len(plan.approvals)}/{plan.required_approvals}")
+        print(f"rollout ready: {str(rollout_ready(plan)).lower()}")
+        if plan.maintenance_window_utc is not None:
+            print(f"maintenance window: {plan.maintenance_window_utc}")
+        print(f"automatic rollback: {str(plan.automatic_rollback).lower()}")
     elif args.command == "rollback":
         plan = load_rollout_plan(args.plan)
         rollback_plan = build_rollback_plan(plan)
