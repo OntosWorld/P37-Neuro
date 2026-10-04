@@ -32,6 +32,43 @@ A test report must always state its level. Results from T1 or T2 must never be d
 
 ---
 
+## Executable staged qualification
+
+The enterprise CLI can now execute the generic checks available at a declared qualification level and write a machine-readable evidence record.
+
+For a MuJoCo-backed robot integration:
+
+```bash
+p37 qualify \
+  --level simulation \
+  --robot examples/tabletop_arm/robot-mujoco.yaml \
+  --artifact p37-candidate-001 \
+  --steps 20 \
+  --output artifacts/qualification
+```
+
+This runs robot-integration validation plus the MuJoCo preflight and writes `qualification-stage.json` and `qualification-stage.md`.
+
+Hardware-dependent levels are intentionally conservative:
+
+```bash
+p37 qualify --level hil --robot robots/acme/robot.yaml --artifact p37-candidate-001
+p37 qualify --level physical --robot robots/acme/robot.yaml --artifact p37-candidate-001
+p37 qualify --level fleet --robot robots/acme/robot.yaml --artifact p37-candidate-001
+```
+
+For HIL, physical and fleet levels, P37 runs the generic checks it can verify locally and records the external evidence still required. It returns an `incomplete` staged report rather than claiming a hardware capability that was not measured.
+
+The full release gate remains evidence-based:
+
+```bash
+p37 qualify --evidence evidence.yaml --robot robots/acme/robot.yaml
+```
+
+That path evaluates the complete release thresholds, including held-out embodiments, physical embodiments, task success rates, interventions, deterministic safety, fleet feedback, promotion/rollback and benchmark evidence.
+
+---
+
 ## 2. Freeze the test before running it
 
 Before training or evaluation, record:
