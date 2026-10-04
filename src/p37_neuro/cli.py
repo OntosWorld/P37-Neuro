@@ -77,7 +77,9 @@ def _build_parser() -> argparse.ArgumentParser:
     deploy.add_argument("--batch-size", type=int, default=10)
     deploy.add_argument("--max-unhealthy-fraction", type=float, default=0.10)
     deploy.add_argument("--required-approvals", type=int, default=1)
-    deploy.add_argument("--approval", action="append", default=[], help="approval identity; repeatable")
+    deploy.add_argument(
+        "--approval", action="append", default=[], help="approval identity; repeatable"
+    )
     deploy.add_argument("--maintenance-window-utc")
     deploy.add_argument(
         "--manual-rollback",
