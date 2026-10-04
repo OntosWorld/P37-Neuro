@@ -9,7 +9,8 @@ The project follows Semantic Versioning for published releases. Capability evide
 ### Added
 - enterprise Robot Integration Kit with declarative robot manifests;
 - `p37 robot init` and `p37 robot validate`;
-- executable release qualification reports via `p37 qualify`;
+- executable staged qualification via `p37 qualify --level integration|simulation|hil|physical|fleet`;
+- evidence-based release qualification reports via `p37 qualify --evidence`;
 - stable vendor-neutral `RobotAdapter` contract and adapter health model;
 - runtime observability contracts, readiness health evaluation and Prometheus/JSONL export;
 - customer/site/region-aware data-governance policy;
