@@ -99,9 +99,7 @@ def test_maps_controller_observation_into_canonical_p37_observation() -> None:
 
 def test_maps_canonical_action_into_controller_command() -> None:
     mapper = RobotIOMapper(_manifest())
-    command = mapper.map_action(
-        Action(timestamp_s=5.0, joint_commands={"shoulder": 0.25})
-    )
+    command = mapper.map_action(Action(timestamp_s=5.0, joint_commands={"shoulder": 0.25}))
 
     assert command.timestamp_s == 5.0
     assert command.values == {"axis_1_target": 1.0}
@@ -111,18 +109,14 @@ def test_mapping_rejects_missing_required_joint_state() -> None:
     mapper = RobotIOMapper(_manifest())
 
     with pytest.raises(RobotMappingError, match="axis_1_position"):
-        mapper.map_observation(
-            RawRobotObservation(timestamp_s=1.0, values={"payload_kg": 2.0})
-        )
+        mapper.map_observation(RawRobotObservation(timestamp_s=1.0, values={"payload_kg": 2.0}))
 
 
 def test_mapping_enforces_manifest_safety_before_controller_conversion() -> None:
     mapper = RobotIOMapper(_manifest())
 
     with pytest.raises(RobotMappingError, match="position_max"):
-        mapper.map_action(
-            Action(timestamp_s=5.0, joint_commands={"shoulder": 1.1})
-        )
+        mapper.map_action(Action(timestamp_s=5.0, joint_commands={"shoulder": 1.1}))
 
 
 class _Transport:
