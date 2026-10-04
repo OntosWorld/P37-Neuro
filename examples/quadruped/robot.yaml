@@ -1,4 +1,4 @@
-schema_version: 1
+schema_version: 2
 robot_id: reference-quadruped
 family: quadruped
 description:
@@ -14,10 +14,69 @@ safety:
   max_observation_age_s: 0.1
   require_external_estop: true
   require_controller_watchdog: true
-sensors:
-  joint_state: /quadruped/joint_states
-  base_imu: /quadruped/imu
-  front_rgb: /quadruped/front/image
+joints:
+  - joint: front_left_hip
+    command: front_left_hip
+    state: front_left_hip
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -1.2
+      position_max: 1.2
+      velocity_limit: 6.0
+      effort_limit: 45.0
+  - joint: front_right_hip
+    command: front_right_hip
+    state: front_right_hip
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -1.2
+      position_max: 1.2
+      velocity_limit: 6.0
+      effort_limit: 45.0
+  - joint: rear_left_hip
+    command: rear_left_hip
+    state: rear_left_hip
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -1.2
+      position_max: 1.2
+      velocity_limit: 6.0
+      effort_limit: 45.0
+  - joint: rear_right_hip
+    command: rear_right_hip
+    state: rear_right_hip
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -1.2
+      position_max: 1.2
+      velocity_limit: 6.0
+      effort_limit: 45.0
+sensor_mappings:
+  - name: joint_state
+    source: /quadruped/joint_states
+    modality: proprioception
+    requirement: required
+  - name: base_imu
+    source: /quadruped/imu
+    modality: imu
+    requirement: required
+  - name: front_rgb
+    source: /quadruped/front/image
+    modality: rgb
+    requirement: optional
+capabilities:
+  observation_read: true
+  action_write: true
+  stop_request: true
+  health: true
+  position_control: true
+  velocity_control: false
+  effort_control: false
+  time_synchronized: true
 metadata:
   example: "true"
   qualification: reference-integration-only
