@@ -238,14 +238,14 @@ class RobotIntegrationManifest:
             return value
 
         value["joints"] = []
-        for mapping in self.joints:
-            item = asdict(mapping)
-            item["control_mode"] = mapping.control_mode.value
+        for joint_mapping in self.joints:
+            item = asdict(joint_mapping)
+            item["control_mode"] = joint_mapping.control_mode.value
             value["joints"].append(item)
         value["sensor_mappings"] = []
-        for mapping in self.sensor_mappings:
-            item = asdict(mapping)
-            item["requirement"] = mapping.requirement.value
+        for sensor_mapping in self.sensor_mappings:
+            item = asdict(sensor_mapping)
+            item["requirement"] = sensor_mapping.requirement.value
             value["sensor_mappings"].append(item)
         return value
 
