@@ -14,6 +14,7 @@ from p37_neuro.deployment import (
     build_rollback_plan,
     load_rollout_plan,
     rollout_ready,
+    verify_qualification_for_deployment,
     write_rollout_plan,
 )
 from p37_neuro.embodiment.importers import load_mjcf, load_urdf
@@ -83,7 +84,12 @@ def _build_parser() -> argparse.ArgumentParser:
     deploy.add_argument("--site", required=True)
     deploy.add_argument("--fleet", required=True)
     deploy.add_argument("--robots", required=True, help="comma-separated robot IDs")
-    deploy.add_argument("--qualification-report", required=True)
+    deploy.add_argument("--qualification-report", type=Path, required=True)
+    deploy.add_argument(
+        "--qualification-sha256",
+        required=True,
+        help="trusted SHA-256 digest for the exact qualification report file",
+    )
     deploy.add_argument("--canary-count", type=int, default=1)
     deploy.add_argument("--batch-size", type=int, default=10)
     deploy.add_argument("--max-unhealthy-fraction", type=float, default=0.10)
@@ -168,13 +174,18 @@ def main() -> None:
             print(f"json: {json_path}")
             print(f"report: {md_path}")
     elif args.command == "deploy":
+        verified_qualification = verify_qualification_for_deployment(
+            args.qualification_report,
+            artifact_id=args.artifact,
+            expected_sha256=args.qualification_sha256,
+        )
         robot_ids = tuple(item.strip() for item in args.robots.split(",") if item.strip())
         plan = RolloutPlan(
             schema_version=1,
             artifact_id=args.artifact,
             previous_artifact_id=args.previous,
             target=DeploymentTarget(args.organization, args.site, args.fleet, robot_ids),
-            qualification_report_uri=args.qualification_report,
+            qualification_report_uri=str(verified_qualification.report_path),
             canary_count=args.canary_count,
             batch_size=args.batch_size,
             maximum_unhealthy_fraction=args.max_unhealthy_fraction,
@@ -184,6 +195,7 @@ def main() -> None:
             automatic_rollback=not args.manual_rollback,
         )
         path = write_rollout_plan(plan, args.output)
+        print(f"verified qualification: {verified_qualification.sha256}")
         print(f"created rollout plan: {path}")
         print(f"batches: {len(plan.batches())}")
         print(f"approvals: {len(plan.approvals)}/{plan.required_approvals}")
