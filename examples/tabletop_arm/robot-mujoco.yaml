@@ -40,6 +40,10 @@ observation_mappings:
   - target: proprioception.elbow_position
     source: elbow
     unit: rad
+end_effectors:
+  - name: gripper
+    link: end_effector
+    frame: world
 capabilities:
   observation_read: true
   action_write: true

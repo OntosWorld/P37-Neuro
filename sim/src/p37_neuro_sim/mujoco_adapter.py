@@ -182,6 +182,14 @@ class MuJoCoAdapter:
             self._renderer.close()
             self._renderer = None
 
+    def body_position(self, name: str) -> tuple[float, float, float]:
+        """Return a named body's world-frame position for task evaluation."""
+        body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, name)
+        if body_id < 0:
+            raise ValueError(f"unknown MuJoCo body: {name}")
+        position = self.data.xpos[body_id]
+        return (float(position[0]), float(position[1]), float(position[2]))
+
     def _observation(self) -> Observation:
         position: dict[str, float] = {}
         velocity: dict[str, float] = {}

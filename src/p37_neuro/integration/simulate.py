@@ -28,6 +28,24 @@ class SimulationPreflightResult:
     final_time_s: float
 
 
+@dataclass(frozen=True, slots=True)
+class ReachBenchmarkResult:
+    """Metrics and evidence emitted by a closed-loop MuJoCo reach run."""
+
+    robot_id: str
+    seed: int
+    steps: int
+    success: bool
+    initial_distance_m: float
+    final_distance_m: float
+    minimum_distance_m: float
+    success_threshold_m: float
+    safety_clamp_count: int
+    replay_max_joint_error: float
+    episode_path: str
+    metrics_path: str
+
+
 def run_mujoco_preflight(
     manifest_path: str | Path,
     *,
@@ -71,3 +89,36 @@ def run_mujoco_preflight(
         )
     finally:
         adapter.close()
+
+
+def run_mujoco_reach_benchmark(
+    manifest_path: str | Path,
+    *,
+    output_dir: str | Path,
+    steps: int = 200,
+    seed: int = 0,
+    target_x: float = 0.22,
+    target_y: float = 0.22,
+    success_threshold_m: float = 0.025,
+) -> ReachBenchmarkResult:
+    """Run the simulator package's closed-loop reach benchmark."""
+    if steps <= 0:
+        raise ValueError("steps must be positive")
+    if success_threshold_m <= 0:
+        raise ValueError("success_threshold_m must be positive")
+    try:
+        module: Any = import_module("p37_neuro_sim")
+    except ModuleNotFoundError as exc:
+        raise SimulationPreflightError(
+            "MuJoCo reach benchmark requires the p37-neuro-sim package; "
+            "run from the sim/ environment or install the simulation package"
+        ) from exc
+    result: ReachBenchmarkResult = module.run_reach_benchmark(
+        manifest_path,
+        output_dir=output_dir,
+        steps=steps,
+        seed=seed,
+        target=(target_x, target_y),
+        success_threshold_m=success_threshold_m,
+    )
+    return result

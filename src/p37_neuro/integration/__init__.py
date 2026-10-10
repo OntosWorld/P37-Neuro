@@ -31,9 +31,11 @@ from p37_neuro.integration.mapping import (
 )
 from p37_neuro.integration.runtime_adapter import MappedRobotAdapter, RawRobotTransport
 from p37_neuro.integration.simulate import (
+    ReachBenchmarkResult,
     SimulationPreflightError,
     SimulationPreflightResult,
     run_mujoco_preflight,
+    run_mujoco_reach_benchmark,
 )
 
 __all__ = [
@@ -48,6 +50,7 @@ __all__ = [
     "ObservationMapping",
     "RawRobotObservation",
     "RawRobotTransport",
+    "ReachBenchmarkResult",
     "RobotAdapter",
     "RobotDescriptionFormat",
     "RobotDescriptionRef",
@@ -65,6 +68,7 @@ __all__ = [
     "create_robot_manifest_template",
     "load_robot_manifest",
     "run_mujoco_preflight",
+    "run_mujoco_reach_benchmark",
     "validate_adapter",
     "validate_robot_integration",
 ]

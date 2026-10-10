@@ -24,3 +24,19 @@ uv run p37 simulate \
 ```
 
 This verifies simulator loading, embodiment mapping and the action/observation loop. It is not a learned-capability benchmark.
+
+## Closed-loop reach benchmark
+
+Run the deterministic inverse-kinematics baseline through the canonical action,
+safety and episode contracts:
+
+```bash
+uv run p37 benchmark-reach \
+  --robot ../examples/tabletop_arm/robot-mujoco.yaml \
+  --seed 42 \
+  --output ../artifacts/reach-baseline
+```
+
+The command writes checksummed episode evidence and benchmark metrics, including
+Cartesian error, safety clamps and deterministic replay error. This establishes a
+physics-backed baseline and harness; it is not evidence of a learned policy.

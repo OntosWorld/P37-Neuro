@@ -22,6 +22,7 @@ from p37_neuro.embodiment.importers import load_mjcf, load_urdf
 from p37_neuro.integration import (
     create_robot_manifest_template,
     run_mujoco_preflight,
+    run_mujoco_reach_benchmark,
     validate_robot_integration,
 )
 from p37_neuro.qualification import (
@@ -64,6 +65,17 @@ def _build_parser() -> argparse.ArgumentParser:
     simulate.add_argument("--backend", choices=("mujoco",), default="mujoco")
     simulate.add_argument("--steps", type=int, default=10)
     simulate.add_argument("--seed", type=int, default=0)
+
+    reach = subparsers.add_parser(
+        "benchmark-reach", help="run a closed-loop MuJoCo Cartesian reach benchmark"
+    )
+    reach.add_argument("--robot", type=Path, required=True)
+    reach.add_argument("--steps", type=int, default=200)
+    reach.add_argument("--seed", type=int, default=0)
+    reach.add_argument("--target-x", type=float, default=0.22)
+    reach.add_argument("--target-y", type=float, default=0.22)
+    reach.add_argument("--success-threshold", type=float, default=0.025)
+    reach.add_argument("--output", type=Path, default=Path("artifacts/reach-benchmark"))
 
     qualify = subparsers.add_parser("qualify", help="execute or evaluate qualification")
     qualify_mode = qualify.add_mutually_exclusive_group(required=True)
@@ -149,6 +161,24 @@ def main() -> None:
         print(f"steps: {simulation_result.steps}")
         print(f"controllable joints: {simulation_result.action_dimension}")
         print(f"final simulation time: {simulation_result.final_time_s:.6f} s")
+    elif args.command == "benchmark-reach":
+        result = run_mujoco_reach_benchmark(
+            args.robot,
+            output_dir=args.output,
+            steps=args.steps,
+            seed=args.seed,
+            target_x=args.target_x,
+            target_y=args.target_y,
+            success_threshold_m=args.success_threshold,
+        )
+        print(f"reach benchmark: {'passed' if result.success else 'failed'}")
+        print(f"robot: {result.robot_id}")
+        print(f"distance: {result.initial_distance_m:.6f} -> {result.final_distance_m:.6f} m")
+        print(f"minimum distance: {result.minimum_distance_m:.6f} m")
+        print(f"safety clamps: {result.safety_clamp_count}")
+        print(f"replay max joint error: {result.replay_max_joint_error:.12f}")
+        print(f"episode: {result.episode_path}")
+        print(f"metrics: {result.metrics_path}")
     elif args.command == "qualify":
         if args.evidence is not None:
             evidence = load_qualification_evidence(args.evidence)
