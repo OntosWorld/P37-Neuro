@@ -26,6 +26,7 @@ class InferenceSession:
     _memory: Tensor | None = field(default=None, init=False, repr=False)
     _joint_features: Tensor = field(init=False, repr=False)
     _joint_mask: Tensor = field(init=False, repr=False)
+    _last_clamped_joints: tuple[str, ...] = field(default=(), init=False, repr=False)
     _safety: JointSafetyEnvelope = field(
         default_factory=JointSafetyEnvelope, init=False, repr=False
     )
@@ -48,6 +49,12 @@ class InferenceSession:
 
     def reset(self) -> None:
         self._memory = None
+        self._last_clamped_joints = ()
+
+    @property
+    def last_clamped_joints(self) -> tuple[str, ...]:
+        """Joints clamped by the deterministic envelope on the latest action."""
+        return self._last_clamped_joints
 
     def act(self, observation: Observation) -> Action:
         state = torch.zeros(
@@ -74,4 +81,6 @@ class InferenceSession:
             for index, joint in enumerate(self.embodiment.joints)
         }
         action = Action(timestamp_s=observation.timestamp_s, joint_commands=commands)
-        return self._safety.apply(action, self.embodiment).action
+        result = self._safety.apply(action, self.embodiment)
+        self._last_clamped_joints = result.clamped_joints
+        return result.action

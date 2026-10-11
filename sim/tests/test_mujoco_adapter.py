@@ -47,3 +47,14 @@ def test_partial_action_is_rejected(tmp_path: Path) -> None:
 def test_bad_mapping_is_rejected(tmp_path: Path) -> None:
     with pytest.raises(MuJoCoConfigurationError, match="unsupported actuator"):
         MuJoCoAdapter(_model(tmp_path), joint_to_actuator={"j1": "missing"})
+
+
+def test_dynamics_randomization_scales_model_parameters(tmp_path: Path) -> None:
+    adapter = MuJoCoAdapter(_model(tmp_path))
+    original_mass = float(adapter.model.body_mass[1])
+    original_gain = float(adapter.model.actuator_gainprm[0, 0])
+    adapter.apply_dynamics_randomization(
+        {"mass_scale": 1.2, "friction_scale": 0.8, "motor_strength_scale": 0.9}
+    )
+    assert float(adapter.model.body_mass[1]) == pytest.approx(original_mass * 1.2)
+    assert float(adapter.model.actuator_gainprm[0, 0]) == pytest.approx(original_gain * 0.9)

@@ -40,6 +40,13 @@ def test_forward_supports_variable_morphology() -> None:
     assert torch.all(output.action_mean[0, :, 3:] == 0)
 
 
+def test_joint_order_encoding_distinguishes_identical_joint_features() -> None:
+    reference = torch.zeros(1, 2, 32)
+    encoding = P37Neuro._joint_position_encoding(2, 32, reference)
+    assert encoding.shape == (1, 2, 32)
+    assert not torch.equal(encoding[:, 0], encoding[:, 1])
+
+
 def test_imitation_and_ppo_losses_backpropagate() -> None:
     config = NeuroConfig(model_dim=32, task_feature_dim=16, high_level_dim=8)
     model = P37Neuro(config)

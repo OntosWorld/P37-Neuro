@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from math import log
 
 import torch
 from torch import Tensor, nn
@@ -184,6 +185,21 @@ class P37Neuro(nn.Module):
         denominator = weights.sum(dim=dim).clamp_min(1.0)
         return numerator / denominator
 
+    @staticmethod
+    def _joint_position_encoding(joints: int, dimension: int, reference: Tensor) -> Tensor:
+        """Encode canonical joint order without imposing a fixed joint count."""
+        positions = torch.arange(joints, device=reference.device, dtype=reference.dtype)[:, None]
+        frequencies = torch.exp(
+            torch.arange(0, dimension, 2, device=reference.device, dtype=reference.dtype)
+            * (-log(10_000.0) / dimension)
+        )
+        encoding = torch.zeros(joints, dimension, device=reference.device, dtype=reference.dtype)
+        encoding[:, 0::2] = torch.sin(positions * frequencies)
+        odd_width = encoding[:, 1::2].shape[1]
+        if odd_width:
+            encoding[:, 1::2] = torch.cos(positions * frequencies[:odd_width])
+        return encoding[None, :, :]
+
     def _encode_images(self, images: Tensor) -> Tensor:
         leading = images.shape[:-3]
         flattened = images.reshape(-1, *images.shape[-3:])
@@ -264,6 +280,9 @@ class P37Neuro(nn.Module):
             raise ValueError("time_mask must contain a contiguous valid prefix")
         padding_mask = ~joint_mask.bool()
         joint_tokens = self.joint_feature_projection(joint_features)
+        joint_tokens = joint_tokens + self._joint_position_encoding(
+            joints, self.config.model_dim, joint_tokens
+        )
         joint_tokens = self.embodiment_encoder(joint_tokens, src_key_padding_mask=padding_mask)
         embodiment = self._masked_mean(joint_tokens, joint_mask, dim=1)
 

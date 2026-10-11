@@ -14,8 +14,12 @@ dependencies = [
   "numpy>=2,<3",
 ]
 
+[project.optional-dependencies]
+learn = ["p37-neuro-ml"]
+
 [tool.uv.sources]
 p37-neuro = { path = "..", editable = true }
+p37-neuro-ml = { path = "../ml", editable = true }
 
 [dependency-groups]
 dev = ["pytest>=8.3", "ruff>=0.11"]

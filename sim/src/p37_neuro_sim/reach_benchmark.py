@@ -72,9 +72,12 @@ def _rollout(
     seed: int,
     success_threshold_m: float,
     record_episode: bool,
+    dynamics: dict[str, float] | None = None,
 ) -> tuple[list[EpisodeStep], list[tuple[float, ...]], list[float], int]:
     adapter = MuJoCoAdapter(description, control_period_s=control_period_s)
     try:
+        if dynamics is not None:
+            adapter.apply_dynamics_randomization(dynamics)
         joint_names = tuple(joint.name for joint in adapter.embodiment.joints)
         if joint_names != ("shoulder", "elbow"):
             raise ReachBenchmarkConfigurationError(
@@ -120,6 +123,44 @@ def _rollout(
         return episode_steps, states, distances, clamp_count
     finally:
         adapter.close()
+
+
+def generate_expert_episode(
+    manifest_path: str | Path,
+    *,
+    target: tuple[float, float],
+    steps: int = 100,
+    seed: int = 0,
+    success_threshold_m: float = 0.025,
+    dynamics: dict[str, float] | None = None,
+) -> Episode:
+    """Generate one analytic-IK demonstration through physics and safety."""
+    manifest = load_robot_manifest(manifest_path)
+    description = resolve_description(manifest, manifest_path=manifest_path)
+    episode_steps, _, _, _ = _rollout(
+        description,
+        control_period_s=1.0 / manifest.runtime.control_frequency_hz,
+        target=target,
+        steps=steps,
+        seed=seed,
+        success_threshold_m=success_threshold_m,
+        record_episode=True,
+        dynamics=dynamics,
+    )
+    return Episode(
+        episode_id=f"expert-reach-{seed}",
+        embodiment_id=manifest.robot_id,
+        task_id="goal-conditioned-cartesian-reach",
+        steps=tuple(episode_steps),
+        source="p37-mujoco-analytic-ik-expert",
+        metadata={
+            "controller": "analytic-ik-baseline",
+            "target_x_m": str(target[0]),
+            "target_y_m": str(target[1]),
+            "capability_evidence": "expert-demonstration",
+            "dynamics": json.dumps(dynamics or {}, sort_keys=True),
+        },
+    )
 
 
 def run_reach_benchmark(

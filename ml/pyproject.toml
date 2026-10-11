@@ -9,6 +9,7 @@ description = "Trainable hierarchical robot brain for P37 Neuro."
 license = "Apache-2.0"
 requires-python = ">=3.12,<3.14"
 dependencies = [
+  "numpy>=2,<3",
   "p37-neuro",
   "PyYAML>=6.0",
   "torch>=2.8,<3",
@@ -19,12 +20,14 @@ export = [
   "onnx>=1.17",
   "onnxscript>=0.2",
 ]
+sim = ["p37-neuro-sim"]
 
 [project.scripts]
 p37-neuro-ml = "p37_neuro_ml.cli:main"
 
 [tool.uv.sources]
 p37-neuro = { path = "..", editable = true }
+p37-neuro-sim = { path = "../sim", editable = true }
 
 [dependency-groups]
 dev = [

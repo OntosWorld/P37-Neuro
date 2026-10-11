@@ -190,6 +190,25 @@ class MuJoCoAdapter:
         position = self.data.xpos[body_id]
         return (float(position[0]), float(position[1]), float(position[2]))
 
+    def apply_dynamics_randomization(self, values: Mapping[str, float]) -> None:
+        """Apply positive mass, friction and actuator-strength scales in place."""
+        supported = {"mass_scale", "friction_scale", "motor_strength_scale"}
+        unknown = set(values) - supported
+        if unknown:
+            raise ValueError(f"unsupported MuJoCo dynamics randomization: {sorted(unknown)}")
+        for name, value in values.items():
+            if value <= 0:
+                raise ValueError(f"{name} must be positive")
+        mass_scale = values.get("mass_scale", 1.0)
+        friction_scale = values.get("friction_scale", 1.0)
+        motor_scale = values.get("motor_strength_scale", 1.0)
+        self.model.body_mass[1:] *= mass_scale
+        self.model.body_inertia[1:] *= mass_scale
+        self.model.geom_friction[:] *= friction_scale
+        self.model.actuator_gainprm[:] *= motor_scale
+        self.model.actuator_biasprm[:] *= motor_scale
+        mujoco.mj_setConst(self.model, self.data)
+
     def _observation(self) -> Observation:
         position: dict[str, float] = {}
         velocity: dict[str, float] = {}
