@@ -190,6 +190,14 @@ class MuJoCoAdapter:
         position = self.data.xpos[body_id]
         return (float(position[0]), float(position[1]), float(position[2]))
 
+    def body_local_position(self, name: str) -> tuple[float, float, float]:
+        """Return a named body's parent-relative model position."""
+        body_id = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_BODY, name)
+        if body_id < 0:
+            raise ValueError(f"unknown MuJoCo body: {name}")
+        position = self.model.body_pos[body_id]
+        return (float(position[0]), float(position[1]), float(position[2]))
+
     def apply_dynamics_randomization(self, values: Mapping[str, float]) -> None:
         """Apply positive mass, friction and actuator-strength scales in place."""
         supported = {"mass_scale", "friction_scale", "motor_strength_scale"}

@@ -37,7 +37,9 @@ def _parser() -> argparse.ArgumentParser:
     reach.add_argument("--output", type=Path, required=True)
     reach.add_argument("--seed", type=int, default=317)
     reach.add_argument("--train-targets", type=int, default=64)
+    reach.add_argument("--validation-targets", type=int, default=32)
     reach.add_argument("--eval-targets", type=int, default=20)
+    reach.add_argument("--candidates", type=int, default=3)
     reach.add_argument("--epochs", type=int, default=200)
     reach.add_argument("--steps", type=int, default=100)
     reach.add_argument("--success-threshold", type=float, default=0.025)
@@ -50,11 +52,25 @@ def _parser() -> argparse.ArgumentParser:
     reach_suite.add_argument("--output", type=Path, required=True)
     reach_suite.add_argument("--seeds", default="317,401,503,607,719")
     reach_suite.add_argument("--train-targets", type=int, default=64)
+    reach_suite.add_argument("--validation-targets", type=int, default=32)
     reach_suite.add_argument("--eval-targets", type=int, default=100)
+    reach_suite.add_argument("--candidates", type=int, default=3)
     reach_suite.add_argument("--epochs", type=int, default=200)
     reach_suite.add_argument("--steps", type=int, default=100)
     reach_suite.add_argument("--success-threshold", type=float, default=0.025)
     reach_suite.add_argument("--qualification-rate", type=float, default=0.90)
+
+    morphology = commands.add_parser(
+        "reach-morphology-eval", help="evaluate a frozen reach checkpoint on a held-out arm"
+    )
+    morphology.add_argument("--checkpoint", type=Path, required=True)
+    morphology.add_argument("--robot", type=Path, required=True)
+    morphology.add_argument("--output", type=Path, required=True)
+    morphology.add_argument("--seed", type=int, default=911)
+    morphology.add_argument("--eval-targets", type=int, default=100)
+    morphology.add_argument("--steps", type=int, default=100)
+    morphology.add_argument("--success-threshold", type=float, default=0.025)
+    morphology.add_argument("--qualification-rate", type=float, default=0.90)
     return parser
 
 
@@ -103,7 +119,9 @@ def main() -> None:
             output_dir=args.output,
             seed=args.seed,
             train_target_count=args.train_targets,
+            validation_target_count=args.validation_targets,
             evaluation_target_count=args.eval_targets,
+            candidate_count=args.candidates,
             epochs=args.epochs,
             evaluation_steps=args.steps,
             success_threshold_m=args.success_threshold,
@@ -126,8 +144,28 @@ def main() -> None:
             output_dir=args.output,
             seeds=seeds,
             train_target_count=args.train_targets,
+            validation_target_count=args.validation_targets,
             evaluation_target_count=args.eval_targets,
+            candidate_count=args.candidates,
             epochs=args.epochs,
+            evaluation_steps=args.steps,
+            success_threshold_m=args.success_threshold,
+            qualification_success_rate=args.qualification_rate,
+        )
+        print(json.dumps(result, sort_keys=True))
+    elif args.command == "reach-morphology-eval":
+        try:
+            from p37_neuro_sim.learned_reach import run_heldout_morphology_evaluation
+        except ModuleNotFoundError as exc:
+            raise SystemExit(
+                "reach-morphology-eval requires the simulation extra; run `uv sync --extra sim`"
+            ) from exc
+        result = run_heldout_morphology_evaluation(
+            args.checkpoint,
+            args.robot,
+            output_dir=args.output,
+            seed=args.seed,
+            evaluation_target_count=args.eval_targets,
             evaluation_steps=args.steps,
             success_threshold_m=args.success_threshold,
             qualification_success_rate=args.qualification_rate,

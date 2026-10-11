@@ -7,6 +7,7 @@ p37_neuro_ml = pytest.importorskip("p37_neuro_ml")
 
 from p37_neuro_sim.learned_reach import (  # noqa: E402
     _wilson_interval,
+    run_heldout_morphology_evaluation,
     run_learned_reach_experiment,
     run_learned_reach_suite,
 )
@@ -16,20 +17,29 @@ def _manifest() -> Path:
     return Path(__file__).resolve().parents[2] / "examples" / "tabletop_arm" / "robot-mujoco.yaml"
 
 
+def _heldout_manifest() -> Path:
+    return Path(__file__).resolve().parents[2] / "examples" / "tabletop_arm" / "robot-heldout.yaml"
+
+
 def test_goal_conditioned_experiment_writes_complete_evidence(tmp_path: Path) -> None:
     result = run_learned_reach_experiment(
         _manifest(),
         output_dir=tmp_path,
         seed=19,
         train_target_count=8,
+        validation_target_count=3,
         evaluation_target_count=3,
+        candidate_count=2,
         epochs=5,
         evaluation_steps=20,
         qualification_success_rate=0.0,
     )
 
     assert result["training_targets"] == 8
+    assert result["validation_targets"] == 3
     assert result["evaluation_targets"] == 3
+    assert result["candidate_count"] == 2
+    assert Path(result["candidate_metrics_path"]).is_file()
     assert result["final_action_loss"] >= 0.0
     assert result["baseline_success_rate"] == 1.0
     assert result["nominal_qualified"] is True
@@ -59,7 +69,9 @@ def test_multi_seed_suite_writes_aggregate_gate(tmp_path: Path) -> None:
         output_dir=tmp_path,
         seeds=(11, 23),
         train_target_count=8,
+        validation_target_count=3,
         evaluation_target_count=3,
+        candidate_count=2,
         epochs=5,
         evaluation_steps=20,
         qualification_success_rate=0.0,
@@ -77,3 +89,29 @@ def test_multi_seed_suite_rejects_duplicate_seeds(tmp_path: Path) -> None:
             output_dir=tmp_path,
             seeds=(7, 7),
         )
+
+
+def test_frozen_checkpoint_runs_on_heldout_morphology(tmp_path: Path) -> None:
+    training = run_learned_reach_experiment(
+        _manifest(),
+        output_dir=tmp_path / "training",
+        seed=31,
+        train_target_count=8,
+        validation_target_count=3,
+        evaluation_target_count=3,
+        candidate_count=2,
+        epochs=5,
+        evaluation_steps=20,
+        qualification_success_rate=0.0,
+    )
+    result = run_heldout_morphology_evaluation(
+        training["checkpoint_dir"],
+        _heldout_manifest(),
+        output_dir=tmp_path / "heldout",
+        evaluation_target_count=3,
+        evaluation_steps=20,
+        qualification_success_rate=0.0,
+    )
+    assert result["robot_id"] == "heldout-tabletop-arm-mujoco"
+    assert result["baseline_success_rate"] == 1.0
+    assert Path(result["metrics_path"]).is_file()

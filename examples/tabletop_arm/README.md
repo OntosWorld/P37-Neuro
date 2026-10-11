@@ -69,6 +69,8 @@ uv run p37-neuro-ml reach-sim-suite \
   --robot ../examples/tabletop_arm/robot-mujoco.yaml \
   --output ../artifacts/learned-reach-suite \
   --seeds 317,401,503,607,719 \
+  --validation-targets 32 \
+  --candidates 3 \
   --eval-targets 100
 ```
 
@@ -76,3 +78,21 @@ The suite reports the aggregate 95% Wilson interval, best and worst training
 seed, total safety clamps and per-run randomization status. A held-out morphology
 is unlocked only when both the aggregate and every individual seed meet the
 declared success threshold.
+
+Each seed trains multiple independently initialized candidates. Candidate ranking
+uses only the validation targets; the selected checkpoint is then frozen before
+the held-out test targets are evaluated once.
+
+Evaluate that frozen checkpoint on the separately declared held-out arm geometry:
+
+```bash
+uv run p37-neuro-ml reach-morphology-eval \
+  --checkpoint ../artifacts/learned-reach-suite/seed-317/checkpoint \
+  --robot ../examples/tabletop_arm/robot-heldout.yaml \
+  --output ../artifacts/heldout-morphology \
+  --eval-targets 100
+```
+
+The held-out arm changes the two planar link lengths from 0.22/0.18 m to
+0.26/0.14 m while preserving the task and control contract. Its targets and
+results must not be used for candidate selection or training.

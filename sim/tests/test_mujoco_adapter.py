@@ -35,6 +35,7 @@ def test_reset_and_step(tmp_path: Path) -> None:
     after = adapter.step(Action(initial.timestamp_s, {"j1": 0.5}))
     assert after.timestamp_s > initial.timestamp_s
     assert -1.0 <= after.joint_position["j1"] <= 1.0
+    assert adapter.body_local_position("link") == pytest.approx((0.0, 0.0, 0.0))
     adapter.close()
 
 

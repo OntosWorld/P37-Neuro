@@ -20,10 +20,10 @@ class ReachBenchmarkConfigurationError(ValueError):
     """Raised when the reference reach task cannot be configured safely."""
 
 
-def _inverse_kinematics(target: tuple[float, float]) -> tuple[float, float]:
+def _inverse_kinematics(
+    target: tuple[float, float], *, link_1: float, link_2: float
+) -> tuple[float, float]:
     """Solve the elbow-down branch for the reference two-link planar arm."""
-    link_1 = 0.22
-    link_2 = 0.18
     x, y = target
     cosine_elbow = (x * x + y * y - link_1 * link_1 - link_2 * link_2) / (2.0 * link_1 * link_2)
     if not -1.0 <= cosine_elbow <= 1.0:
@@ -83,7 +83,11 @@ def _rollout(
             raise ReachBenchmarkConfigurationError(
                 "reference reach benchmark requires shoulder and elbow joints in that order"
             )
-        shoulder, elbow = _inverse_kinematics(target)
+        link_1 = abs(adapter.body_local_position("link_2")[0])
+        link_2 = abs(adapter.body_local_position("end_effector")[0])
+        if link_1 <= 0 or link_2 <= 0:
+            raise ReachBenchmarkConfigurationError("planar arm link lengths must be positive")
+        shoulder, elbow = _inverse_kinematics(target, link_1=link_1, link_2=link_2)
         safety = JointSafetyEnvelope()
         observation = adapter.reset(seed)
         episode_steps: list[EpisodeStep] = []

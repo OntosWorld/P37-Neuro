@@ -1,0 +1,58 @@
+schema_version: 2
+robot_id: heldout-tabletop-arm-mujoco
+family: manipulator
+description:
+  format: mjcf
+  path: robot-heldout.mjcf
+runtime:
+  transport: replay
+  control_frequency_hz: 100
+safety:
+  max_observation_age_s: 0.1
+  require_external_estop: true
+  require_controller_watchdog: true
+joints:
+  - joint: shoulder
+    command: shoulder
+    state: shoulder
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -2.0
+      position_max: 2.0
+  - joint: elbow
+    command: elbow
+    state: elbow
+    control_mode: position
+    unit: rad
+    safety:
+      position_min: -2.0
+      position_max: 2.0
+sensor_mappings:
+  - name: joint_state
+    source: mujoco/joint_state
+    modality: proprioception
+    requirement: required
+observation_mappings:
+  - target: proprioception.shoulder_position
+    source: shoulder
+    unit: rad
+  - target: proprioception.elbow_position
+    source: elbow
+    unit: rad
+end_effectors:
+  - name: gripper
+    link: end_effector
+    frame: world
+capabilities:
+  observation_read: true
+  action_write: true
+  stop_request: true
+  health: true
+  position_control: true
+  velocity_control: false
+  effort_control: false
+  time_synchronized: true
+metadata:
+  example: "true"
+  qualification: heldout-morphology-only
