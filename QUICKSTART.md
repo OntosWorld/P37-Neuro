@@ -167,3 +167,22 @@ For the complete ML environment, use the dedicated `ml/` package as shown above.
 Do not connect an unqualified research policy directly to unrestricted physical actuators.
 
 Physical integrations require independent emergency stops, controller-level limits, watchdogs and the staged qualification process in [docs/testing.md](docs/testing.md).
+
+## Enterprise readiness check
+
+Before handing an integration to HIL or deployment, run:
+
+```bash
+p37 doctor \
+  --robot examples/tabletop_arm/robot.yaml \
+  --require-cpp \
+  --output artifacts/doctor.json
+```
+
+For CI/CD systems that do not import the Python SDK, export the versioned artifact schemas:
+
+```bash
+p37 schema export --output artifacts/schemas
+```
+
+The exported schemas cover robot manifests, qualification reports, rollout plans and runtime metric snapshots.
