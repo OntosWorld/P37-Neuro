@@ -7,7 +7,10 @@ The project follows Semantic Versioning for published releases. Capability evide
 ## Unreleased
 
 ### Added
-- enterprise Robot Integration Kit with declarative robot manifests;\n- robot manifest schema v2 with explicit joint/controller mappings, sensor requirements, canonical observation mappings, end effectors, adapter capabilities and per-joint safety overrides;\n- executable robot I/O mapping plus a manifest-backed adapter for translating vendor/controller observations and commands at runtime;\n- deployment qualification verification that requires a passing release report for the exact artifact plus a trusted SHA-256 digest before rollout planning;
+- enterprise Robot Integration Kit with declarative robot manifests;
+- robot manifest schema v2 with explicit joint/controller mappings, sensor requirements, canonical observation mappings, end effectors, adapter capabilities and per-joint safety overrides;
+- executable robot I/O mapping plus a manifest-backed adapter for translating vendor/controller observations and commands at runtime;
+- deployment qualification verification that requires a passing release report for the exact artifact plus a trusted SHA-256 digest before rollout planning;
 - `p37 robot init` and `p37 robot validate`;
 - executable staged qualification via `p37 qualify --level integration|simulation|hil|physical|fleet`;
 - evidence-based release qualification reports via `p37 qualify --evidence`;
@@ -18,6 +21,8 @@ The project follows Semantic Versioning for published releases. Capability evide
 - `p37 deploy`, `p37 status` and `p37 rollback`;
 - compatibility, API stability, enterprise deployment, quality and support documentation;
 - CodeQL, dependency review, OpenSSF Scorecard, SBOM and build-provenance controls.
+- enterprise readiness diagnostics via `p37 doctor`;
+- versioned JSON Schemas for robot manifests, qualification reports, rollout plans and runtime metrics.
 
 ### Changed
 - enterprise-facing maturity language now uses qualification-focused terminology;
