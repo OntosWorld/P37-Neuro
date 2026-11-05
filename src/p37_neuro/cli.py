@@ -6,6 +6,8 @@ import argparse
 from pathlib import Path
 
 from p37_neuro import __version__
+from p37_neuro.artifact_schemas import export_schemas, schema_names
+from p37_neuro.doctor import run_doctor, write_doctor_report
 from p37_neuro.config import load_config
 from p37_neuro.data.storage import read_episode
 from p37_neuro.deployment import (
