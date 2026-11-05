@@ -121,7 +121,8 @@ def run_doctor(
                     (
                         f"artifact={plan.artifact_id}; approvals="
                         f"{len(plan.approvals)}/{plan.required_approvals}; "
-                        f"qualification_digest={'present' if plan.qualification_report_sha256 else 'missing'}"
+                        "qualification_digest="
+                        + ("present" if plan.qualification_report_sha256 else "missing")
                     ),
                 )
             )
