@@ -27,6 +27,8 @@ New users should begin with the repository [Quickstart](../QUICKSTART.md).
 | [API Stability](api-stability.md) | public interfaces, versioning and deprecation |
 | [Compatibility](../COMPATIBILITY.md) | supported software and deployment targets |
 | [Quality Declaration](quality-declaration.md) | engineering, testing, security and support controls |
+| Enterprise Readiness Diagnostics | `p37 doctor` checks environment, robot integration, qualification and rollout readiness |
+| Artifact Schemas | `p37 schema export` emits versioned JSON Schemas for manifests, qualification, rollout and metrics |
 
 ## Engineering reference
 
