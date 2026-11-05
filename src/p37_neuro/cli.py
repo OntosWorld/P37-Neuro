@@ -7,7 +7,6 @@ from pathlib import Path
 
 from p37_neuro import __version__
 from p37_neuro.artifact_schemas import export_schemas, schema_names
-from p37_neuro.doctor import run_doctor, write_doctor_report
 from p37_neuro.config import load_config
 from p37_neuro.data.storage import read_episode
 from p37_neuro.deployment import (
@@ -20,6 +19,7 @@ from p37_neuro.deployment import (
     verify_qualification_for_deployment,
     write_rollout_plan,
 )
+from p37_neuro.doctor import run_doctor, write_doctor_report
 from p37_neuro.embodiment.importers import load_mjcf, load_urdf
 from p37_neuro.integration import (
     create_robot_manifest_template,
