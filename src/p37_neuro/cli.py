@@ -124,6 +124,19 @@ def _build_parser() -> argparse.ArgumentParser:
     rollback = subparsers.add_parser("rollback", help="create a rollback plan")
     rollback.add_argument("--plan", type=Path, required=True)
     rollback.add_argument("--output", type=Path, default=Path("artifacts/rollback.json"))
+
+    doctor = subparsers.add_parser("doctor", help="check enterprise deployment readiness")
+    doctor.add_argument("--robot", type=Path)
+    doctor.add_argument("--qualification-report", type=Path)
+    doctor.add_argument("--rollout-plan", type=Path)
+    doctor.add_argument("--require-cpp", action="store_true")
+    doctor.add_argument("--output", type=Path)
+
+    schema = subparsers.add_parser("schema", help="inspect or export P37 artifact schemas")
+    schema_commands = schema.add_subparsers(dest="schema_command", required=True)
+    schema_commands.add_parser("list", help="list versioned artifact schemas")
+    schema_export = schema_commands.add_parser("export", help="export JSON Schemas")
+    schema_export.add_argument("--output", type=Path, default=Path("artifacts/schemas"))
     return parser
 
 
@@ -251,6 +264,28 @@ def main() -> None:
         path = write_rollout_plan(rollback_plan, args.output)
         print(f"created rollback plan: {path}")
         print(f"target artifact: {rollback_plan.artifact_id}")
+    elif args.command == "doctor":
+        report = run_doctor(
+            robot_manifest=args.robot,
+            qualification_report=args.qualification_report,
+            rollout_plan=args.rollout_plan,
+            require_cpp=args.require_cpp,
+        )
+        for check in report.checks:
+            state = "READY" if check.ready else ("OPTIONAL" if not check.required else "ACTION")
+            print(f"{state:8} {check.name}: {check.detail}")
+        overall = "ready" if report.ready else "action_required"
+        print(f"overall: {overall}")
+        if args.output is not None:
+            path = write_doctor_report(report, args.output)
+            print(f"report: {path}")
+        if not report.ready:
+            raise SystemExit(2)
+    elif args.command == "schema" and args.schema_command == "list":
+        print("\n".join(schema_names()))
+    elif args.command == "schema" and args.schema_command == "export":
+        for path in export_schemas(args.output):
+            print(path)
 
 
 if __name__ == "__main__":
