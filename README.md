@@ -346,6 +346,8 @@ p37 deploy --artifact p37-v2 --previous p37-v1 \
   --qualification-sha256 <trusted-sha256>
 p37 status --plan artifacts/rollout.json
 p37 rollback --plan artifacts/rollout.json
+p37 doctor --robot robots/my-robot/robot.yaml --require-cpp
+p37 schema export --output artifacts/schemas
 ```
 
 The CLI creates and validates integration, qualification and rollout artifacts; it does not bypass robot-controller or site approval systems.
