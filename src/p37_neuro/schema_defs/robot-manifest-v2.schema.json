@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ontos.ws/schemas/p37/robot-manifest-v2.schema.json",
+  "title": "P37 Robot Integration Manifest v2",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "robot_id",
+    "family",
+    "description",
+    "runtime",
+    "safety",
+    "joints",
+    "capabilities"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 2
+    },
+    "robot_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "family": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "object",
+      "required": [
+        "format",
+        "path"
+      ],
+      "properties": {
+        "format": {
+          "enum": [
+            "urdf",
+            "mjcf",
+            "usd"
+          ]
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "runtime": {
+      "type": "object",
+      "required": [
+        "transport",
+        "control_frequency_hz"
+      ],
+      "properties": {
+        "transport": {
+          "enum": [
+            "ros2",
+            "direct",
+            "replay"
+          ]
+        },
+        "control_frequency_hz": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "state_topic": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "command_topic": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "stop_topic": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "safety": {
+      "type": "object",
+      "properties": {
+        "max_observation_age_s": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "require_external_estop": {
+          "type": "boolean"
+        },
+        "require_controller_watchdog": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "joints": {
+      "type": "array"
+    },
+    "sensor_mappings": {
+      "type": "array"
+    },
+    "observation_mappings": {
+      "type": "array"
+    },
+    "end_effectors": {
+      "type": "array"
+    },
+    "capabilities": {
+      "type": "object"
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string"
+      }
+    }
+  }
+}\n

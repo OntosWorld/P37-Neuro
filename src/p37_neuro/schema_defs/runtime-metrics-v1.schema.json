@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ontos.ws/schemas/p37/runtime-metrics-v1.schema.json",
+  "title": "P37 Runtime Metric Snapshot v1",
+  "type": "object",
+  "required": [
+    "robot_id",
+    "artifact_id",
+    "timestamp_s",
+    "control_loop_hz",
+    "inference_p50_ms",
+    "inference_p95_ms",
+    "inference_p99_ms",
+    "observation_age_p95_ms",
+    "rejected_commands",
+    "watchdog_events",
+    "interventions",
+    "runtime_restarts"
+  ],
+  "properties": {
+    "robot_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "artifact_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "timestamp_s": {
+      "type": "number",
+      "minimum": 0
+    },
+    "control_loop_hz": {
+      "type": "number",
+      "minimum": 0
+    },
+    "inference_p50_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "inference_p95_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "inference_p99_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "observation_age_p95_ms": {
+      "type": "number",
+      "minimum": 0
+    },
+    "rejected_commands": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "watchdog_events": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "interventions": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "runtime_restarts": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "gpu_memory_mb": {
+      "type": [
+        "number",
+        "null"
+      ],
+      "minimum": 0
+    }
+  }
+}\n

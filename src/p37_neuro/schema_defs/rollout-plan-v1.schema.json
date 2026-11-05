@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ontos.ws/schemas/p37/rollout-plan-v1.schema.json",
+  "title": "P37 Rollout Plan v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "previous_artifact_id",
+    "target",
+    "qualification_report_uri",
+    "canary_count",
+    "batch_size",
+    "maximum_unhealthy_fraction",
+    "required_approvals",
+    "approvals",
+    "automatic_rollback"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "artifact_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "previous_artifact_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "qualification_report_uri": {
+      "type": "string",
+      "minLength": 1
+    },
+    "qualification_report_sha256": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[0-9a-fA-F]{64}$"
+    },
+    "canary_count": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "batch_size": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "maximum_unhealthy_fraction": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    },
+    "required_approvals": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "approvals": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "uniqueItems": true
+    },
+    "maintenance_window_utc": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "automatic_rollback": {
+      "type": "boolean"
+    },
+    "target": {
+      "type": "object",
+      "required": [
+        "organization_id",
+        "site_id",
+        "fleet_id",
+        "robot_ids"
+      ]
+    }
+  }
+}\n

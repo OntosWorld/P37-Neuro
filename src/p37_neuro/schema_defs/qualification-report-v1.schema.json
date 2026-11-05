@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://ontos.ws/schemas/p37/qualification-report-v1.schema.json",
+  "title": "P37 Enterprise Qualification Report v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "artifact_id",
+    "status",
+    "evidence_level",
+    "unmet_gates",
+    "thresholds",
+    "evidence"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": 1
+    },
+    "artifact_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "status": {
+      "enum": [
+        "qualifies",
+        "does_not_qualify"
+      ]
+    },
+    "evidence_level": {
+      "type": "string",
+      "minLength": 1
+    },
+    "unmet_gates": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "thresholds": {
+      "type": "object"
+    },
+    "evidence": {
+      "type": "object"
+    },
+    "robot_integration": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  }
+}\n
