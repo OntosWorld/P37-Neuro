@@ -176,7 +176,7 @@ def write_staged_qualification_report(
     )
 
     check_lines = [
-        f"- {'PASS' if check.passed else 'FAIL'} — {check.name}: {check.detail}"
+        f"- {'READY' if check.passed else 'ACTION'} — {check.name}: {check.detail}"
         for check in report.checks
     ]
     evidence_lines = (
