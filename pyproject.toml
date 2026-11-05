@@ -83,5 +83,3 @@ packages = ["p37_neuro"]
 warn_unreachable = true
 show_error_codes = true
 
-[tool.hatch.build.targets.wheel.force-include]
-"src/p37_neuro/schema_defs" = "p37_neuro/schema_defs"
