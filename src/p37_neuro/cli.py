@@ -268,21 +268,21 @@ def main() -> None:
         print(f"created rollback plan: {path}")
         print(f"target artifact: {rollback_plan.artifact_id}")
     elif args.command == "doctor":
-        report = run_doctor(
+        doctor_report = run_doctor(
             robot_manifest=args.robot,
             qualification_report=args.qualification_report,
             rollout_plan=args.rollout_plan,
             require_cpp=args.require_cpp,
         )
-        for check in report.checks:
+        for check in doctor_report.checks:
             state = "READY" if check.ready else ("OPTIONAL" if not check.required else "ACTION")
             print(f"{state:8} {check.name}: {check.detail}")
-        overall = "ready" if report.ready else "action_required"
+        overall = "ready" if doctor_report.ready else "action_required"
         print(f"overall: {overall}")
         if args.output is not None:
-            path = write_doctor_report(report, args.output)
+            path = write_doctor_report(doctor_report, args.output)
             print(f"report: {path}")
-        if not report.ready:
+        if not doctor_report.ready:
             raise SystemExit(2)
     elif args.command == "schema" and args.schema_command == "list":
         print("\n".join(schema_names()))
