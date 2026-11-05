@@ -186,7 +186,7 @@ def main() -> None:
             target_y=args.target_y,
             success_threshold_m=args.success_threshold,
         )
-        print(f"reach benchmark: {'passed' if result.success else 'failed'}")
+        print(f"reach benchmark: {'qualifies' if result.success else 'requires_further_validation'}")
         print(f"robot: {result.robot_id}")
         print(f"distance: {result.initial_distance_m:.6f} -> {result.final_distance_m:.6f} m")
         print(f"minimum distance: {result.minimum_distance_m:.6f} m")
