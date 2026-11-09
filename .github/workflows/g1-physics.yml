@@ -1,0 +1,30 @@
+name: G1 MuJoCo physics smoke
+
+on:
+  pull_request:
+    paths:
+      - "sim/**"
+      - ".github/workflows/g1-physics.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  physics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install simulator and trainer dependencies
+        run: uv sync --extra train --group dev
+        working-directory: sim
+      - name: Compile new Python modules
+        run: uv run python -m compileall -q src/p37_neuro_sim/g1_locomotion_env.py src/p37_neuro_sim/g1_train.py src/p37_neuro_sim/g1_rollout.py
+        working-directory: sim
+      - name: Run actual MuJoCo simulation tests
+        run: uv run pytest -q tests/test_g1_rollout.py tests/test_g1_locomotion_env.py
+        working-directory: sim
