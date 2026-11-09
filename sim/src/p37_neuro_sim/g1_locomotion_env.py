@@ -156,7 +156,7 @@ class G1LocomotionEnv(gym.Env):
         fallen = height < self.fall_height_m or not np.isfinite(self.data.qpos).all()
         # Dense training reward. This is a proposed curriculum, not a benchmark score.
         velocity_reward = float(np.exp(-4 * (forward_velocity - self.command_velocity_m_s) ** 2))
-        upright_reward = float(np.clip(-self._observe()[-4], -1.0, 1.0))
+        upright_reward = float(np.clip(-self._observe()[-2], -1.0, 1.0))
         effort_penalty = float(np.mean(np.square(torque))) * 1e-5
         reward = 1.5 * velocity_reward + 0.5 * upright_reward - effort_penalty
         if fallen:
