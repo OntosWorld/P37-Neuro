@@ -133,7 +133,9 @@ def evaluate(model_path: Path, checkpoint: Path, output: Path) -> None:
             state = env.reset(seed)
             memory = None
             reward_total = 0.0
-            for step in range(500):
+            count = 0
+            for _ in range(500):
+                count += 1
                 with torch.no_grad():
                     result = brain(
                         joint_features=state.joint_features,
@@ -152,7 +154,7 @@ def evaluate(model_path: Path, checkpoint: Path, output: Path) -> None:
             trials.append({
                 "seed": seed,
                 "total_reward": reward_total,
-                "steps": step + 1,
+                "steps": count,
                 "episode_ended": bool(done[0]),
             })
     finally:
