@@ -57,7 +57,8 @@ def evaluate(model: Path, checkpoint: Path, output: Path, *,
                                    "final_forward_velocity_m_s": info["forward_velocity_m_s"]})
                     break
         result = {"checkpoint": str(checkpoint), "kind": "experimental_baseline_not_p37",
-                  "trials": trials,\n                  "survival_fraction": sum(not t["fallen"] for t in trials) / len(trials)}
+                  "trials": trials,
+                  "survival_fraction": sum(not t["fallen"] for t in trials) / len(trials)}
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         return result
