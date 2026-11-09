@@ -28,3 +28,13 @@ jobs:
       - name: Run actual MuJoCo simulation tests
         run: uv run pytest -q tests/test_g1_rollout.py tests/test_g1_locomotion_env.py
         working-directory: sim
+      - name: Fetch official MuJoCo Menagerie G1
+        run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git /tmp/mujoco_menagerie
+      - name: Execute official G1 rigid-body simulation
+        working-directory: sim
+        run: |
+          uv run python -m p37_neuro_sim.g1_rollout \
+            --model /tmp/mujoco_menagerie/unitree_g1/scene.xml \
+            --output artifacts/g1-real-physics \
+            --duration 8 --seed 1000 --push-newtons 45
+          uv run python -c "import json; from pathlib import Path; p=Path('artifacts/g1-real-physics/summary.json'); x=json.loads(p.read_text()); assert x['level']=='simulation_only'; assert x['elapsed_s'] > 0"
