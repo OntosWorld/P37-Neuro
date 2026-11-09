@@ -4,9 +4,6 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-gym = pytest.importorskip("gymnasium")
-pytest.importorskip("mujoco")
-
 from p37_neuro_sim.g1_locomotion_env import G1LocomotionEnv
 
 XML = """
@@ -21,7 +18,9 @@ XML = """
 <joint name="hip" type="hinge" axis="0 1 0" range="-1 1" damping=".2"/>
 <geom type="capsule" fromto="0 0 0 0 0 -.35" size=".035" mass="1"/>
 </body></body></worldbody>
-<actuator><motor name="hip_motor" joint="hip" gear="1" ctrllimited="true" ctrlrange="-30 30"/></actuator>
+<actuator>
+<motor name="hip_motor" joint="hip" gear="1" ctrllimited="true" ctrlrange="-30 30"/>
+</actuator>
 <keyframe><key name="stand" qpos="0 0 .8 1 0 0 0 0"/></keyframe>
 </mujoco>
 """
