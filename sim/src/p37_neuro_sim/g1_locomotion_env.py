@@ -57,6 +57,8 @@ class G1LocomotionEnv(gym.Env):
         self._substeps = steps
         self._control_dt = control_dt
         self._actuators = []
+        self._position_servo = []
+        self._gears = []
         for index in range(self.model.nu):
             if self.model.actuator_trntype[index] != mujoco.mjtTrn.mjTRN_JOINT:
                 raise ValueError("only direct joint-transmission motors supported")
@@ -65,13 +67,19 @@ class G1LocomotionEnv(gym.Env):
                 raise ValueError("only hinge motor actuators supported")
             if self.model.actuator_dyntype[index] != mujoco.mjtDyn.mjDYN_NONE:
                 raise ValueError("dynamic actuators not supported")
-            # Training uses torque motors; no position-actuator implicit servo.
-            if abs(float(self.model.actuator_biasprm[index, 1])) > 1e-8:
-                raise ValueError("position/velocity servos not supported by torque policy")
             gear = float(self.model.actuator_gear[index, 0])
             gain = float(self.model.actuator_gainprm[index, 0])
+            bias_position = float(self.model.actuator_biasprm[index, 1])
+            bias_velocity = float(self.model.actuator_biasprm[index, 2])
             if abs(gear * gain) < 1e-8:
-                raise ValueError("zero motor transmission gain")
+                raise ValueError("zero actuator transmission gain")
+            is_servo = abs(bias_position) > 1e-8
+            if is_servo and abs(bias_position + gain) > 1e-6 * max(1.0, abs(gain)):
+                raise ValueError("unsupported affine position actuator")
+            if not is_servo and abs(bias_velocity) > 1e-8:
+                raise ValueError("unsupported velocity servo")
+            self._position_servo.append(is_servo)
+            self._gears.append(gear)
             self._actuators.append(
                 (
                     int(self.model.jnt_qposadr[joint_id]),
@@ -95,6 +103,8 @@ class G1LocomotionEnv(gym.Env):
         self._joint_q = np.array([x[0] for x in self._actuators])
         self._joint_v = np.array([x[1] for x in self._actuators])
         self._gains = np.array([x[2] for x in self._actuators])
+        self._gears = np.asarray(self._gears, dtype=np.float64)
+        self._position_servo = np.asarray(self._position_servo, dtype=bool)
         self._reference = np.zeros(self.model.nq)
         key = mujoco.mj_name2id(self.model, mujoco.mjtObj.mjOBJ_KEY, "stand")
         self._key = key if key >= 0 else (0 if self.model.nkey else -1)
@@ -149,15 +159,20 @@ class G1LocomotionEnv(gym.Env):
             raise ValueError("invalid locomotion action")
         action = np.clip(action, -1.0, 1.0)
         target = self._reference[self._joint_q] + self.action_scale_rad * action
-        torque = (
+        control = (
             self.stiffness * (target - self.data.qpos[self._joint_q])
             - self.damping * self.data.qvel[self._joint_v]
         ) / self._gains
+        # MuJoCo position actuators expect the desired transmission length,
+        # whereas motor actuators expect force-like controls.
+        control[self._position_servo] = (
+            target[self._position_servo] * self._gears[self._position_servo]
+        )
         for index in range(self.model.nu):
             if self.model.actuator_ctrllimited[index]:
                 lo, hi = self.model.actuator_ctrlrange[index]
-                torque[index] = np.clip(torque[index], lo, hi)
-        self.data.ctrl[:] = torque
+                control[index] = np.clip(control[index], lo, hi)
+        self.data.ctrl[:] = control
         for _ in range(self._substeps):
             mujoco.mj_step(self.model, self.data)
         self._elapsed += self._control_dt
@@ -167,7 +182,7 @@ class G1LocomotionEnv(gym.Env):
         # Dense training reward. This is a proposed curriculum, not a benchmark score.
         velocity_reward = float(np.exp(-4 * (forward_velocity - self.command_velocity_m_s) ** 2))
         upright_reward = float(np.clip(-self._observe()[-2], -1.0, 1.0))
-        effort_penalty = float(np.mean(np.square(torque))) * 1e-5
+        effort_penalty = float(np.mean(np.square(control))) * 1e-5
         reward = 1.5 * velocity_reward + 0.5 * upright_reward - effort_penalty
         if fallen:
             reward -= 5.0
