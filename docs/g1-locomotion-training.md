@@ -34,3 +34,26 @@ The evaluator runs fixed held-out seeds 1000–1099 and writes trial-level fall,
 ## Required next step
 
 Confirm GitHub Actions smoke is green, verify real Menagerie G1 loads, then run a tiny training experiment. Inspect learning curves and actual physics rollouts before scaling training. After that train P37 on qualified locomotion data or connect P37's recurrent policy to the environment and evaluate against this baseline with paired held-out conditions.
+
+## P37-native recurrent PPO experiment
+
+P37 now also has a G1 MuJoCo bridge backed by the actual `P37Neuro` recurrent model, `OnPolicyCollector`, and `PPOTrainer`. This is separate from the Stable-Baselines3 benchmark. **No successful G1 walking checkpoint is claimed yet.**
+
+```sh
+cd sim
+uv sync --extra train --extra learn --group dev
+uv run python -m p37_neuro_sim.g1_p37_train \
+  --model /tmp/mujoco_menagerie/unitree_g1/scene.xml \
+  --output artifacts/g1-p37 --updates 1000 --seed 37
+
+uv run python -m p37_neuro_sim.g1_p37_train \
+  --model /tmp/mujoco_menagerie/unitree_g1/scene.xml \
+  --output artifacts/g1-p37-evaluation \
+  --evaluate artifacts/g1-p37/checkpoint
+```
+
+The training command produces P37's integrity-checked `checkpoint/model.pt` and `checkpoint/manifest.json`, plus `history.json`. Evaluation writes `heldout.json` for seeds 1000–1099.
+
+This bridge currently uses a single MuJoCo environment, unnormalized joint residual/velocity features and a small global context vector. It is a genuine P37 neural PPO update pathway, but is still an *experimental training baseline*, lacking the broader locomotion curriculum, meaningful held-out morphology tests, domain randomization, measured disturbance recovery and browser inference export. Do not use its mere training completion to claim that the G1 can walk, that P37 generalizes, or that the model is qualified.
+
+**Next acceptance gate:** verify official G1 loading in Actions, train with sufficient compute, produce rollouts from saved checkpoint, evaluate frozen held-out seeds, and publish video + metrics only if genuinely observed. Subsequent work should add multi-body training and mjswan ONNX parity validation.
