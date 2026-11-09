@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#0b0d10">
+<title>P37 Brain Lab — Real-physics robot viewer</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,Arial;background:#0b0d10;color:#f4f5f7}
+*{box-sizing:border-box}body{margin:0}main{max-width:1100px;margin:auto;padding:32px 24px 64px}
+header{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #252a31;padding:8px 0 24px}
+.wordmark{font-size:16px;font-weight:700;letter-spacing:.06em}.tag{font-size:12px;color:#9ca5b1;border:1px solid #39414d;border-radius:20px;padding:7px 12px}
+h1{font-size:clamp(36px,6vw,72px);line-height:1.05;font-weight:580;letter-spacing:-.055em;max-width:870px;margin:74px 0 22px}
+.lead{font-size:18px;color:#aeb5c0;line-height:1.6;max-width:760px}
+.cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-top:45px}
+.card{border:1px solid #292f38;border-radius:14px;min-height:270px;padding:24px;display:flex;flex-direction:column;justify-content:space-between;background:#12161b}
+.card h2{font-size:23px;font-weight:550;margin:12px 0}.card p{font-size:14px;color:#aeb5c0;line-height:1.55}
+.type{font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:#818c9a}
+a.open{color:#0d1015;background:#e9edf2;border-radius:8px;text-decoration:none;padding:13px 15px;display:inline-block;font-size:14px;font-weight:700;text-align:center}
+a.open:focus-visible{outline:3px solid #80b0ff;outline-offset:3px}
+section{border-top:1px solid #292f38;margin-top:50px;padding-top:28px}h3{font-size:20px;font-weight:600}
+.notice{border-left:3px solid #a0aaba;background:#171c22;padding:15px 19px;color:#cbd1da;line-height:1.65}
+code{color:#c6d2e5}footer{margin-top:55px;color:#87919c;font-size:12px}
+@media(max-width:750px){.cards{grid-template-columns:1fr}main{padding:20px}h1{margin-top:42px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="wordmark">P37 <span style="color:#818b98">/ BRAIN LAB</span></div><span class="tag">Research preview · real physics</span></header>
+<h1>Real robots.<br>Real physics.<br>Measured intelligence.</h1>
+<p class="lead">Explore real articulated robot models in the browser using Google DeepMind's MuJoCo physics engine. This first step verifies robot-model access. P37 policy-driven locomotion, recovery, and cross-embodiment trials will be enabled only after qualified checkpoints and reproducible evaluation are available.</p>
+<div class="cards">
+<article class="card"><div><div class="type">Humanoid · 29 DOF</div><h2>Unitree G1</h2><p>Open the actual G1 model in MuJoCo Live. Inspect articulated joints, gravity, contacts and simulation options.</p></div><a class="open" target="_blank" rel="noopener noreferrer" href="https://live.mujoco.org/?model=github:google-deepmind/mujoco_menagerie/main/unitree_g1/scene.xml">Open real G1 simulation ↗</a></article>
+<article class="card"><div><div class="type">Quadruped</div><h2>Unitree Go2</h2><p>Inspect a physical quadruped model. P37 policy comparison is not yet enabled.</p></div><a class="open" target="_blank" rel="noopener noreferrer" href="https://live.mujoco.org/?model=github:google-deepmind/mujoco_menagerie/main/unitree_go2/scene.xml">Open real Go2 simulation ↗</a></article>
+<article class="card"><div><div class="type">Manipulator</div><h2>Franka Panda</h2><p>Inspect a grasp-capable arm model before enabling actual P37 manipulation testing.</p></div><a class="open" target="_blank" rel="noopener noreferrer" href="https://live.mujoco.org/?model=github:google-deepmind/mujoco_menagerie/main/franka_emika_panda/scene.xml">Open real arm simulation ↗</a></article>
+</div>
+<section><h3>What does this preview validate?</h3><div class="notice"><strong>Real physics, not P37 inference — yet.</strong> These links launch public models in MuJoCo Live, hosted by Google DeepMind. A model standing, falling or moving under gravity is not evidence of a P37 trained policy. No benchmark scores or claimed P37 improvements are shown.</div></section>
+<section><h3>Next release gate</h3><p class="lead">The first genuine P37 G1 demonstration requires a policy checkpoint trained for the G1 observation/action contract, native-vs-browser inference parity, deterministic disturbance trials, actuator safety enforcement, and a report with held-out seeds. See <code>docs/browser-brain-lab.md</code> in the P37 repository.</p></section>
+<footer>Ontos Robotics · P37 Neuro · Experimental robot simulation preview</footer>
+</main>
+</body>
+</html>
