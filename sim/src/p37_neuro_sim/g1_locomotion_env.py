@@ -7,6 +7,7 @@ trained and evaluated before anyone describes it as walking.
 from __future__ import annotations
 
 from pathlib import Path
+from typing import ClassVar
 
 import mujoco
 import numpy as np
@@ -19,7 +20,7 @@ except ImportError as exc:
 
 
 class G1LocomotionEnv(gym.Env):
-    metadata = {"render_modes": []}
+    metadata: ClassVar[dict[str, list[str]]] = {"render_modes": []}
 
     def __init__(
         self,
