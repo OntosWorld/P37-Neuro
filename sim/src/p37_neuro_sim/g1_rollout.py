@@ -108,13 +108,20 @@ def run(model_path: Path, output: Path, trial: Trial, policy: str | None = None)
         if controller:
             command = controller(model, data, trial)
         else:
-            command = np.array(
-                [
-                    (60 * (targets[q] - data.qpos[q]) - 3 * data.qvel[v]) / gear
-                    for q, v, gear in mapping
-                ],
-                dtype=np.float64,
-            )
+            commands = []
+            for index, (q, v, gear) in enumerate(mapping):
+                gain = float(model.actuator_gainprm[index, 0])
+                bias_position = float(model.actuator_biasprm[index, 1])
+                if abs(bias_position) > 1e-8:
+                    if abs(bias_position + gain) > 1e-6 * max(1.0, abs(gain)):
+                        raise ValueError("unsupported position-servo control")
+                    commands.append(float(targets[q] * gear))
+                else:
+                    if abs(gear * gain) < 1e-8:
+                        raise ValueError("invalid motor transmission")
+                    torque = 60 * (targets[q] - data.qpos[q]) - 3 * data.qvel[v]
+                    commands.append(float(torque / (gear * gain)))
+            command = np.asarray(commands, dtype=np.float64)
         limited, rejected = clamp(model, command)
         clamps += rejected
         data.ctrl[:] = limited
