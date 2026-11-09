@@ -1,7 +1,9 @@
 from pathlib import Path
+
 import mujoco
 import numpy as np
 import pytest
+
 from p37_neuro_sim.g1_rollout import Trial, clamp, direct_motor_mapping, run
 
 XML = """<mujoco><option timestep="0.002"/><worldbody>
