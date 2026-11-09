@@ -186,7 +186,7 @@ class RobotIOMapper:
             and safety.effort_limit is not None
             and abs(value) > safety.effort_limit
         ):
-                raise RobotMappingError(
-                    f"joint {mapping.joint!r} effort {value} exceeds manifest "
-                    f"limit {safety.effort_limit}"
-                )
+            raise RobotMappingError(
+                f"joint {mapping.joint!r} effort {value} exceeds manifest "
+                f"limit {safety.effort_limit}"
+            )
