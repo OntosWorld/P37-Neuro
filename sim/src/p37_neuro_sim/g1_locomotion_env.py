@@ -4,6 +4,7 @@ Requires optional sim training dependencies: gymnasium and stable-baselines3.
 The policy learns residual joint targets over the standing pose; it must be
 trained and evaluated before anyone describes it as walking.
 """
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -72,14 +73,17 @@ class G1LocomotionEnv(gym.Env):
             if abs(gear * gain) < 1e-8:
                 raise ValueError("zero motor transmission gain")
             self._actuators.append(
-                (int(self.model.jnt_qposadr[joint_id]),
-                 int(self.model.jnt_dofadr[joint_id]),
-                 gear * gain)
+                (
+                    int(self.model.jnt_qposadr[joint_id]),
+                    int(self.model.jnt_dofadr[joint_id]),
+                    gear * gain,
+                )
             )
         if not self._actuators:
             raise ValueError("robot has no supported motor actuators")
         self._base_joints = [
-            j for j in range(self.model.njnt)
+            j
+            for j in range(self.model.njnt)
             if self.model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE
         ]
         if len(self._base_joints) != 1:
@@ -117,20 +121,23 @@ class G1LocomotionEnv(gym.Env):
         mujoco.mju_quat2Mat(rotation, orientation)
         # World Z axis in local coordinates.
         gravity_local = rotation.reshape(3, 3).T @ np.array([0.0, 0.0, -1.0])
-        return np.concatenate((
-            self.data.qpos[self._joint_q] - self._reference[self._joint_q],
-            self.data.qvel[self._joint_v],
-            self.data.qvel[self._base_v : self._base_v + 3],
-            self.data.qvel[self._base_v + 3 : self._base_v + 6],
-            gravity_local,
-            [self.command_velocity_m_s],
-        )).astype(np.float32)
+        return np.concatenate(
+            (
+                self.data.qpos[self._joint_q] - self._reference[self._joint_q],
+                self.data.qvel[self._joint_v],
+                self.data.qvel[self._base_v : self._base_v + 3],
+                self.data.qvel[self._base_v + 3 : self._base_v + 6],
+                gravity_local,
+                [self.command_velocity_m_s],
+            )
+        ).astype(np.float32)
 
     def reset(self, *, seed: int | None = None, options: dict | None = None):
         super().reset(seed=seed)
         self._reset_model()
-        noise = self.np_random.uniform(-self.reset_noise_rad, self.reset_noise_rad,
-                                       len(self._joint_q))
+        noise = self.np_random.uniform(
+            -self.reset_noise_rad, self.reset_noise_rad, len(self._joint_q)
+        )
         self.data.qpos[self._joint_q] += noise
         mujoco.mj_forward(self.model, self.data)
         self._elapsed = 0.0
@@ -142,8 +149,10 @@ class G1LocomotionEnv(gym.Env):
             raise ValueError("invalid locomotion action")
         action = np.clip(action, -1.0, 1.0)
         target = self._reference[self._joint_q] + self.action_scale_rad * action
-        torque = (self.stiffness * (target - self.data.qpos[self._joint_q])
-                  - self.damping * self.data.qvel[self._joint_v]) / self._gains
+        torque = (
+            self.stiffness * (target - self.data.qpos[self._joint_q])
+            - self.damping * self.data.qvel[self._joint_v]
+        ) / self._gains
         for index in range(self.model.nu):
             if self.model.actuator_ctrllimited[index]:
                 lo, hi = self.model.actuator_ctrlrange[index]
@@ -164,8 +173,12 @@ class G1LocomotionEnv(gym.Env):
             reward -= 5.0
         terminated = bool(fallen)
         truncated = bool(self._elapsed >= self.episode_seconds)
-        info = {"base_height_m": height, "forward_velocity_m_s": forward_velocity,
-                "fallen": bool(fallen), "elapsed_s": self._elapsed}
+        info = {
+            "base_height_m": height,
+            "forward_velocity_m_s": forward_velocity,
+            "fallen": bool(fallen),
+            "elapsed_s": self._elapsed,
+        }
         return self._observe(), float(reward), terminated, truncated, info
 
     def close(self):

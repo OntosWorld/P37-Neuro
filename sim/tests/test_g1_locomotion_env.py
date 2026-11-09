@@ -1,4 +1,5 @@
 """Small real-physics training environment tests (no pretrained checkpoint needed)."""
+
 from pathlib import Path
 
 import numpy as np
@@ -25,6 +26,7 @@ XML = """
 </mujoco>
 """
 
+
 def test_real_mujoco_gym_step(tmp_path: Path) -> None:
     path = tmp_path / "mini.xml"
     path.write_text(XML, encoding="utf-8")
@@ -43,6 +45,7 @@ def test_real_mujoco_gym_step(tmp_path: Path) -> None:
             env.step(np.array([float("nan")]))
     finally:
         env.close()
+
 
 def test_bad_control_period(tmp_path: Path) -> None:
     path = tmp_path / "mini.xml"

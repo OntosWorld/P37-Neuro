@@ -2,6 +2,7 @@
 
 This produces an experimental SB3 PPO checkpoint, *not* a qualified P37 shared brain.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -15,28 +16,41 @@ from p37_neuro_sim.g1_locomotion_env import G1LocomotionEnv
 
 def train(model: Path, output: Path, *, timesteps: int, seed: int) -> None:
     from stable_baselines3 import PPO
+
     if timesteps <= 0:
         raise ValueError("timesteps must be positive")
     output.mkdir(parents=True, exist_ok=True)
     env = G1LocomotionEnv(model)
     try:
-        agent = PPO("MlpPolicy", env, seed=seed, verbose=1, device="cpu",
-                    n_steps=1024, batch_size=256)
+        agent = PPO(
+            "MlpPolicy", env, seed=seed, verbose=1, device="cpu", n_steps=1024, batch_size=256
+        )
         agent.learn(total_timesteps=timesteps)
         agent.save(str(output / "g1_ppo.zip"))
-        (output / "training.json").write_text(json.dumps({
-            "kind": "experimental_g1_locomotion_baseline",
-            "policy_family": "stable_baselines3_PPO",
-            "is_trained_p37_brain": False,
-            "timesteps": timesteps, "seed": seed, "model": str(model.resolve()),
-        }, indent=2) + "\n", encoding="utf-8")
+        (output / "training.json").write_text(
+            json.dumps(
+                {
+                    "kind": "experimental_g1_locomotion_baseline",
+                    "policy_family": "stable_baselines3_PPO",
+                    "is_trained_p37_brain": False,
+                    "timesteps": timesteps,
+                    "seed": seed,
+                    "model": str(model.resolve()),
+                },
+                indent=2,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
     finally:
         env.close()
 
 
-def evaluate(model: Path, checkpoint: Path, output: Path, *,
-             seeds: range = range(1000, 1100)) -> dict:
+def evaluate(
+    model: Path, checkpoint: Path, output: Path, *, seeds: range = range(1000, 1100)
+) -> dict:
     from stable_baselines3 import PPO
+
     env = G1LocomotionEnv(model)
     agent = PPO.load(str(checkpoint), device="cpu")
     trials = []
@@ -51,14 +65,22 @@ def evaluate(model: Path, checkpoint: Path, output: Path, *,
                 total_reward += rew
                 steps += 1
                 if terminated or truncated:
-                    trials.append({"seed": seed, "fallen": info["fallen"],
-                                   "sim_seconds": info["elapsed_s"],
-                                   "mean_reward": total_reward / steps,
-                                   "final_forward_velocity_m_s": info["forward_velocity_m_s"]})
+                    trials.append(
+                        {
+                            "seed": seed,
+                            "fallen": info["fallen"],
+                            "sim_seconds": info["elapsed_s"],
+                            "mean_reward": total_reward / steps,
+                            "final_forward_velocity_m_s": info["forward_velocity_m_s"],
+                        }
+                    )
                     break
-        result = {"checkpoint": str(checkpoint), "kind": "experimental_baseline_not_p37",
-                  "trials": trials,
-                  "survival_fraction": sum(not t["fallen"] for t in trials) / len(trials)}
+        result = {
+            "checkpoint": str(checkpoint),
+            "kind": "experimental_baseline_not_p37",
+            "trials": trials,
+            "survival_fraction": sum(not t["fallen"] for t in trials) / len(trials),
+        }
         output.parent.mkdir(parents=True, exist_ok=True)
         output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         return result
@@ -78,6 +100,7 @@ def main():
         print(json.dumps(evaluate(args.model, args.evaluate, args.output / "heldout.json")))
     else:
         train(args.model, args.output, timesteps=args.timesteps, seed=args.seed)
+
 
 if __name__ == "__main__":
     main()

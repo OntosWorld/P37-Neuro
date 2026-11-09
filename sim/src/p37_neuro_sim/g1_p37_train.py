@@ -2,6 +2,7 @@
 
 Experimental P37 RL research pipeline. A saved checkpoint is not proof of walking.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -102,12 +103,14 @@ def train(model_path: Path, output: Path, *, updates: int, seed: int) -> None:
             standard = batch.advantages.std(unbiased=False).clamp_min(1e-6)
             batch.advantages = (batch.advantages - batch.advantages.mean()) / standard
             metrics = trainer.step(batch)
-            history.append({
-                "update": update + 1,
-                "loss": metrics.loss,
-                "policy_loss": metrics.policy_loss,
-                "value_loss": metrics.value_loss,
-            })
+            history.append(
+                {
+                    "update": update + 1,
+                    "loss": metrics.loss,
+                    "policy_loss": metrics.policy_loss,
+                    "value_loss": metrics.value_loss,
+                }
+            )
     finally:
         env.close()
     output.mkdir(parents=True, exist_ok=True)
@@ -122,6 +125,7 @@ def train(model_path: Path, output: Path, *, updates: int, seed: int) -> None:
         },
     )
     (output / "history.json").write_text(json.dumps(history, indent=2) + "\n")
+
 
 def evaluate(model_path: Path, checkpoint: Path, output: Path) -> None:
     brain, manifest = load_checkpoint(checkpoint)
@@ -151,24 +155,32 @@ def evaluate(model_path: Path, checkpoint: Path, output: Path) -> None:
                 reward_total += float(reward[0])
                 if bool(done[0]):
                     break
-            trials.append({
-                "seed": seed,
-                "total_reward": reward_total,
-                "steps": count,
-                "episode_ended": bool(done[0]),
-            })
+            trials.append(
+                {
+                    "seed": seed,
+                    "total_reward": reward_total,
+                    "steps": count,
+                    "episode_ended": bool(done[0]),
+                }
+            )
     finally:
         env.close()
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps({
-        "kind": "P37Neuro_unqualified_g1_simulation",
-        "checkpoint_sha256": manifest["sha256"],
-        "trials": trials,
-        "warning": (
-            "Evaluation does not yet distinguish timeout from falls or "
-            "measure walking recovery."
-        ),
-    }, indent=2) + "\n")
+    output.write_text(
+        json.dumps(
+            {
+                "kind": "P37Neuro_unqualified_g1_simulation",
+                "checkpoint_sha256": manifest["sha256"],
+                "trials": trials,
+                "warning": (
+                    "Evaluation does not yet distinguish timeout from falls or "
+                    "measure walking recovery."
+                ),
+            },
+            indent=2,
+        )
+        + "\n"
+    )
 
 
 def main() -> None:

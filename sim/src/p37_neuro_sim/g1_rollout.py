@@ -1,4 +1,5 @@
 """Actual MuJoCo physics trial for G1; PD hold is NOT a trained walking policy."""
+
 from __future__ import annotations
 
 import argparse
@@ -33,6 +34,7 @@ class Trial:
         if self.fall_drop_m <= 0:
             raise ValueError("fall threshold must be positive")
 
+
 def direct_motor_mapping(model):
     mapping = []
     for i in range(model.nu):
@@ -40,7 +42,8 @@ def direct_motor_mapping(model):
             raise ValueError(f"unsupported transmission at actuator {i}")
         j = int(model.actuator_trnid[i, 0])
         if int(model.jnt_type[j]) not in (
-            int(mujoco.mjtJoint.mjJNT_HINGE), int(mujoco.mjtJoint.mjJNT_SLIDE)
+            int(mujoco.mjtJoint.mjJNT_HINGE),
+            int(mujoco.mjtJoint.mjJNT_SLIDE),
         ):
             raise ValueError(f"unsupported joint type at actuator {i}")
         gear = float(model.actuator_gear[i, 0])
@@ -50,6 +53,7 @@ def direct_motor_mapping(model):
     if not mapping:
         raise ValueError("no direct joint actuators found")
     return mapping
+
 
 def clamp(model, commands):
     commands = np.asarray(commands, dtype=np.float64)
@@ -65,6 +69,7 @@ def clamp(model, commands):
             result[i] = limited
     return result, rejected
 
+
 def run(model_path: Path, output: Path, trial: Trial, policy: str | None = None):
     trial.validate()
     model = mujoco.MjModel.from_xml_path(str(model_path.resolve()))
@@ -78,8 +83,7 @@ def run(model_path: Path, output: Path, trial: Trial, policy: str | None = None)
     mujoco.mj_forward(model, data)
     targets = data.qpos.copy()
     free = [
-        j for j in range(model.njnt)
-        if int(model.jnt_type[j]) == int(mujoco.mjtJoint.mjJNT_FREE)
+        j for j in range(model.njnt) if int(model.jnt_type[j]) == int(mujoco.mjtJoint.mjJNT_FREE)
     ]
     if not free:
         raise ValueError("expected a free-base humanoid model")
@@ -104,8 +108,13 @@ def run(model_path: Path, output: Path, trial: Trial, policy: str | None = None)
         if controller:
             command = controller(model, data, trial)
         else:
-            command = np.array([(60 * (targets[q] - data.qpos[q]) - 3 * data.qvel[v]) / gear
-                                for q, v, gear in mapping], dtype=np.float64)
+            command = np.array(
+                [
+                    (60 * (targets[q] - data.qpos[q]) - 3 * data.qvel[v]) / gear
+                    for q, v, gear in mapping
+                ],
+                dtype=np.float64,
+            )
         limited, rejected = clamp(model, command)
         clamps += rejected
         data.ctrl[:] = limited
@@ -116,11 +125,16 @@ def run(model_path: Path, output: Path, trial: Trial, policy: str | None = None)
             mujoco.mj_step(model, data)
         z = float(data.xpos[body, 2])
         fallen = z < start_z - trial.fall_drop_m
-        samples.append({"time_s": float(data.time), "base_height_m": z,
-                        "fallen": int(fallen), "safety_clamps": rejected})
+        samples.append(
+            {
+                "time_s": float(data.time),
+                "base_height_m": z,
+                "fallen": int(fallen),
+                "safety_clamps": rejected,
+            }
+        )
         states.append(
-            {"time_s": float(data.time), "qpos": data.qpos.tolist(),
-             "qvel": data.qvel.tolist()}
+            {"time_s": float(data.time), "qpos": data.qpos.tolist(), "qvel": data.qvel.tolist()}
         )
         if fallen:
             fall_s = float(data.time)
@@ -131,15 +145,22 @@ def run(model_path: Path, output: Path, trial: Trial, policy: str | None = None)
         writer.writeheader()
         writer.writerows(samples)
     (output / "trajectory.json").write_text(json.dumps(states), encoding="utf-8")
-    result = {"level": "simulation_only", "controller": policy or "PD_hold_not_locomotion",
-              "model_sha256": hashlib.sha256(model_path.read_bytes()).hexdigest(),
-              "mujoco_version": mujoco.__version__, "trial": asdict(trial),
-              "push_direction": direction, "fall_time_s": fall_s,
-              "survived_trial": fall_s is None, "safety_clamps": clamps,
-              "elapsed_s": float(data.time),
-              "warning": "No P37 learned walking capability is demonstrated by this harness."}
+    result = {
+        "level": "simulation_only",
+        "controller": policy or "PD_hold_not_locomotion",
+        "model_sha256": hashlib.sha256(model_path.read_bytes()).hexdigest(),
+        "mujoco_version": mujoco.__version__,
+        "trial": asdict(trial),
+        "push_direction": direction,
+        "fall_time_s": fall_s,
+        "survived_trial": fall_s is None,
+        "safety_clamps": clamps,
+        "elapsed_s": float(data.time),
+        "warning": "No P37 learned walking capability is demonstrated by this harness.",
+    }
     (output / "summary.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
     return result
+
 
 def main():
     p = argparse.ArgumentParser()
@@ -150,8 +171,18 @@ def main():
     p.add_argument("--push-newtons", type=float, default=45.0)
     p.add_argument("--policy", help="Trusted module:function; returns actuator commands")
     a = p.parse_args()
-    print(json.dumps(run(a.model, a.output, Trial(seed=a.seed, seconds=a.duration,
-                    push_newtons=a.push_newtons), policy=a.policy), indent=2))
+    print(
+        json.dumps(
+            run(
+                a.model,
+                a.output,
+                Trial(seed=a.seed, seconds=a.duration, push_newtons=a.push_newtons),
+                policy=a.policy,
+            ),
+            indent=2,
+        )
+    )
+
 
 if __name__ == "__main__":
     main()

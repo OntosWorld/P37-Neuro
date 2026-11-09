@@ -13,10 +13,12 @@ XML = """<mujoco><option timestep="0.002"/><worldbody>
 <geom type="capsule" size=".04 .1" mass="1"/></body></body></worldbody>
 <actuator><motor joint="hinge" ctrlrange="-20 20" ctrllimited="true"/></actuator></mujoco>"""
 
+
 def test_validation():
     Trial().validate()
     with pytest.raises(ValueError):
         Trial(seconds=1, push_start=2).validate()
+
 
 def test_real_physics_rollout(tmp_path: Path):
     path = tmp_path / "scene.xml"
@@ -28,8 +30,11 @@ def test_real_physics_rollout(tmp_path: Path):
     with pytest.raises(ValueError):
         clamp(model, np.array([float("nan")]))
     out = tmp_path / "out"
-    result = run(path, out, Trial(seconds=0.1, push_start=0.02, push_duration=0.02,
-                                 push_newtons=1, fall_drop_m=1))
+    result = run(
+        path,
+        out,
+        Trial(seconds=0.1, push_start=0.02, push_duration=0.02, push_newtons=1, fall_drop_m=1),
+    )
     assert result["level"] == "simulation_only"
     assert result["controller"] == "PD_hold_not_locomotion"
     for name in ("timeseries.csv", "trajectory.json", "summary.json"):
