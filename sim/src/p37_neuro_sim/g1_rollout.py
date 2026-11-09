@@ -1,5 +1,6 @@
 """Actual MuJoCo physics trial for G1; PD hold is NOT a trained walking policy."""
 from __future__ import annotations
+
 import argparse
 import csv
 import hashlib
@@ -10,6 +11,7 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
+
 
 @dataclass(frozen=True)
 class Trial:
@@ -37,7 +39,9 @@ def direct_motor_mapping(model):
         if int(model.actuator_trntype[i]) != int(mujoco.mjtTrn.mjTRN_JOINT):
             raise ValueError(f"unsupported transmission at actuator {i}")
         j = int(model.actuator_trnid[i, 0])
-        if int(model.jnt_type[j]) not in (int(mujoco.mjtJoint.mjJNT_HINGE), int(mujoco.mjtJoint.mjJNT_SLIDE)):
+        if int(model.jnt_type[j]) not in (
+            int(mujoco.mjtJoint.mjJNT_HINGE), int(mujoco.mjtJoint.mjJNT_SLIDE)
+        ):
             raise ValueError(f"unsupported joint type at actuator {i}")
         gear = float(model.actuator_gear[i, 0])
         if abs(gear) < 1e-9:
@@ -73,7 +77,10 @@ def run(model_path: Path, output: Path, trial: Trial, policy: str | None = None)
         mujoco.mj_resetData(model, data)
     mujoco.mj_forward(model, data)
     targets = data.qpos.copy()
-    free = [j for j in range(model.njnt) if int(model.jnt_type[j]) == int(mujoco.mjtJoint.mjJNT_FREE)]
+    free = [
+        j for j in range(model.njnt)
+        if int(model.jnt_type[j]) == int(mujoco.mjtJoint.mjJNT_FREE)
+    ]
     if not free:
         raise ValueError("expected a free-base humanoid model")
     body = int(model.jnt_bodyid[free[0]])
@@ -111,7 +118,10 @@ def run(model_path: Path, output: Path, trial: Trial, policy: str | None = None)
         fallen = z < start_z - trial.fall_drop_m
         samples.append({"time_s": float(data.time), "base_height_m": z,
                         "fallen": int(fallen), "safety_clamps": rejected})
-        states.append({"time_s": float(data.time), "qpos": data.qpos.tolist(), "qvel": data.qvel.tolist()})
+        states.append(
+            {"time_s": float(data.time), "qpos": data.qpos.tolist(),
+             "qvel": data.qvel.tolist()}
+        )
         if fallen:
             fall_s = float(data.time)
             break
