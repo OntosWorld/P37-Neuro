@@ -162,7 +162,10 @@ def evaluate(model_path: Path, checkpoint: Path, output: Path) -> None:
         "kind": "P37Neuro_unqualified_g1_simulation",
         "checkpoint_sha256": manifest["sha256"],
         "trials": trials,
-        "warning": "Evaluation does not yet distinguish timeout from falls or measure walking recovery.",
+        "warning": (
+            "Evaluation does not yet distinguish timeout from falls or "
+            "measure walking recovery."
+        ),
     }, indent=2) + "\n")
 
 
