@@ -1,10 +1,6 @@
 name: Publish P37 Brain Lab to Cloudflare
 
 on:
-  workflow_run:
-    workflows: ["Browser Brain Lab"]
-    types: [completed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       build_run_id:
@@ -18,10 +14,6 @@ permissions:
 
 jobs:
   publish:
-    if: >-
-      (github.event_name == 'workflow_dispatch') ||
-      (github.event.workflow_run.event == 'push' &&
-       github.event.workflow_run.conclusion == 'success')
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -29,7 +21,7 @@ jobs:
       - name: Download verified static simulation site
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN: ${{ inputs.build_run_id || github.event.workflow_run.id }}
+          SOURCE_RUN: ${{ inputs.build_run_id }}
         run: |
           mkdir -p _site
           gh run download "$SOURCE_RUN" --name p37-browser-brain-lab --dir _site
