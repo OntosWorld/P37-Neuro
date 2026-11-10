@@ -181,9 +181,12 @@ class RobotIOMapper:
                     f"joint {mapping.joint!r} velocity {value} exceeds manifest "
                     f"limit {safety.velocity_limit}"
                 )
-        elif mapping.control_mode is ControlMode.EFFORT:
-            if safety.effort_limit is not None and abs(value) > safety.effort_limit:
-                raise RobotMappingError(
-                    f"joint {mapping.joint!r} effort {value} exceeds manifest "
-                    f"limit {safety.effort_limit}"
-                )
+        elif (
+            mapping.control_mode is ControlMode.EFFORT
+            and safety.effort_limit is not None
+            and abs(value) > safety.effort_limit
+        ):
+            raise RobotMappingError(
+                f"joint {mapping.joint!r} effort {value} exceeds manifest "
+                f"limit {safety.effort_limit}"
+            )

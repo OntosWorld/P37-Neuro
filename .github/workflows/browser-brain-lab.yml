@@ -1,0 +1,99 @@
+name: Browser Brain Lab
+
+on:
+  pull_request:
+    paths:
+      - "sim/web/**"
+      - ".github/workflows/browser-brain-lab.yml"
+  push:
+    branches: [main]
+    paths:
+      - "sim/web/**"
+      - ".github/workflows/browser-brain-lab.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install browser simulation builder
+        run: python -m pip install "mjswan" "pytest>=8.3"
+      - name: Run static tests
+        run: |
+          python -m compileall -q sim/web/build_mjswan.py sim/web/assemble_site.py
+          python -m pytest -q sim/web/test_portal.py
+      - name: Fetch official virtual robot models
+        run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
+      - name: Build MuJoCo WebAssembly + three robot scenes
+        run: |
+          BASE_PATH="/simulator/"
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/main" ]]; then
+            BASE_PATH="/${GITHUB_REPOSITORY#*/}/simulator/"
+          fi
+          python sim/web/build_mjswan.py --menagerie _menagerie --base-path "$BASE_PATH"
+      - name: Assemble and validate static website
+        run: |
+          python sim/web/assemble_site.py --output _site
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          manifest = json.loads(Path("_site/simulator/manifest.json").read_text())
+          scenes = {s["id"] for p in manifest["projects"] for s in p["scenes"]}
+          assert {"unitree_g1", "unitree_go2", "franka_panda"} <= scenes
+          assert Path("_site/index.html").is_file()
+          assert Path("_site/simulator/index.html").is_file()
+          print("Built real robot scenes:", sorted(scenes))
+          PY
+      - name: Record provenance
+        run: |
+          python - <<'PY'
+          import importlib.metadata
+          import json
+          import subprocess
+          from pathlib import Path
+          sha = subprocess.check_output(["git", "-C", "_menagerie", "rev-parse", "HEAD"], text=True).strip()
+          info = {
+              "model_origin": "google-deepmind/mujoco_menagerie",
+              "menagerie_commit": sha,
+              "mjswan": importlib.metadata.version("mjswan"),
+              "mujoco": importlib.metadata.version("mujoco"),
+              "policy": "none",
+              "capability_evidence": False,
+          }
+          Path("_site/build-info.json").write_text(json.dumps(info, indent=2) + "\n")
+          PY
+      - name: Publish preview artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-browser-brain-lab
+          path: _site/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Prepare GitHub Pages artifact on main
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site/
+
+  deploy:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Publish Brain Lab
+        id: deployment
+        uses: actions/deploy-pages@v4
