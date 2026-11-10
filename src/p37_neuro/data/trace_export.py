@@ -47,8 +47,12 @@ class TraceProvenance:
         if self.outcome not in {"success", "failure", "unverified"}:
             raise ValueError("invalid outcome")
         required = (
-            self.code_commit, self.simulator, self.simulator_version,
-            self.robot_description_sha256, self.adapter_version, self.evaluation_protocol,
+            self.code_commit,
+            self.simulator,
+            self.simulator_version,
+            self.robot_description_sha256,
+            self.adapter_version,
+            self.evaluation_protocol,
         )
         if any(not value.strip() for value in required):
             raise ValueError("incomplete provenance")
@@ -87,18 +91,20 @@ def export_episode(
         if step.reward is not None and not isfinite(step.reward):
             raise ValueError("reward must be finite")
         previous_time = t
-        frames.append({
-            "t": t,
-            "action_t": action_t,
-            "joint_position": _finite_channels(observation.joint_position, "joint_position"),
-            "joint_velocity": _finite_channels(observation.joint_velocity, "joint_velocity"),
-            "state": _finite_channels(observation.state, "state"),
-            "joint_command": _finite_channels(action.joint_commands, "joint_command"),
-            "reward": step.reward,
-            "terminal": step.terminal,
-            "failure_code": step.failure_code,
-            "intervention": step.intervention,
-        })
+        frames.append(
+            {
+                "t": t,
+                "action_t": action_t,
+                "joint_position": _finite_channels(observation.joint_position, "joint_position"),
+                "joint_velocity": _finite_channels(observation.joint_velocity, "joint_velocity"),
+                "state": _finite_channels(observation.state, "state"),
+                "joint_command": _finite_channels(action.joint_commands, "joint_command"),
+                "reward": step.reward,
+                "terminal": step.terminal,
+                "failure_code": step.failure_code,
+                "intervention": step.intervention,
+            }
+        )
     return {
         "schema_version": SCHEMA_VERSION,
         "episode_id": episode.episode_id,
