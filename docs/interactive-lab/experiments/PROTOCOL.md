@@ -8,7 +8,7 @@ The robot arms are **procedural 2-joint reference models**, not real manufacture
 
 ## Controller and claims
 
-The controller is **analytic inverse kinematics + joint-space PD + gravity compensation**. No P37 learned policy is loaded. Neither morphology is held out from training because there is **no training**.
+The controller is **analytic inverse kinematics + MuJoCo position servos**. No P37 learned policy is loaded. Neither morphology is held out from training because there is **no training**.
 
 Valid statement: "Two robot models execute the same reach target under a deterministic baseline controller in MuJoCo, with separately measured recorded outcomes."
 
@@ -25,7 +25,7 @@ Invalid statements: "P37 learned cross-embodiment transfer", "one frozen trained
 - Duration: 3.0 s, samples every 10 simulation steps
 - Success criterion: terminal end-effector Euclidean X/Z position error <= 0.045 m
 - Seed: 7 by default (recorded in the artifact; no stochastic model perturbations)
-- Recorded signals: both joint positions/velocities, commanded motor torques, tip X/Z, target X/Z, positional error, interventions/failures
+- Recorded signals: both joint positions/velocities, commanded joint position targets, tip X/Z, target X/Z, positional error, interventions/failures
 - Provenance: source revision, XML SHA-256 per model, MuJoCo version, evidence level, controller identity, declared outcome
 
 ## Reproduce
