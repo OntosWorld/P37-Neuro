@@ -23,9 +23,18 @@ class P37G1Env:
     """Single-physics-environment vector adapter for P37's PPO collector."""
 
     def __init__(
-        self, model_path: Path, *, reset_on_done: bool = True, push_newtons: float = 0.0
+        self,
+        model_path: Path,
+        *,
+        reset_on_done: bool = True,
+        push_newtons: float = 0.0,
+        fall_height_m: float = 0.45,
     ) -> None:
-        self.sim = G1LocomotionEnv(model_path, push_newtons=push_newtons)
+        self.sim = G1LocomotionEnv(
+            model_path,
+            push_newtons=push_newtons,
+            fall_height_m=fall_height_m,
+        )
         self.reset_on_done = reset_on_done
         self.last_info: dict = {}
         self.joints = len(self.sim._actuators)
