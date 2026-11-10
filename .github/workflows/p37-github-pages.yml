@@ -53,12 +53,15 @@ jobs:
               for scene in project["scenes"]
           }
           assert {"unitree_g1", "unitree_go2", "franka_panda", "unitree_h1", "booster_t1", "boston_dynamics_spot", "crazyflie_2"} <= scenes
-          assert len(scenes) >= 10
+          assert len(scenes) >= 13
+          assert {"g1_impact_lab", "go2_contact_field", "franka_gravity_stack"} <= scenes
           assert (site / "index.html").is_file()
           assert (site / "simulator/index.html").is_file()
           assert (site / "catalog.json").is_file()
           assert (site / "studio.css").is_file()
           assert (site / "studio.js").is_file()
+          assert (site / "demos.css").is_file()
+          assert (site / "demo-catalog.json").is_file()
           metadata = {
               "host": "github-pages",
               "repository": "OntosRobotics/P37-Neuro",
