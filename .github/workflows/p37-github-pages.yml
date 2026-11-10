@@ -1,0 +1,129 @@
+name: P37 Brain Lab — GitHub Pages
+
+on:
+  pull_request:
+    paths:
+      - "sim/web/**"
+      - ".github/workflows/p37-github-pages.yml"
+  push:
+    branches: [main]
+    paths:
+      - "sim/web/**"
+      - ".github/workflows/p37-github-pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "p37-brain-lab-github-pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and test GitHub Pages site
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install MuJoCo web builder and test dependencies
+        run: python -m pip install "mjswan" "pytest>=8.3" "playwright>=1.55,<2"
+      - name: Fetch actual robot models
+        run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
+      - name: Build for GitHub Pages project URL
+        run: |
+          python sim/web/build_mjswan.py \
+            --menagerie _menagerie \
+            --base-path /P37-Neuro/simulator/
+          python sim/web/assemble_site.py --output _pages
+          python - <<'PY'
+          import importlib.metadata
+          import json
+          import subprocess
+          from pathlib import Path
+
+          site = Path("_pages")
+          manifest = json.loads((site / "simulator/manifest.json").read_text())
+          scenes = {
+              scene["id"]
+              for project in manifest["projects"]
+              for scene in project["scenes"]
+          }
+          assert {"unitree_g1", "unitree_go2", "franka_panda"} <= scenes
+          assert (site / "index.html").is_file()
+          assert (site / "simulator/index.html").is_file()
+          metadata = {
+              "host": "github-pages",
+              "repository": "OntosRobotics/P37-Neuro",
+              "robot_models": sorted(scenes),
+              "menagerie_commit": subprocess.check_output(
+                  ["git", "-C", "_menagerie", "rev-parse", "HEAD"],
+                  text=True,
+              ).strip(),
+              "mjswan": importlib.metadata.version("mjswan"),
+              "mujoco": importlib.metadata.version("mujoco"),
+              "policy": "none",
+              "p37_locomotion_qualified": False,
+          }
+          (site / "build-info.json").write_text(
+              json.dumps(metadata, indent=2) + "\n",
+              encoding="utf-8",
+          )
+          print("Prepared GitHub Pages robots:", sorted(scenes))
+          PY
+      - name: Install headless Chromium
+        run: python -m playwright install --with-deps chromium
+      - name: Browser check using exact /P37-Neuro/ public URL prefix
+        run: |
+          python sim/web/e2e_test.py \
+            --site _pages \
+            --url-prefix /P37-Neuro/ \
+            --screenshots _pages_test_results
+      - name: Keep browser screenshots and results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-github-pages-browser-evidence
+          path: _pages_test_results/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Upload public website preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-github-pages-site
+          path: _pages/
+          if-no-files-found: error
+          retention-days: 14
+      - name: Package website for GitHub Pages
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _pages/
+
+  deploy:
+    name: Publish at GitHub Pages
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Confirm GitHub Pages is enabled
+        uses: actions/configure-pages@v5
+      - name: Publish static simulation site
+        id: deployment
+        uses: actions/deploy-pages@v4
+      - name: Confirm expected deployment
+        env:
+          PAGE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          echo "P37 Brain Lab published: $PAGE_URL"
+          test -n "$PAGE_URL"
