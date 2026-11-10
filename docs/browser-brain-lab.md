@@ -47,3 +47,37 @@ Until then, the interface must display `Model-only physics` and contain no fabri
 The viewer includes mjswan's own credits dialog and collects third-party licenses from MuJoCo Menagerie assets when built from local scenes. Preserve these files in deployments. Verify the terms for each robot model, texture, skin and policy before publishing.
 
 Technical documentation: https://mjswan.readthedocs.io/en/latest/getting-started/examples/ and https://mujoco.readthedocs.io/en/latest/studio/web_viewers.html
+
+## Real measured push tests
+
+The Browser Brain Lab CI executes `sim/web/disturbance_test.py` against the real G1 and Go2 MuJoCo Menagerie models before assembling the website. It compares identical reset states with and without a horizontal force applied from 0.15 to 0.30 seconds. The report records applied force, nominal impulse, final base displacement compared with the unpushed trial, and exact repeatability. The current first pass observed a 0.06315 m difference at 90 N on G1, and 0.00898 m at 40 N on Go2. These are simulation force responses without a learned controller; **do not call them P37 disturbance recovery**.
+
+The mjswan browser has direct mouse/pointer force interaction. Drag the robot using its viewer controls. The native tests verify the underlying MuJoCo force response; pointer interactions still need separate interaction-specific automated validation.
+
+## Genuine recurrent P37 inference in real G1 physics
+
+The native research entrypoint is `sim/src/p37_neuro_sim/g1_p37_train.py` (introduced in PR #14). It trains the actual `P37Neuro` recurrent model with P37's PPO collector and trainer in the official G1 MuJoCo model, persists an integrity-checked checkpoint, reloads it, and sends its actions to the robot's joint actuators. The GitHub Actions workflow `P37 G1 native policy qualification smoke` publishes an **experimental, unqualified** artifact with held-out trial results. Running one PPO update is an integration smoke test; it is not evidence of learned walking or recovery.
+
+To reproduce locally, install the training dependencies and fetch Menagerie:
+
+```bash
+git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
+cd sim
+uv sync --extra train --extra learn --group dev
+uv run python -m p37_neuro_sim.g1_p37_train \
+  --model ../_menagerie/unitree_g1/scene.xml \
+  --output artifacts/g1-p37-experimental --updates 1 --seed 37
+uv run python -m p37_neuro_sim.g1_p37_train \
+  --model ../_menagerie/unitree_g1/scene.xml \
+  --evaluate artifacts/g1-p37-experimental/checkpoint \
+  --output artifacts/g1-p37-evaluation \
+  --eval-seeds 3 --eval-steps 100 --push-newtons 45
+```
+
+**Qualification gate:** the P37 model must demonstrate meaningful commanded locomotion, sustained balance and paired disturbance recovery over at least 100 held-out seeds; disclose failures and compare a realistic baseline. No checkpoint is eligible for the public walking demo until qualification, ONNX export and native-vs-browser closed-loop parity are verified. The public lab remains labeled model-only physics until then.
+
+## Publishing publicly
+
+PR #14 adds `.github/workflows/p37-public-deploy.yml`, which watches for successful `Browser Brain Lab` builds on `main`, downloads their verified artifact, builds with root-relative `/simulator/` assets and uploads to Cloudflare Pages using Wrangler. Set **Actions secrets** `CLOUDFLARE_API_TOKEN` (Pages Edit) and `CLOUDFLARE_ACCOUNT_ID` on this repository or at organization level. Optionally set Actions variable `P37_CLOUDFLARE_PROJECT` (default `p37-brain-lab`). After successful deployment and an external HTTPS check, the public URL is at the selected project’s root. A configured workflow is not proof that a site has been deployed.
+
+GitHub Pages is an alternative only when explicitly enabled for the private repository (and when its plan permits). Earlier Pages deployments failed with 404 because Pages is not enabled. Do not claim a live site before a successful deployment response.

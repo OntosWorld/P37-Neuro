@@ -15,6 +15,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+train = ["gymnasium>=1.0,<2"]
+export = ["onnx>=1.16,<2", "onnxruntime>=1.20,<2"]
 learn = ["p37-neuro-ml"]
 
 [tool.uv.sources]

@@ -32,13 +32,20 @@ jobs:
           python -m pytest -q sim/web/test_portal.py
       - name: Fetch official virtual robot models
         run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
-      - name: Build MuJoCo WebAssembly + three robot scenes
+      - name: Verify measured external forces on G1 and Go2
         run: |
-          BASE_PATH="/simulator/"
-          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/main" ]]; then
-            BASE_PATH="/${GITHUB_REPOSITORY#*/}/simulator/"
-          fi
-          python sim/web/build_mjswan.py --menagerie _menagerie --base-path "$BASE_PATH"
+          python sim/web/disturbance_test.py \
+            --menagerie _menagerie \
+            --out _physics/g1-go2-force-results.json
+      - name: Upload reproducible disturbance measurements
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-physical-force-evidence
+          path: _physics/g1-go2-force-results.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Build MuJoCo WebAssembly + three robot scenes
+        run: python sim/web/build_mjswan.py --menagerie _menagerie --base-path /simulator/
       - name: Assemble and validate static website
         run: |
           python sim/web/assemble_site.py --output _site
@@ -75,7 +82,7 @@ jobs:
           python -m pip install "playwright>=1.55,<2"
           python -m playwright install --with-deps chromium
       - name: Run real browser scene, selection and reset test
-        run: python sim/web/e2e_test.py --site _site --screenshots _screenshots
+        run: python sim/web/e2e_test.py --site _site --screenshots _screenshots --url-prefix /
       - name: Upload browser screenshots and errors
         if: always()
         uses: actions/upload-artifact@v4
@@ -92,13 +99,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Prepare GitHub Pages artifact on main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.P37_ENABLE_GITHUB_PAGES == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site/
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.P37_ENABLE_GITHUB_PAGES == 'true'
     needs: build
     runs-on: ubuntu-latest
     permissions:
