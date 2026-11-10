@@ -1,6 +1,6 @@
 """Generate *measured MuJoCo* reach trials for two different two-link arms.
 
-This is an engineering baseline using analytic IK and PD + gravity compensation.
+This is an engineering baseline using analytic IK and MuJoCo position servos.
 No P37 trained policy is loaded. Execution is T2 simulated physics evidence only.
 
 Run (with MuJoCo installed):
@@ -68,8 +68,8 @@ def robot_xml(config: RobotConfig) -> str:
     <site name="goal" pos="{TARGET_X_M} 0 {TARGET_Z_M}" size=".022" rgba="1 .8 .45 1"/>
   </worldbody>
   <actuator>
-    <motor name="shoulder_torque" joint="shoulder" gear="1"/>
-    <motor name="elbow_torque" joint="elbow" gear="1"/>
+    <position name="shoulder_servo" joint="shoulder" kp="220" kv="30"/>
+    <position name="elbow_servo" joint="elbow" kp="180" kv="24"/>
   </actuator>
 </mujoco>"""
 
@@ -116,19 +116,12 @@ def record_run(
     tip_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_SITE, "tip")
     assert tip_id >= 0
 
-    # No learned P37 checkpoint is attached. All forces are from this baseline controller.
-    kp = (50.0, 38.0)
-    kd = (9.0, 7.0)
+    # No learned P37 checkpoint is attached. MuJoCo position servos track analytic IK.
     total_steps = round(DURATION_S / DT_S)
     recorded: list[EpisodeStep] = []
     for i in range(total_steps + 1):
         mujoco.mj_forward(model, data)
-        controls = [
-            kp[j] * (target[j] - float(data.qpos[j]))
-            - kd[j] * float(data.qvel[j])
-            + float(data.qfrc_bias[j])
-            for j in range(2)
-        ]
+        controls = list(target)
         if i % SAMPLE_EVERY == 0:
             tip = data.site_xpos[tip_id]
             error = math.hypot(float(tip[0]) - TARGET_X_M, float(tip[2]) - TARGET_Z_M)
@@ -176,7 +169,7 @@ def record_run(
         task_id=TASK_ID,
         source="mujoco-closed-loop-pd-ik-baseline",
         steps=recorded,
-        metadata={"controller": "analytic-ik-pd-gravity", "training": "none"},
+        metadata={"controller": "analytic-ik-mujoco-position-servo", "training": "none"},
     )
     provenance = TraceProvenance(
         checkpoint_sha256="",
@@ -184,7 +177,7 @@ def record_run(
         simulator="MuJoCo",
         simulator_version=mujoco.__version__,
         robot_description_sha256=hashlib.sha256(xml.encode("utf-8")).hexdigest(),
-        adapter_version="analytic-ik-pd-v1",
+        adapter_version="analytic-ik-position-servo-v2",
         seed=seed,
         training_membership="unknown",
         evidence_level="T2",
