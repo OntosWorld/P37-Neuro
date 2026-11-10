@@ -32,6 +32,18 @@ jobs:
           python -m pytest -q sim/web/test_portal.py
       - name: Fetch official virtual robot models
         run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
+      - name: Verify measured external forces on G1 and Go2
+        run: |
+          python sim/web/disturbance_test.py \
+            --menagerie _menagerie \
+            --out _physics/g1-go2-force-results.json
+      - name: Upload reproducible disturbance measurements
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-physical-force-evidence
+          path: _physics/g1-go2-force-results.json
+          if-no-files-found: error
+          retention-days: 14
       - name: Build MuJoCo WebAssembly + three robot scenes
         run: |
           BASE_PATH="/simulator/"
