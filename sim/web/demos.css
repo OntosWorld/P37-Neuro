@@ -1,0 +1,182 @@
+/* Curated task scenes and evidence: the MuJoCo canvas remains the hero. */
+.experience-strip{
+  position:absolute;z-index:8;top:76px;left:clamp(20px,3.4vw,56px);
+  right:clamp(20px,3.4vw,56px);
+  display:flex;gap:15px;align-items:center;pointer-events:none;
+}
+.strip-label{
+  color:#e6edf2;font-size:11px;font-weight:550;
+  text-shadow:0 1px 8px #111;
+  white-space:nowrap;
+}
+.experience-actions{
+  display:flex;gap:6px;align-items:center;flex-wrap:wrap;pointer-events:auto;
+}
+.experience-chip{
+  border:1px solid rgba(233,240,245,.32);
+  background:rgba(18,24,29,.77);backdrop-filter:blur(12px);
+  border-radius:6px;color:#e6ebef;
+  font-size:11px;letter-spacing:0;font-weight:525;
+  padding:9px 11px;min-height:34px;
+  box-shadow:0 4px 18px rgba(0,0,0,.09);
+}
+.experience-chip:hover,.experience-chip:focus-visible{
+  background:#36414a;border-color:#9aa8b5;color:#fff;
+}
+.experience-chip[aria-pressed="true"]{
+  background:#edf3f7;color:#151b21;border-color:#edf3f7;
+}
+.experience-compare{
+  color:#fff;background:rgba(44,55,64,.9);
+  border-color:#8293a1;
+}
+.scene-badge{top:132px}
+.demo-panel{
+  position:fixed;z-index:42;top:64px;right:0;bottom:0;
+  width:min(460px,calc(100vw - 22px));
+  display:flex;flex-direction:column;
+  overflow:hidden;min-width:0;
+  transform:translateX(105%);
+  transition:transform .25s ease;
+  background:#14181c;color:#eaf0f3;
+  border-left:1px solid #3c4852;
+  box-shadow:-16px 0 60px rgba(0,0,0,.36);
+}
+.demo-panel.open{transform:translateX(0)}
+.demo-panel-header{
+  position:relative;padding:28px 27px 24px;
+  border-bottom:1px solid #323b43;
+}
+.demo-kicker{
+  font-size:11px;letter-spacing:.11em;
+  color:#94a6b4;font-weight:640;
+}
+.demo-panel-header h2{
+  font-size:29px;font-weight:570;line-height:1.13;
+  letter-spacing:-.05em;margin:15px 0 9px;
+}
+.demo-panel-header p{
+  color:#a7b4be;font-size:13px;line-height:1.62;
+  margin:0;max-width:335px;
+}
+.demo-panel-header .close-drawer{top:24px;right:24px}
+.demo-panel-body{
+  overflow-y:auto;scrollbar-color:#505c65 transparent;
+  padding:22px 27px 40px;
+}
+.demo-section-label{
+  color:#c9d4db;font-size:12px;font-weight:620;
+  display:flex;justify-content:space-between;
+  margin-bottom:12px;
+}
+.demo-section-label span{color:#83939e;font-weight:460}
+.demo-list{display:flex;flex-direction:column;gap:9px}
+.demo-entry{
+  width:100%;background:#1d2328;border:1px solid #39444c;
+  border-radius:8px;text-align:left;color:#edf3f7;
+  display:grid;grid-template-columns:40px 1fr 18px;gap:13px;
+  align-items:center;padding:15px 13px;min-height:83px;
+}
+.demo-entry:hover{
+  border-color:#758b9b;background:#29343d;
+}
+.demo-entry[aria-pressed="true"]{
+  border-color:#a4b6c2;background:#2a3740;
+}
+.demo-entry-number{
+  display:grid;place-items:center;border-radius:6px;
+  border:1px solid #485660;background:#171d22;color:#b6c5d0;
+  width:40px;height:40px;font-size:11px;font-weight:700;
+}
+.demo-entry strong{display:block;font-size:13px;font-weight:620;letter-spacing:-.02em}
+.demo-entry small{display:block;margin-top:6px;color:#9caebc;font-size:11px;line-height:1.4}
+.demo-entry-arrow{font-size:15px;color:#b7c6d2}
+.compare-feature{
+  margin-top:33px;padding:22px 21px;
+  border:1px solid #41515d;border-radius:9px;
+  background:linear-gradient(138deg,#222d35,#171f25 70%);
+}
+.compare-feature h3{
+  font-size:23px;line-height:1.12;font-weight:550;
+  letter-spacing:-.04em;margin:13px 0 12px;
+}
+.compare-feature>p{
+  color:#a8b6c0;font-size:12px;
+  line-height:1.65;margin:0 0 18px;
+}
+.compare-results{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.compare-result{
+  padding:13px;border-radius:6px;
+  border:1px solid #47535c;background:#1b262e;
+  min-width:0;
+}
+.compare-result span,.compare-result small{display:block}
+.compare-result span{font-size:11px;font-weight:650;color:#e5edf2}
+.compare-result strong{display:block;font-size:29px;font-weight:520;letter-spacing:-.05em;margin:7px 0 2px}
+.compare-result small{font-size:10px;color:#96a8b5;line-height:1.4}
+.compare-results>p{
+  grid-column:1/-1;color:#c4cfd7;
+  font-size:12px;line-height:1.6;margin:0;
+}
+.compare-switch{display:flex;gap:7px;margin:15px 0}
+.compare-switch button{
+  flex:1;background:#dce9f1;color:#172129;
+  border:1px solid #dce9f1;border-radius:5px;
+  padding:11px 6px;min-height:42px;
+  font-weight:630;font-size:11px;
+}
+.compare-switch button:hover{background:#fff}
+.compare-feature .compare-disclaimer{
+  font-size:11px;color:#adbac4;margin:12px 0;
+}
+#cross-body-source{
+  display:block;color:#dce8f1;
+  font-size:11px;font-weight:650;
+  border-top:1px solid #47535d;
+  margin-top:16px;padding-top:15px;
+}
+#cross-body-source:hover{color:#fff}
+@media(max-width:1050px){
+  .demo-panel{width:min(450px,calc(100vw - 24px))}
+}
+@media(max-width:740px){
+  .experience-strip{
+    top:66px;left:16px;right:0;
+    display:block;max-width:100vw;
+  }
+  .strip-label{font-size:10px;display:block;margin-bottom:8px}
+  .experience-actions{
+    width:100%;overflow-x:auto;white-space:nowrap;
+    flex-wrap:nowrap;padding-right:15px;
+    scrollbar-width:none;
+  }
+  .experience-actions::-webkit-scrollbar{display:none}
+  .experience-chip{flex:0 0 auto;padding:8px 10px;font-size:10px;min-height:32px}
+  .scene-badge{top:164px;right:16px}
+  .demo-panel{
+    top:auto;left:0;right:0;bottom:0;
+    width:100%;max-width:100%;height:min(84dvh,810px);
+    border-radius:18px 18px 0 0;
+    border:1px solid #424e59;border-bottom:0;
+    transform:translateY(105%);
+    box-shadow:0 -24px 75px rgba(0,0,0,.40);
+  }
+  .demo-panel.open{transform:translateY(0)}
+  .demo-panel-header{padding:23px 23px 18px}
+  .demo-panel-header h2{font-size:26px}
+  .demo-panel-header p{font-size:12px}
+  .demo-panel-body{padding:19px 19px 35px}
+  .demo-entry{padding:13px 10px}
+  .compare-feature{margin-top:22px;padding:19px 16px}
+  .compare-feature h3{font-size:22px}
+  .header-source{display:none}
+  .header-actions{gap:3px}
+  .header-button{padding:0 9px}
+}
+@media(max-width:385px){
+  .nav-arrow{display:none}
+  .brand-product{display:none}
+  .header-button{font-size:10px;padding:0 8px}
+  .experience-strip{top:60px}
+}
+@media(prefers-reduced-motion:reduce){.demo-panel{transition:none}}

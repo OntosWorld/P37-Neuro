@@ -6,6 +6,8 @@
   const dom = (id) => document.getElementById(id);
   const state = {
     robots: [],
+    demos: [],
+    bodyEvidence: null,
     selected: null,
     available: new Set(),
     manifestReady: false,
@@ -47,13 +49,13 @@
   function closeDrawers({restoreFocus = true} = {}) {
     const wasOpen = Boolean(state.drawer);
     state.drawer = null;
-    for (const id of ["robot-library-panel", "inspector"]) {
+    for (const id of ["robot-library-panel", "inspector", "demo-panel"]) {
       const panel = dom(id);
       panel.classList.remove("open");
       panel.inert = true;
       panel.setAttribute("aria-hidden", "true");
     }
-    for (const id of ["toggle-library", "browse-models", "toggle-inspector"]) {
+    for (const id of ["toggle-library", "browse-models", "toggle-inspector", "toggle-demos"]) {
       dom(id).setAttribute("aria-expanded", "false");
     }
     dom("surface-scrim").hidden = true;
@@ -72,19 +74,24 @@
     if (!state.drawer) focusBeforeDrawer = document.activeElement;
     state.drawer = name;
     const library = name === "library";
-    dom("robot-library-panel").classList.toggle("open", library);
-    dom("inspector").classList.toggle("open", !library);
-    dom("robot-library-panel").inert = !library;
-    dom("inspector").inert = library;
-    dom("robot-library-panel").setAttribute("aria-hidden", String(!library));
-    dom("inspector").setAttribute("aria-hidden", String(library));
+    const inspector = name === "inspector";
+    const demos = name === "demos";
+    for (const [id, active] of [
+      ["robot-library-panel", library], ["inspector", inspector], ["demo-panel", demos]
+    ]) {
+      dom(id).classList.toggle("open", active);
+      dom(id).inert = !active;
+      dom(id).setAttribute("aria-hidden", String(!active));
+    }
     dom("toggle-library").setAttribute("aria-expanded", String(library));
     dom("browse-models").setAttribute("aria-expanded", String(library));
-    dom("toggle-inspector").setAttribute("aria-expanded", String(!library));
+    dom("toggle-inspector").setAttribute("aria-expanded", String(inspector));
+    dom("toggle-demos").setAttribute("aria-expanded", String(demos));
     dom("surface-scrim").hidden = false;
     document.body.classList.add("drawer-open");
     if (library) dom("robot-library").scrollTop = 0;
-    (library ? dom("close-library") : dom("close-inspector")).focus({preventScroll: true});
+    (library ? dom("close-library") : inspector ? dom("close-inspector") : dom("close-demos"))
+      .focus({preventScroll: true});
   }
 
   function escapeForText(value) {
@@ -160,16 +167,17 @@
   function drawSelectedRobot(robot) {
     const index = state.robots.findIndex((candidate) => candidate.id === robot.id);
     dom("crumb-robot").textContent = robot.name.toUpperCase();
-    dom("scene-number").textContent = String(index + 1).padStart(2, "0") + " / " + String(state.robots.length).padStart(2, "0");
-    dom("scene-badge").textContent = "Model-only physics";
+    dom("scene-number").textContent = robot.isDemo ? "INTERACTIVE DEMO" : String(index + 1).padStart(2, "0") + " / " + String(state.robots.length).padStart(2, "0");
+    dom("scene-badge").textContent = robot.isDemo ? "Real physics · no learned controller" : "Model-only physics";
     dom("scene-title").textContent = robot.name;
     dom("scene-subtitle").textContent = robot.short;
     dom("inspector-name").textContent = robot.name;
-    dom("inspector-description").textContent = escapeForText(robot.capability) + ". " +
+    dom("inspector-description").textContent = robot.isDemo ? robot.capability : escapeForText(robot.capability) + ". " +
       "Interactive physical simulation using the upstream robot model.";
     dom("inspector-kind").textContent = robot.kind;
     dom("task-title").textContent = robot.task;
-    dom("task-detail").textContent = details[robot.kind] || "Explore the real physics model.";
+    dom("task-detail").textContent = robot.isDemo ? robot.interaction : details[robot.kind] || "Explore the real physics model.";
+    dom("scene-controls-tooltip").textContent = robot.isDemo ? robot.interaction : "Drag the robot to apply force. Drag empty space to orbit.";
     dom("dock-title").textContent = robot.name + " / physics";
     dom("dock-description").textContent = "Actual rigid-body contacts, gravity and articulated joints";
     dom("inspector-controller").textContent = "Model-only";
@@ -230,10 +238,105 @@
     if (updateHistory) {
       const url = new URL(window.location.href);
       url.searchParams.set("robot", robot.id);
+      url.searchParams.delete("demo");
+      history.replaceState(null, "", url);
+    }
+    drawDemoActive();
+    closeDrawers();
+    loadScene(robot);
+  }
+
+  function drawDemoActive() {
+    document.querySelectorAll("[data-demo]").forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.demo === state.selected?.id));
+    });
+    document.querySelectorAll(".demo-entry").forEach((button) => {
+      button.setAttribute("aria-pressed", String(button.dataset.scene === state.selected?.id));
+    });
+  }
+
+  function selectDemo(id, updateHistory = true) {
+    const demo = state.demos.find((item) => item.id === id);
+    if (!demo) return;
+    const source = state.robots.find((item) => item.id === demo.robot_id);
+    if (!source) return;
+    const scene = {
+      ...source, id: demo.id, isDemo: true,
+      name: demo.name, short: demo.body + " · " + demo.task,
+      task: demo.task, capability: demo.summary,
+      interaction: demo.interaction
+    };
+    state.selected = scene;
+    drawSelectedRobot(scene);
+    drawLibrary();
+    drawDemoActive();
+    if (updateHistory) {
+      const url = new URL(window.location.href);
+      url.searchParams.set("demo", demo.id);
+      url.searchParams.delete("robot");
       history.replaceState(null, "", url);
     }
     closeDrawers();
-    loadScene(robot);
+    loadScene(scene);
+  }
+
+  function renderDemos() {
+    const list = dom("demo-list");
+    list.replaceChildren();
+    for (let i = 0; i < state.demos.length; i++) {
+      const demo = state.demos[i];
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "demo-entry";
+      button.dataset.scene = demo.id;
+      button.setAttribute("aria-pressed", String(demo.id === state.selected?.id));
+      const num = document.createElement("span");
+      num.className = "demo-entry-number";
+      num.textContent = String(i + 1).padStart(2, "0");
+      const info = document.createElement("span");
+      const title = document.createElement("strong");
+      title.textContent = demo.name;
+      const note = document.createElement("small");
+      note.textContent = demo.body + " / " + demo.task;
+      info.append(title, note);
+      const arrow = document.createElement("span");
+      arrow.className = "demo-entry-arrow";
+      arrow.textContent = "↗";
+      button.append(num, info, arrow);
+      button.addEventListener("click", () => selectDemo(demo.id));
+      list.append(button);
+    }
+  }
+
+  async function loadCrossBodyResults() {
+    const holder = dom("cross-body-results");
+    try {
+      const response = await fetch("./cross-body-evidence.json", {cache: "no-store"});
+      if (!response.ok) throw new Error("No published report yet");
+      const report = await response.json();
+      if (report.performance_qualified !== false ||
+          report.shared_weights !== true ||
+          report.additional_finetuning !== false ||
+          !Array.isArray(report.robot_results) ||
+          report.robot_results.length !== 2) throw new Error("Unverified result shape");
+      holder.replaceChildren();
+      for (const entry of report.robot_results) {
+        const node = document.createElement("div");
+        node.className = "compare-result";
+        const name = document.createElement("span");
+        name.textContent = entry.robot_id === "unitree_g1" ? "Unitree G1" : "Unitree Go2";
+        const number = document.createElement("strong");
+        number.textContent = String(entry.output_actions);
+        const detail = document.createElement("small");
+        detail.textContent = "Joint actions / same weights · " + entry.executed_steps + " steps";
+        node.append(name, number, detail);
+        holder.append(node);
+      }
+      dom("cross-body-source").href = report.source_workflow ||
+        "https://github.com/OntosRobotics/P37-Neuro/actions/workflows/p37-g1-policy.yml";
+    } catch {
+      holder.textContent = "Verified two-body inference results have not been published yet. The architectural test is separate from these physics scenes.";
+    }
   }
 
   function setCategory(category) {
@@ -299,6 +402,14 @@
     });
     dom("tab-scene").addEventListener("click", () => setInspector("scene"));
     dom("tab-p37").addEventListener("click", () => setInspector("p37"));
+    dom("toggle-demos").addEventListener("click", () => openDrawer("demos"));
+    dom("close-demos").addEventListener("click", () => closeDrawers());
+    dom("show-cross-body").addEventListener("click", () => openDrawer("demos"));
+    dom("compare-g1").addEventListener("click", () => selectDemo("g1_impact_lab"));
+    dom("compare-go2").addEventListener("click", () => selectDemo("go2_contact_field"));
+    document.querySelectorAll("[data-demo]").forEach(button => {
+      button.addEventListener("click", () => selectDemo(button.dataset.demo));
+    });
     dom("toggle-inspector").addEventListener("click", () => {
       if (state.drawer === "inspector") closeDrawers();
       else setInspector("p37");
@@ -314,7 +425,7 @@
         closeDrawers();
       }
       if (event.key === "Tab" && state.drawer) {
-        const panel = dom(state.drawer === "library" ? "robot-library-panel" : "inspector");
+        const panel = dom(state.drawer === "library" ? "robot-library-panel" : state.drawer === "demos" ? "demo-panel" : "inspector");
         const focusables = [...panel.querySelectorAll('button:not([disabled]),a[href]')]
           .filter((element) => element.getClientRects().length);
         if (!focusables.length) return;
@@ -347,16 +458,23 @@
     dom("copy-scene").addEventListener("click", async () => {
       if (!state.selected) return;
       const url = new URL(location.href);
-      url.searchParams.set("robot", state.selected.id);
+      if (state.selected.isDemo) {
+        url.searchParams.set("demo", state.selected.id);
+        url.searchParams.delete("robot");
+      } else {
+        url.searchParams.set("robot", state.selected.id);
+        url.searchParams.delete("demo");
+      }
       try {
         await navigator.clipboard.writeText(url.toString());
         showToast("Link copied to clipboard");
       } catch { showToast("Copy unavailable — use the address bar"); }
     });
 
-    const [catalogResponse, manifestResponse] = await Promise.allSettled([
+    const [catalogResponse, manifestResponse, demoResponse] = await Promise.allSettled([
       fetch("./catalog.json", {cache:"no-store"}),
-      fetch("./simulator/manifest.json", {cache:"no-store"})
+      fetch("./simulator/manifest.json", {cache:"no-store"}),
+      fetch("./demo-catalog.json", {cache:"no-store"})
     ]);
     try {
       if (catalogResponse.status !== "fulfilled" || !catalogResponse.value.ok) throw new Error();
@@ -377,12 +495,30 @@
       state.manifestReady = false;
     }
 
+    if (demoResponse.status === "fulfilled" && demoResponse.value.ok) {
+      try {
+        const data = await demoResponse.value.json();
+        if (Array.isArray(data.scenes)) {
+          state.demos = data.scenes.filter(demo => state.available.has(demo.id));
+        }
+      } catch { state.demos = []; }
+    }
+    renderDemos();
     dom("robot-count").textContent = String(state.robots.length).padStart(2, "0") + " models";
     dom("top-robot-count").textContent = String(state.robots.length);
-    const requested = new URLSearchParams(location.search).get("robot");
-    const first = state.robots.find((robot) => robot.id === requested) || state.robots[0];
-    if (first) selectRobot(first.id, Boolean(requested));
-    await loadEvidence();
+    const params = new URLSearchParams(location.search);
+    const requestedDemo = params.get("demo");
+    const requestedRobot = params.get("robot");
+    const first = state.robots.find((robot) => robot.id === requestedRobot) || state.robots[0];
+    if (requestedDemo && state.demos.some(demo => demo.id === requestedDemo)) {
+      selectDemo(requestedDemo, false);
+    } else if (requestedRobot && first) {
+      selectRobot(first.id, false);
+    } else if (first) {
+      // Keep startup responsive; load the heavier task scenes on selection.
+      selectRobot(first.id, false);
+    }
+    await Promise.all([loadEvidence(), loadCrossBodyResults()]);
   }
 
   initialize();

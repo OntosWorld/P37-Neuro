@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "kind": "p37_same_checkpoint_two_real_bodies",
+  "model": "P37Neuro recurrent",
+  "checkpoint_sha256": "d992ec82bc9c21ad909ddc7458be9bc45de897a250fe270716d26858c614f0b2",
+  "shared_weights": true,
+  "additional_finetuning": false,
+  "actual_model_inference": true,
+  "actual_mujoco_physics": true,
+  "task": "Short forward-command control smoke",
+  "performance_qualified": false,
+  "robot_results": [
+    {
+      "robot_id": "unitree_g1",
+      "joints": 29,
+      "output_actions": 29,
+      "requested_steps": 30,
+      "executed_steps": 30,
+      "simulated_seconds": 0.6000000000000002,
+      "final_base_height_m": 0.7922283485766046,
+      "fall_detected": false,
+      "max_absolute_action": 0.24501794576644897,
+      "controller": "same_frozen_p37_checkpoint",
+      "qualified": false
+    },
+    {
+      "robot_id": "unitree_go2",
+      "joints": 12,
+      "output_actions": 12,
+      "requested_steps": 30,
+      "executed_steps": 30,
+      "simulated_seconds": 0.6000000000000002,
+      "final_base_height_m": 0.25087679339528834,
+      "fall_detected": false,
+      "max_absolute_action": 0.16098211705684662,
+      "controller": "same_frozen_p37_checkpoint",
+      "qualified": false
+    }
+  ],
+  "interpretation": "The same trained G1 checkpoint can produce joint commands of different lengths and drive short MuJoCo rollouts on G1 and Go2. This demonstrates architectural compatibility, not successful cross-embodiment locomotion or transfer learning.",
+  "source_workflow": "https://github.com/OntosRobotics/P37-Neuro/actions/runs/42894652354",
+  "evidence_type": "native P37/MuJoCo evaluation, not embedded-browser policy control",
+  "assertion": "P37 variable-joint inference supported across 29- and 12-actuator embodiments"
+}

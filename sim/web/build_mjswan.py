@@ -15,6 +15,7 @@ from pathlib import Path
 import mjswan
 import mujoco
 from catalog import ROBOTS, RobotScene, check_catalog
+from demo_specs import DEMOS, decorate_task
 
 ROOT = Path(__file__).resolve().parent
 
@@ -108,6 +109,32 @@ def build(menagerie: Path, base_path: str = "/simulator/") -> Path:
             )
         )
         built_scenes.append(robot.id)
+
+    # Extra scenes are genuine physics experiments built from the *same*
+    # official MJCF robot source as the gallery. They contain real obstacles,
+    # collidable blocks, and free moving rigid bodies; no scripted outcomes.
+    by_id = {robot.id: robot for robot in ROBOTS}
+    for demo in DEMOS:
+        robot = by_id[demo.robot_id]
+        path = menagerie / robot.model / "scene.xml"
+        spec = mujoco.MjSpec.from_file(str(path))
+        _light_scene(spec, robot)
+        decorate_task(spec, demo.id)
+        scene = project.add_scene(spec=spec, name=demo.name)
+        scene.set_viewer(
+            mjswan.ViewerConfig(
+                lookat=(
+                    robot.camera[0] + 0.23,
+                    robot.camera[1],
+                    robot.camera[2],
+                ),
+                distance=robot.distance * 1.17,
+                elevation=robot.elevation,
+                azimuth=robot.azimuth,
+                origin_type=mjswan.ViewerConfig.OriginType.WORLD,
+            )
+        )
+        built_scenes.append(demo.id)
 
     old_cwd = Path.cwd()
     try:
