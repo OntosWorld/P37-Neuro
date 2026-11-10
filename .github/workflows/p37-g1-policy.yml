@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "sim/src/p37_neuro_sim/g1_*.py"
+      - "sim/src/p37_neuro_sim/cross_embodiment_smoke.py"
       - "sim/tests/test_g1_locomotion_env.py"
       - "sim/pyproject.toml"
       - ".github/workflows/p37-g1-policy.yml"
@@ -89,6 +90,29 @@ jobs:
           assert data["max_memory_difference"] < 2e-3
           assert Path("artifacts/g1-p37-onnx/p37-g1-experimental.onnx").is_file()
           PY
+      - name: Run same frozen P37 checkpoint across G1 and Go2
+        working-directory: sim
+        env:
+          OMP_NUM_THREADS: "2"
+          MKL_NUM_THREADS: "2"
+        run: |
+          uv run python -m p37_neuro_sim.cross_embodiment_smoke \
+            --menagerie ../_menagerie \
+            --checkpoint artifacts/g1-p37-experimental/checkpoint \
+            --output artifacts/cross-body-smoke.json
+          uv run python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("artifacts/cross-body-smoke.json")
+          report=json.loads(p.read_text())
+          assert report["shared_weights"] is True
+          assert report["additional_finetuning"] is False
+          assert report["performance_qualified"] is False
+          rows=report["robot_results"]
+          assert {r["robot_id"] for r in rows} == {"unitree_g1","unitree_go2"}
+          assert rows[0]["output_actions"] != rows[1]["output_actions"]
+          assert all(r["executed_steps"] > 0 for r in rows)
+          PY
       - name: Upload experimental P37 checkpoint and measured rollouts
         if: success()
         uses: actions/upload-artifact@v4
@@ -98,5 +122,6 @@ jobs:
             sim/artifacts/g1-p37-experimental/
             sim/artifacts/g1-p37-smoke-eval/
             sim/artifacts/g1-p37-onnx/
+            sim/artifacts/cross-body-smoke.json
           if-no-files-found: error
           retention-days: 14
