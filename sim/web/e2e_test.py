@@ -55,7 +55,6 @@ def test(site: Path, screenshots: Path) -> dict:
                     "--use-angle=swiftshader",
                 ],
             )
-            stack.callback(browser.close)
             page = browser.new_page(viewport={"width": 1500, "height": 980})
             page.on("pageerror", lambda error: failures.append(str(error)))
             page.on(
@@ -101,6 +100,7 @@ def test(site: Path, screenshots: Path) -> dict:
             )
             if failures:
                 raise AssertionError("Browser runtime errors: " + " | ".join(failures[:8]))
+            browser.close()
     result = {
         "status": "pass",
         "screenshots": results,
