@@ -33,6 +33,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
     catalog = json.loads((site / "catalog.json").read_text(encoding="utf-8"))
     assert len(catalog["robots"]) >= 10
     assert (site / "studio.css").is_file()
+    assert (site / "studio-minimal.css").is_file()
     assert (site / "studio.js").is_file()
     assert (site / "p37-evidence.json").is_file()
 
@@ -94,16 +95,34 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             page.locator("#scene-loading").wait_for(state="hidden", timeout=120000)
             assert page.locator("#robot-count").inner_text().startswith("10")
 
-            # Research evidence is real native G1 control data, never mislabeled
-            # as the controller attached to the public model-only iframe.
+            # The 3D scene, rather than either library/inspector sidebar,
+            # occupies the full viewport on desktop.
+            stage = page.locator("#scene-canvas").bounding_box()
+            assert stage and stage["width"] >= 1400, "scene is still crowded by permanent panels"
+            assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "true"
+            assert page.locator("#inspector").get_attribute("aria-hidden") == "true"
+            page.screenshot(path=str(screenshots / "ui-desktop.png"))
+
+            # P37 research is visible only when explicitly requested.
+            page.locator("#toggle-inspector").click()
+            assert page.locator("#toggle-inspector").get_attribute("aria-expanded") == "true"
             page.locator("#tab-p37").click()
             assert "EXPERIMENTAL" in page.locator("#panel-p37").inner_text()
             page.locator(".trial-row").first.wait_for(state="visible", timeout=15000)
             assert "SEED 1000" in page.locator("#evidence-trials").inner_text()
-            page.locator("#tab-scene").click()
+            page.screenshot(path=str(screenshots / "ui-research.png"))
+            page.locator("#close-inspector").click()
+            assert page.locator("#inspector").get_attribute("aria-hidden") == "true"
+
+            # On-demand library, category filtering, and dismiss actions.
+            page.locator("#toggle-library").click()
+            assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "false"
             page.locator('[data-category="Quadrupeds"]').click()
             assert page.locator('[data-robot="unitree_g1"]').count() == 0
             page.locator('[data-category="All"]').click()
+            page.screenshot(path=str(screenshots / "ui-library.png"))
+            page.locator("#close-library").click()
+            assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "true"
 
             for key, expected in (
                 ("unitree_g1", "Unitree G1"),
@@ -112,7 +131,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                 ("boston_dynamics_spot", "Boston Dynamics Spot"),
                 ("crazyflie_2", "Crazyflie 2"),
             ):
+                page.locator("#toggle-library").click()
                 page.locator(f'[data-robot="{key}"]').click()
+                assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "true"
                 page.wait_for_function(
                     "(key) => new URL(document.querySelector('#sim').src)"
                     ".searchParams.get('scene') === key",
@@ -145,6 +166,21 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             page.frame_locator("#sim").locator("canvas").first.wait_for(
                 state="visible", timeout=90000
             )
+            # Mobile bottom-sheet layout must fit viewport without horizontal overflow.
+            page.set_viewport_size({"width": 390, "height": 844})
+            page.wait_for_timeout(350)
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+            scene_mobile = page.locator("#scene-canvas").bounding_box()
+            assert scene_mobile and scene_mobile["width"] >= 385
+            page.screenshot(path=str(screenshots / "ui-mobile.png"))
+            page.locator("#toggle-library").click()
+            assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "false"
+            gallery = page.locator("#robot-library-panel").bounding_box()
+            assert gallery and gallery["width"] <= 391
+            page.screenshot(path=str(screenshots / "ui-mobile-library.png"))
+            page.locator("#surface-scrim").click(position={"x": 380, "y": 25}, force=True)
+            assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "true"
+
             if failures:
                 raise AssertionError("Browser runtime errors: " + " | ".join(failures[:8]))
             if console_errors:
