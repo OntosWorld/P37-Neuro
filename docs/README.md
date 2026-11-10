@@ -4,6 +4,10 @@ This directory contains the technical and product documentation for P37 Neuro.
 
 Documentation is organized by responsibility. Each document should have one clear purpose and link to the canonical source instead of duplicating status or implementation details.
 
+## Interactive research lab
+
+- [Cross-Embodiment Interactive Lab](interactive-lab/README.md) — a clearly labeled architecture explorer with task/embodiment controls, links to the current browser physics viewer, and reproducible-evidence requirements. [Open local web page](interactive-lab/index.html).
+
 ## Start here
 
 New users should begin with the repository [Quickstart](../QUICKSTART.md).
