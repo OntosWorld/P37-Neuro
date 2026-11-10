@@ -39,6 +39,8 @@ jobs:
               assert t["provenance"]["checkpoint_sha256"] == ""
               assert t["frames"]
               assert "position_error_m" in t["frames"][-1]["state"]
+              assert t["provenance"]["outcome"] == "success", "baseline reach regression"
+              assert t["frames"][-1]["state"]["position_error_m"] <= 0.045
           print("Baseline physics episode artifacts validated")
           PY
       - uses: actions/upload-artifact@v4
