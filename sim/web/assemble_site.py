@@ -8,6 +8,7 @@ import shutil
 from pathlib import Path
 
 from catalog import ROBOTS
+from demo_specs import DEMOS
 
 ROOT = Path(__file__).resolve().parent
 
@@ -21,7 +22,7 @@ def assemble(output: Path) -> Path:
     projects = manifest.get("projects", [])
     if not isinstance(projects, list) or not projects:
         raise ValueError("mjswan build has no projects")
-    expected = {robot.id for robot in ROBOTS}
+    expected = {robot.id for robot in ROBOTS} | {demo.id for demo in DEMOS}
     scenes = {
         scene.get("id")
         for project in projects
@@ -54,6 +55,21 @@ def assemble(output: Path) -> Path:
         "robots": [robot.to_public() for robot in ROBOTS],
     }
     (output / "catalog.json").write_text(json.dumps(catalog, indent=2) + "\n", encoding="utf-8")
+    demo_catalog = {
+        "schema_version": 1,
+        "engine": "MuJoCo WebAssembly",
+        "scenes": [demo.public() for demo in DEMOS],
+        "policy_status": "physics-only",
+    }
+    (output / "demo-catalog.json").write_text(
+        json.dumps(demo_catalog, indent=2) + "\n", encoding="utf-8"
+    )
+    evidence = ROOT / "cross-body-evidence.json"
+    if evidence.is_file():
+        report = json.loads(evidence.read_text(encoding="utf-8"))
+        if report.get("performance_qualified") is not False:
+            raise ValueError("cross-body experiment must be marked unqualified")
+        shutil.copy2(evidence, output / "cross-body-evidence.json")
     shutil.copytree(viewer, output / "simulator")
     return output
 
