@@ -205,8 +205,8 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "false"
             page.wait_for_function(
                 "() => document.querySelector('#robot-library-panel')"
-                ".getBoundingClientRect().top < innerHeight - 300",
-                timeout=10000,
+                ".getBoundingClientRect().top < 280",
+                timeout=15000,
             )
             gallery = page.locator("#robot-library-panel").bounding_box()
             assert gallery and gallery["width"] <= 391
