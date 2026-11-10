@@ -4,6 +4,7 @@ This bundles true Menagerie MJCF geometry and MuJoCo WebAssembly. Styling
 adds lights and non-colliding visual markers, never hidden locomotion scripts.
 Only verified trained controllers may be attached as P37 policies.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -38,12 +39,14 @@ def _light_scene(spec: mujoco.MjSpec, robot: RobotScene) -> None:
     # Subtle static reference edges help place the robot in 3D.
     radius = 1.65 if robot.kind in ("Humanoids", "Quadrupeds") else 1.15
     color = [0.23, 0.29, 0.34, 0.60]
-    for i, (x, y, sx, sy) in enumerate((
-        (-radius, 0, 0.012, radius),
-        (radius, 0, 0.012, radius),
-        (0, -radius, radius, 0.012),
-        (0, radius, radius, 0.012),
-    )):
+    for i, (x, y, sx, sy) in enumerate(
+        (
+            (-radius, 0, 0.012, radius),
+            (radius, 0, 0.012, radius),
+            (0, -radius, radius, 0.012),
+            (0, radius, radius, 0.012),
+        )
+    ):
         spec.worldbody.add_geom(
             name=f"p37_marker_{i}",
             type=mujoco.mjtGeom.mjGEOM_BOX,
@@ -113,9 +116,7 @@ def build(menagerie: Path, base_path: str = "/simulator/") -> Path:
         for scene in project_data.get("scenes", [])
     }
     if not set(built_scenes).issubset(generated_ids):
-        raise RuntimeError(
-            f"missing compiled scenes: {sorted(set(built_scenes) - generated_ids)}"
-        )
+        raise RuntimeError(f"missing compiled scenes: {sorted(set(built_scenes) - generated_ids)}")
     return output
 
 

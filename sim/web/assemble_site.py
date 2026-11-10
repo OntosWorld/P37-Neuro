@@ -1,4 +1,5 @@
 """Assemble the production P37 Brain Lab from genuine compiled MuJoCo scenes."""
+
 from __future__ import annotations
 
 import argparse
@@ -46,9 +47,7 @@ def assemble(output: Path) -> Path:
         "controller_status": "model_only",
         "robots": [robot.to_public() for robot in ROBOTS],
     }
-    (output / "catalog.json").write_text(
-        json.dumps(catalog, indent=2) + "\n", encoding="utf-8"
-    )
+    (output / "catalog.json").write_text(json.dumps(catalog, indent=2) + "\n", encoding="utf-8")
     shutil.copytree(viewer, output / "simulator")
     return output
 

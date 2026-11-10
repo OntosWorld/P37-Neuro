@@ -1,4 +1,5 @@
 """Static invariants for the P37 public physics and research interface."""
+
 from pathlib import Path
 
 from catalog import ROBOTS, check_catalog
@@ -10,11 +11,13 @@ def test_curated_catalog() -> None:
     check_catalog()
     assert len(ROBOTS) >= 10
     assert {robot.kind for robot in ROBOTS} >= {
-        "Humanoids", "Quadrupeds", "Manipulators", "Mobile", "Aerial"
+        "Humanoids",
+        "Quadrupeds",
+        "Manipulators",
+        "Mobile",
+        "Aerial",
     }
-    assert {"unitree_g1", "unitree_go2", "franka_panda"}.issubset(
-        {robot.id for robot in ROBOTS}
-    )
+    assert {"unitree_g1", "unitree_go2", "franka_panda"}.issubset({robot.id for robot in ROBOTS})
 
 
 def test_browser_has_real_interaction_and_honest_policy_status() -> None:
