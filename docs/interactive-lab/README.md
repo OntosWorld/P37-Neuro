@@ -51,3 +51,62 @@ Before enabling a trained P37 policy on the public site:
 - Current source/protocol and actual physics viewer remain directly accessible.
 - Works on desktop and narrow mobile layouts.
 - Keyboard controls and reduced-motion settings are respected.
+
+## Recorded evidence comparison (implemented)
+
+Open [compare/index.html](compare/index.html) after serving this directory with the same static HTTP server. The viewer accepts local JSON only and synchronizes time across two or more recorded episodes. The **joint-state rails are recorded numerical values, not robot geometry or an animated physics simulation**. There are no hard-coded examples or invented success rates.
+
+The Python adapter `p37_neuro.data.trace_export` serializes canonical `Episode` objects, including joint-position/velocity observations, commands, reward, failure and intervention markers, and explicit source/provenance metadata. The comparison schema is `p37-trace-v1`.
+
+Example for existing in-memory canonical episodes:
+
+```python
+from p37_neuro.data.trace_export import (
+    TraceProvenance, export_comparison, write_comparison
+)
+
+# Supply actual recorded Episode objects from your real P37 run.
+episodes = [recorded_arm_a, recorded_arm_b]
+provenances = [
+    TraceProvenance(
+        checkpoint_sha256=checkpoint_sha256_a,
+        code_commit=code_commit,
+        simulator="MuJoCo",
+        simulator_version=simulator_version,
+        robot_description_sha256=robot_description_sha_a,
+        adapter_version=adapter_a,
+        seed=seed_a,
+        training_membership="held-out",
+        evidence_level="T2",
+        policy_attached=True,
+        evaluation_protocol="docs/testing.md",
+        outcome="unverified",
+    ),
+    TraceProvenance(
+        checkpoint_sha256=checkpoint_sha256_b,
+        code_commit=code_commit,
+        simulator="MuJoCo",
+        simulator_version=simulator_version,
+        robot_description_sha256=robot_description_sha_b,
+        adapter_version=adapter_b,
+        seed=seed_b,
+        training_membership="held-out",
+        evidence_level="T2",
+        policy_attached=True,
+        evaluation_protocol="docs/testing.md",
+        outcome="unverified",
+    ),
+]
+artifact = export_comparison(episodes, provenances, title="Recorded reach task")
+write_comparison("comparison.json", artifact)
+```
+
+The example intentionally uses undefined placeholders for **real run artifacts**; it cannot be executed until you supply actual episodes and provenance. Do not replace them with fabricated claims. The exporter does not calculate success or claim evidence quality: the caller must derive those fields from qualified external evaluation.
+
+- Import `comparison.json` via the file control in the browser.
+- The synchronized view uses each episode's recorded timestamps. If traces have different durations, the shorter trace holds its final recorded sample.
+- Frames are sampled with zero-order hold; no intervening physical state is inferred.
+- The browser cannot verify hashes or confirm that the imported content is genuine. External provenance checks and acceptance gates remain mandatory.
+- This is an offline, dependency-free viewer. Live simulation rendering and deploy-site routing are separate workstreams.
+
+Tests are in `tests/test_trace_export.py`. Run `uv run pytest tests/test_trace_export.py` in the repository environment.
