@@ -35,6 +35,9 @@ class G1LocomotionEnv(gym.Env):
         damping: float = 2.0,
         fall_height_m: float = 0.45,
         reset_noise_rad: float = 0.02,
+        push_newtons: float = 0.0,
+        push_start_s: float = 2.0,
+        push_end_s: float = 2.15,
     ) -> None:
         super().__init__()
         self.model_path = Path(model_path).resolve()
@@ -47,10 +50,15 @@ class G1LocomotionEnv(gym.Env):
         self.damping = damping
         self.fall_height_m = fall_height_m
         self.reset_noise_rad = reset_noise_rad
+        self.push_newtons = push_newtons
+        self.push_start_s = push_start_s
+        self.push_end_s = push_end_s
         if min(episode_seconds, control_dt, action_scale_rad, stiffness, fall_height_m) <= 0:
             raise ValueError("positive simulation parameters required")
-        if damping < 0 or reset_noise_rad < 0:
-            raise ValueError("damping and noise cannot be negative")
+        if min(damping, reset_noise_rad, push_newtons) < 0:
+            raise ValueError("damping, noise and force cannot be negative")
+        if not 0 <= push_start_s < push_end_s <= episode_seconds:
+            raise ValueError("invalid push timing")
         steps = round(control_dt / self.model.opt.timestep)
         if steps < 1 or abs(steps * self.model.opt.timestep - control_dt) > 1e-9:
             raise ValueError("control_dt must be an integer multiple of MuJoCo timestep")
@@ -149,6 +157,7 @@ class G1LocomotionEnv(gym.Env):
             -self.reset_noise_rad, self.reset_noise_rad, len(self._joint_q)
         )
         self.data.qpos[self._joint_q] += noise
+        self.data.xfrc_applied[:] = 0.0
         mujoco.mj_forward(self.model, self.data)
         self._elapsed = 0.0
         return self._observe(), {"seed": seed, "initial_height_m": self._initial_height}
@@ -174,6 +183,9 @@ class G1LocomotionEnv(gym.Env):
                 control[index] = np.clip(control[index], lo, hi)
         self.data.ctrl[:] = control
         for _ in range(self._substeps):
+            self.data.xfrc_applied[self._root_body] = 0.0
+            if self.push_start_s <= self.data.time < self.push_end_s:
+                self.data.xfrc_applied[self._root_body, 0] = self.push_newtons
             mujoco.mj_step(self.model, self.data)
         self._elapsed += self._control_dt
         height = float(self.data.xpos[self._root_body, 2])
@@ -193,6 +205,7 @@ class G1LocomotionEnv(gym.Env):
             "forward_velocity_m_s": forward_velocity,
             "fallen": bool(fallen),
             "elapsed_s": self._elapsed,
+            "push_newtons": self.push_newtons,
         }
         return self._observe(), float(reward), terminated, truncated, info
 
