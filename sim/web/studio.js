@@ -10,7 +10,7 @@
     available: new Set(),
     manifestReady: false,
     category: "All",
-    controlsOpen: true,
+    controlsOpen: false,
     inspector: "scene",
     frameVersion: 0,
     frameTimeout: null,
