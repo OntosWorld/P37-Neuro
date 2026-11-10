@@ -4,6 +4,7 @@ Runs against a built _site directory, asserts scenes render a canvas,
 selector switches real models, reset reloads. Captures screenshots.
 Requires playwright + a Chromium install (GitHub Actions workflow provides it).
 """
+
 from __future__ import annotations
 
 import argparse
