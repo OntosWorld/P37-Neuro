@@ -108,3 +108,17 @@ The example intentionally uses undefined placeholders for **real run artifacts**
 - This is an offline, dependency-free viewer. Live simulation rendering and deploy-site routing are separate workstreams.
 
 Tests are in `tests/test_trace_export.py`. Run `uv run pytest tests/test_trace_export.py` in the repository environment.
+
+## Interactive deterministic kinematics sandbox
+
+The new [kinematics demo](sim/index.html) adds a direct interactive engineering experience alongside the architecture diagram and recorded trace comparison.
+
+It uses a browser-side 2D **cyclic coordinate descent inverse-kinematics solver** for three simplified robot body configurations. Visitors can drag the target, adjust its height/distance, switch between arms, and compare all three at once. Joint limits, link lengths, base positions, and end-effector error are calculated from the declared demonstration models.
+
+This is intentionally labeled **kinematics only**: there is no MuJoCo backend, motor dynamics, contact, trained P37 policy checkpoint, or learned adaptation in this demo. Reachability is solver-local, not proof of an industrial robot's reach envelope or task success. Its placeholder body configurations are not documented manufacturer specifications.
+
+Do not use this demo to make benchmark or physical robotics performance claims. It is a frontend interaction and architecture-explanation layer, intended to be replaced or supplemented by recorded, qualified policy trials.
+
+### Non-destructive deployment
+
+This is additive to `docs/interactive-lab`; existing Brain Lab source, browser MuJoCo functionality, and site deployment workflows are untouched. A merge alone does not ensure the GitHub Pages site publishes this folder. Only integrate the new navigation once the actual existing Pages source/build pipeline is identified. **Do not replace the live site with this static directory.**
