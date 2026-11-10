@@ -235,8 +235,10 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert page.locator("#cross-retraining").inner_text() == "None"
             assert "Unitree G1" in page.locator("#stage-title").inner_text()
             assert page.frame_locator("#stage-frame").locator("canvas").first.is_visible()
-            assert page.frame_locator("#stage-frame").locator("body").evaluate(
-                "(node) => node.ownerDocument.defaultView.__mjswanReady === true"
+            assert (
+                page.frame_locator("#stage-frame")
+                .locator("body")
+                .evaluate("(node) => node.ownerDocument.defaultView.__mjswanReady === true")
             ), "main demo was captured before native MuJoCo reported a stable frame"
             assert "not yet verified" in page.locator(".cross-claim").inner_text().lower()
             page.set_viewport_size({"width": 1440, "height": 900})
@@ -270,8 +272,10 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             page.locator("#compare-idle-a").wait_for(state="hidden", timeout=120000)
             page.locator("#compare-idle-b").wait_for(state="hidden", timeout=120000)
             for key in ("a", "b"):
-                assert page.frame_locator(f"#compare-frame-{key}").locator("body").evaluate(
-                    "(node) => node.ownerDocument.defaultView.__mjswanReady === true"
+                assert (
+                    page.frame_locator(f"#compare-frame-{key}")
+                    .locator("body")
+                    .evaluate("(node) => node.ownerDocument.defaultView.__mjswanReady === true")
                 ), f"body {key} is not physically loaded"
             page.locator(".compare-grid").screenshot(
                 path=str(screenshots / "demos-two-bodies.png"), timeout=90000
