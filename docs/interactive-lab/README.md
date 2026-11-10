@@ -122,3 +122,18 @@ Do not use this demo to make benchmark or physical robotics performance claims. 
 ### Non-destructive deployment
 
 This is additive to `docs/interactive-lab`; existing Brain Lab source, browser MuJoCo functionality, and site deployment workflows are untouched. A merge alone does not ensure the GitHub Pages site publishes this folder. Only integrate the new navigation once the actual existing Pages source/build pipeline is identified. **Do not replace the live site with this static directory.**
+
+## Recorded physics-backed cross-body demo
+
+The repository now includes a reproducible MuJoCo two-body reaching runner at `scripts/mujoco_cross_body_demo.py` and a [frozen experimental protocol](experiments/PROTOCOL.md).
+
+The runner generates measured episodes under **analytic inverse kinematics + PD/gravity compensation**, not a trained P37 checkpoint. On supported Python/MuJoCo environments:
+
+```bash
+uv sync --project sim
+uv run --project sim python scripts/mujoco_cross_body_demo.py --output artifacts/cross-body-mujoco.json
+```
+
+Then import the JSON into [Recorded Experiments](compare/index.html). The viewer now plots actual recorded end-effector X/Z trajectories when these channels are present. A GitHub Actions workflow named **Cross-body MuJoCo recorded baseline** also produces a downloadable JSON experiment artifact on successful execution.
+
+The runner does not change the existing Brain Lab physics viewer. The public site must not be described as running trained P37 policy inference until an actual qualified model checkpoint has been attached and tested.

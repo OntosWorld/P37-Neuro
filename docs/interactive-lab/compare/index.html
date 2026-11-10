@@ -16,7 +16,7 @@ h1{font-weight:590;letter-spacing:-.058em;line-height:1.05;font-size:clamp(38px,
 .controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:20px 0}input[type=range]{accent-color:#b4edd4;flex:1;min-width:180px}output{font-variant-numeric:tabular-nums;color:#b3c6ce}
 .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:23px;min-width:0}
 .card h2{font-size:19px;letter-spacing:-.03em;margin:2px 0 7px}.meta{font-size:12px;color:#a9bac3;margin-bottom:22px;overflow-wrap:anywhere}
-.tracks{display:grid;gap:8px}.track{display:grid;grid-template-columns:135px minmax(0,1fr) 70px;align-items:center;gap:12px;font-size:11px}.track-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#b3c4ca}
+.trajectory{display:block;width:100%;height:180px;background:#0b1419;border:1px solid #2c3b43;border-radius:6px;margin:12px 0 18px}.tracks{display:grid;gap:8px}.track{display:grid;grid-template-columns:135px minmax(0,1fr) 70px;align-items:center;gap:12px;font-size:11px}.track-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#b3c4ca}
 .rail{position:relative;background:#24333c;height:8px;border-radius:10px;overflow:hidden}.fill{height:100%;background:var(--mint);position:absolute;left:0;top:0;transition:width .08s linear}
 .track-value{font-variant-numeric:tabular-nums;text-align:right;color:#c4d9d8}.pill{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mint)}
 h3{font-size:12px;font-weight:670;letter-spacing:.12em;text-transform:uppercase;color:#b1c2cb;margin:22px 0 12px}
@@ -79,11 +79,32 @@ function trackLine(target,name,value,min,max){
  fill.style.width=(100*Math.max(0,Math.min(1,fraction))).toFixed(2)+"%";
  rail.append(fill);line.append(caption,rail,val);target.append(line);
 }
+function drawTrajectory(canvas, trace, frame){
+ const samples=trace.frames.filter(f=>finite(f.state.tip_x_m)&&finite(f.state.tip_z_m));
+ if(samples.length<2){canvas.hidden=true;return}canvas.hidden=false;
+ const ratio=Math.min(window.devicePixelRatio||1,2),w=Math.max(100,canvas.clientWidth),h=180;
+ canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);
+ const ctx=canvas.getContext("2d");ctx.setTransform(ratio,0,0,ratio,0,0);
+ const xs=samples.map(f=>f.state.tip_x_m),zs=samples.map(f=>f.state.tip_z_m);
+ const targetX=samples[0].state.target_x_m,targetZ=samples[0].state.target_z_m;
+ if(finite(targetX)&&finite(targetZ)){xs.push(targetX);zs.push(targetZ)}
+ let xmin=Math.min(...xs),xmax=Math.max(...xs),zmin=Math.min(...zs),zmax=Math.max(...zs);
+ if(xmax-xmin<.1){xmin-=.05;xmax+=.05}if(zmax-zmin<.1){zmin-=.05;zmax+=.05}
+ const pad=24,scale=Math.min((w-2*pad)/(xmax-xmin),(h-2*pad)/(zmax-zmin));
+ const px=x=>pad+(x-xmin)*scale,py=z=>h-pad-(z-zmin)*scale;
+ ctx.strokeStyle="#20333d";ctx.lineWidth=1;for(let j=0;j<=4;j++){const y=pad+j*(h-2*pad)/4;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(w-pad,y);ctx.stroke()}
+ ctx.strokeStyle="#88cebb";ctx.lineWidth=2;ctx.beginPath();
+ samples.forEach((f,i)=>{const x=px(f.state.tip_x_m),y=py(f.state.tip_z_m);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.stroke();
+ if(finite(targetX)&&finite(targetZ)){ctx.strokeStyle="#d3bf91";ctx.lineWidth=2;const x=px(targetX),y=py(targetZ);ctx.beginPath();ctx.moveTo(x-7,y);ctx.lineTo(x+7,y);ctx.moveTo(x,y-7);ctx.lineTo(x,y+7);ctx.stroke()}
+ if(finite(frame.state.tip_x_m)&&finite(frame.state.tip_z_m)){const x=px(frame.state.tip_x_m),y=py(frame.state.tip_z_m);ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle="#e4fff2";ctx.fill()}
+ ctx.font="11px system-ui";ctx.fillStyle="#93aeb6";ctx.fillText("Recorded X/Z trajectory · m",14,16);
+}
 function render(){
  clock.textContent=elapsed.toFixed(2)+" s";time.value=String(duration?Math.round(1000*elapsed/duration):0);
  for(let i=0;i<traces.length;i++){
   const t=traces[i],f=sampleAt(t.frames,elapsed),target=document.getElementById("channels-"+i),state=document.getElementById("state-"+i);
   target.replaceChildren();
+  drawTrajectory(document.getElementById("trajectory-"+i),t,f);
   const keys=Object.keys(f.joint_position).sort().slice(0,24);
   if(!keys.length)target.append(node("p","muted","No joint-position channels in this frame."));
   for(const key of keys){
@@ -99,7 +120,7 @@ function makeCards(){
  const p=t.provenance,article=node("article","card"),label=node("div","pill","Recorded episode "+(i+1)),heading=node("h2","",text(t.label||t.embodiment_id));
  const meta=node("div","meta",t.episode_id+" · "+t.embodiment_id+" · "+t.frames.length+" frames");
  const state=node("p","muted");state.id="state-"+i;
- const head=node("h3","","Joint position (recorded units)"),channels=node("div","tracks");channels.id="channels-"+i;
+ const trajectoryTitle=node("h3","","Measured end-effector path"),trajectory=node("canvas","trajectory");trajectory.id="trajectory-"+i;trajectory.setAttribute("aria-label","Recorded X and Z end-effector path for "+t.episode_id);const head=node("h3","","Joint position (recorded units)"),channels=node("div","tracks");channels.id="channels-"+i;
  const eh=node("h3","","Source evidence"),dl=node("dl","");
  row(dl,"Evidence level",p.evidence_level);row(dl,"Outcome",p.outcome);
  row(dl,"Policy attached",p.policy_attached?"Declared yes":"No");
@@ -108,7 +129,7 @@ function makeCards(){
  row(dl,"Adapter version",p.adapter_version);row(dl,"Simulator",p.simulator+" "+p.simulator_version);
  row(dl,"Seed",p.seed);row(dl,"Code commit",p.code_commit);row(dl,"Protocol",p.evaluation_protocol);
  row(dl,"Source",t.source);
- article.append(label,heading,meta,state,head,channels,eh,dl);cards.append(article);
+ article.append(label,heading,meta,state,trajectoryTitle,trajectory,head,channels,eh,dl);cards.append(article);
  });
 }
 function makeSummary(){
@@ -143,6 +164,7 @@ function tick(ts){if(!playing)return;if(lastFrame)elapsed+=Math.min(.12,(ts-last
 $("#toggle").addEventListener("click",()=>{if(playing){stop();return}if(elapsed>=duration)elapsed=0;playing=true;lastFrame=0;$("#toggle").textContent="Pause";$("#toggle").setAttribute("aria-pressed","true");raf=requestAnimationFrame(tick)});
 $("#reset").addEventListener("click",()=>{stop();elapsed=0;render()});
 time.addEventListener("input",()=>{stop();elapsed=duration*Number(time.value)/1000;render()});
+window.addEventListener("resize",()=>{if(traces.length)render()});
 upload.addEventListener("change",async()=>{
  const file=upload.files?.[0];if(!file)return;
  if(file.size>20*1024*1024){$("#message").textContent="File exceeds 20 MB safety limit";return}
