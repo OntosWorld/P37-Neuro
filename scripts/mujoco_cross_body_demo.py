@@ -218,6 +218,9 @@ def main() -> None:
             config.name,
             trial[1].outcome,
             f"final error={trial[0].steps[-1].observation.state['position_error_m']:.4f} m",
+            f"q={dict(trial[0].steps[-1].observation.joint_position)}",
+            f"tip=({trial[0].steps[-1].observation.state['tip_x_m']:.3f}, "
+            f"{trial[0].steps[-1].observation.state['tip_z_m']:.3f})",
         )
     print(f"Recorded {len(trials)} T2 physics episodes to {args.output}")
 
