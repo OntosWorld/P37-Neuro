@@ -14,7 +14,7 @@ def _load_demo() -> object:
 
 def test_script_contains_only_a_baseline_controller() -> None:
     source = str(_load_demo())
-    assert "analytic-ik-pd-gravity" in source
+    assert "analytic-ik-mujoco-position-servo" in source
     assert "policy_attached=False" in source
     assert 'evidence_level="T2"' in source
     assert "mujoco.mj_step(model, data)" in source
