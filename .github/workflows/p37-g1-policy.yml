@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "sim/src/p37_neuro_sim/g1_*.py"
+      - "sim/src/p37_neuro_sim/cross_body_*.py"
       - "sim/tests/test_g1_locomotion_env.py"
       - "sim/pyproject.toml"
       - ".github/workflows/p37-g1-policy.yml"
@@ -68,6 +69,31 @@ jobs:
           assert all(row["sim_seconds"] > 0 for row in result["trials"])
           print(json.dumps({"checkpoint_hash": manifest["sha256"], "trials": result["trials"]}, indent=2))
           PY
+      - name: Execute unchanged P37 checkpoint on different robot bodies
+        working-directory: sim
+        env:
+          OMP_NUM_THREADS: "2"
+          MKL_NUM_THREADS: "2"
+        run: |
+          uv run python -m p37_neuro_sim.cross_body_smoke \
+            --checkpoint artifacts/g1-p37-experimental/checkpoint \
+            --g1 ../_menagerie/unitree_g1/scene.xml \
+            --go2 ../_menagerie/unitree_go2/scene.xml \
+            --output artifacts/p37-cross-body-smoke/results.json \
+            --seeds 2 --max-steps 60
+          uv run python - <<'PY'
+          import json
+          from pathlib import Path
+          data=json.loads(Path("artifacts/p37-cross-body-smoke/results.json").read_text())
+          assert data["qualified_for_cross_body_task_transfer"] is False
+          assert data["parameters_retrained_for_go2"] is False
+          assert data["same_checkpoint_used_for_all_bodies"] is True
+          assert data["bodies"]["unitree_g1"]["actuators"] != data["bodies"]["unitree_go2"]["actuators"]
+          assert all(
+              trial["commands_sent"] > 0
+              for body in data["bodies"].values() for trial in body["trials"]
+          )
+          PY
       - name: Export ONNX and compare native P37 inference
         working-directory: sim
         env:
@@ -98,5 +124,6 @@ jobs:
             sim/artifacts/g1-p37-experimental/
             sim/artifacts/g1-p37-smoke-eval/
             sim/artifacts/g1-p37-onnx/
+            sim/artifacts/p37-cross-body-smoke/
           if-no-files-found: error
           retention-days: 14
