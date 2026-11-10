@@ -247,12 +247,8 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert "Unitree Go2" in page.locator("#stage-title").inner_text()
             page.locator("#compare-run").click()
             assert not page.locator("#compare-stop").is_disabled()
-            assert page.locator("#compare-frame-a").get_attribute("src").startswith(
-                "../simulator/"
-            )
-            assert page.locator("#compare-frame-b").get_attribute("src").startswith(
-                "../simulator/"
-            )
+            assert page.locator("#compare-frame-a").get_attribute("src").startswith("../simulator/")
+            assert page.locator("#compare-frame-b").get_attribute("src").startswith("../simulator/")
             assert "ACTUATORS" in page.locator("#body-stats-a").inner_text()
             assert "ACTUATORS" in page.locator("#body-stats-b").inner_text()
             page.frame_locator("#compare-frame-a").locator("canvas").first.wait_for(
