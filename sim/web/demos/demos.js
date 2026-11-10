@@ -14,7 +14,8 @@
     selected: "unitree_g1",
     comparisonActive: false,
     stageTimer: null,
-    stageLoadVersion: 0
+    stageLoadVersion: 0,
+    comparisonVersion: 0
   };
 
   function model(id) {
@@ -38,6 +39,35 @@
     $("stage-error").hidden = false;
     $("stage-error").querySelector("span").textContent = message;
     setStageStatus("SIMULATION UNAVAILABLE");
+  }
+
+  // mjswan's own ready signal fires only after scene loading and its first
+  // stable frame. iframe.onload and canvas presence are too early for demos.
+  function awaitPhysicsFrame(frame, isCurrent, onReady, onError) {
+    const deadline = Date.now() + 120000;
+    function check() {
+      if (!isCurrent()) return;
+      try {
+        const inner = frame.contentWindow;
+        if (inner?.__mjswanError === true) {
+          onError("MuJoCo reported a scene-loading error.");
+          return;
+        }
+        if (inner?.__mjswanReady === true) {
+          onReady();
+          return;
+        }
+      } catch {
+        onError("The embedded simulator is not accessible at this origin.");
+        return;
+      }
+      if (Date.now() >= deadline) {
+        onError("Scene initialization timed out. Try a WebGL-enabled device.");
+        return;
+      }
+      setTimeout(check, 150);
+    }
+    check();
   }
 
   function startStage(id) {
@@ -66,16 +96,17 @@
     }
     frame.onload = () => {
       if (version !== state.stageLoadVersion || state.comparisonActive) return;
-      $("stage-loading").hidden = true;
-      setStageStatus("PHYSICS RUNNING");
-      if (state.stageTimer) clearTimeout(state.stageTimer);
+      awaitPhysicsFrame(
+        frame,
+        () => version === state.stageLoadVersion && !state.comparisonActive,
+        () => {
+          $("stage-loading").hidden = true;
+          setStageStatus("PHYSICS RUNNING");
+        },
+        (message) => stageError(message)
+      );
     };
     frame.src = simUrl(id);
-    state.stageTimer = setTimeout(() => {
-      if (version === state.stageLoadVersion && !$("stage-loading").hidden) {
-        stageError("The simulator did not load. Check WebGL support or open the full lab.");
-      }
-    }, 110000);
   }
 
   function setCompareOptions() {
@@ -124,6 +155,7 @@
   function stopComparison({restoreStage = true} = {}) {
     if (!state.comparisonActive) return;
     state.comparisonActive = false;
+    ++state.comparisonVersion;
     for (const key of ["a", "b"]) {
       $("compare-frame-" + key).src = "about:blank";
       $("compare-idle-" + key).hidden = false;
@@ -155,10 +187,23 @@
         "Stop the comparison to return to the main scene.";
       setStageStatus("SCENE PAUSED");
     }
+    const version = ++state.comparisonVersion;
     for (const [key, id] of [["a", a], ["b", b]]) {
       renderStats(id, key);
-      $("compare-idle-" + key).hidden = true;
-      $("compare-frame-" + key).src = simUrl(id);
+      const frame = $("compare-frame-" + key);
+      const overlay = $("compare-idle-" + key);
+      overlay.textContent = "Preparing " + (model(id)?.name || "robot") + " physics…";
+      overlay.hidden = false;
+      frame.onload = () => {
+        if (!state.comparisonActive || version !== state.comparisonVersion) return;
+        awaitPhysicsFrame(
+          frame,
+          () => state.comparisonActive && version === state.comparisonVersion,
+          () => { overlay.hidden = true; },
+          (message) => { overlay.textContent = message; }
+        );
+      };
+      frame.src = simUrl(id);
     }
     $("compare-stop").disabled = false;
     $("compare-run").textContent = "Restart comparison ↻";
