@@ -55,12 +55,15 @@ jobs:
           manifest = json.loads(Path("_site/simulator/manifest.json").read_text())
           scenes = {s["id"] for p in manifest["projects"] for s in p["scenes"]}
           assert {"unitree_g1", "unitree_go2", "franka_panda", "unitree_h1", "booster_t1", "boston_dynamics_spot", "crazyflie_2"} <= scenes
-          assert len(scenes) >= 10
+          assert len(scenes) >= 13
+          assert {"g1_impact_lab", "go2_contact_field", "franka_gravity_stack"} <= scenes
           assert Path("_site/index.html").is_file()
           assert Path("_site/simulator/index.html").is_file()
           assert Path("_site/catalog.json").is_file()
           assert Path("_site/studio.css").is_file()
           assert Path("_site/studio.js").is_file()
+          assert Path("_site/demos.css").is_file()
+          assert Path("_site/demo-catalog.json").is_file()
           print("Built real robot scenes:", sorted(scenes))
           PY
       - name: Record provenance
