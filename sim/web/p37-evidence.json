@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "kind": "experimental_p37_g1_physics",
+  "model": "P37Neuro recurrent PPO",
+  "robot": "Unitree G1",
+  "training_updates": 1,
+  "policy_scope": "native MuJoCo closed-loop; not web-driven",
+  "qualification": "unqualified",
+  "qualified_for_walking": false,
+  "commanded_velocity_m_s": 0.3,
+  "evaluation": {
+    "control_dt_s": 0.02,
+    "seeds": [
+      {
+        "seed": 1000,
+        "sim_seconds": 1.98,
+        "fallen": true,
+        "final_velocity_m_s": 1.0662642854
+      },
+      {
+        "seed": 1001,
+        "sim_seconds": 1.68,
+        "fallen": true,
+        "final_velocity_m_s": -1.4010885581
+      },
+      {
+        "seed": 1002,
+        "sim_seconds": 2,
+        "fallen": false,
+        "final_velocity_m_s": 0.1849221564
+      }
+    ],
+    "notes": "Two trials fell; one reached the 2 second evaluation horizon. The configured 45N force starts at t=2s, so these trials do not demonstrate learned recovery. These results are smoke tests, not a locomotion success benchmark."
+  },
+  "onnx": {
+    "max_action_abs_error": 2.1606683731079102e-7,
+    "max_memory_abs_error": 1.4901161193847656e-7,
+    "parity_steps": 16
+  },
+  "provenance": {
+    "training_workflow": "https://github.com/OntosRobotics/P37-Neuro/actions/runs/42825360546",
+    "onnx_workflow": "https://github.com/OntosRobotics/P37-Neuro/actions/runs/42826853022",
+    "checkpoint_sha256": "05aceaa2229bfa87dd137d4188e9103588c5f96d054bdad19a5c71aefc514ac4"
+  }
+}

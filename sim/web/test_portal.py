@@ -1,21 +1,51 @@
-"""Static checks for the physical robot web entry point."""
+"""Static invariants for the P37 public physics and research interface."""
 
 from pathlib import Path
+
+from catalog import ROBOTS, check_catalog
 
 ROOT = Path(__file__).resolve().parent
 
 
-def test_browser_page_names_real_robots():
+def test_curated_catalog() -> None:
+    check_catalog()
+    assert len(ROBOTS) >= 10
+    assert {robot.kind for robot in ROBOTS} >= {
+        "Humanoids",
+        "Quadrupeds",
+        "Manipulators",
+        "Mobile",
+        "Aerial",
+    }
+    assert {"unitree_g1", "unitree_go2", "franka_panda"}.issubset({robot.id for robot in ROBOTS})
+
+
+def test_browser_has_real_interaction_and_honest_policy_status() -> None:
     page = (ROOT / "index.html").read_text(encoding="utf-8")
-    for name in ("Unitree G1", "Unitree Go2", "Franka Panda", "simulator/manifest.json"):
-        assert name in page
-    assert "Model-only physics" in page
-    assert "not been qualified" in page
+    js = (ROOT / "studio.js").read_text(encoding="utf-8")
+    css = (ROOT / "studio.css").read_text(encoding="utf-8")
+    for marker in (
+        "P37 Brain Lab",
+        "studio.css",
+        "studio.js",
+        "robot-library",
+        "scene-canvas",
+        "inspector-panel",
+        "p37-evidence",
+        "Trained P37 policy",
+    ):
+        assert marker in page or marker in js
+    assert "simulator/manifest.json" in js
+    assert "NOT ATTACHED" in page
+    assert "not walking-qualified" in js.lower() or "not walking-qualified" in page.lower()
+    assert len(css) > 4000
 
 
-def test_builder_defines_real_menagerie_scenes():
+def test_builder_keeps_real_mujoco_scenes() -> None:
     script = (ROOT / "build_mjswan.py").read_text(encoding="utf-8")
-    for model in ("unitree_g1", "unitree_go2", "franka_emika_panda"):
-        assert model in script
     assert "MjSpec.from_file" in script
+    assert "project.add_scene" in script
     assert "scene.set_viewer" in script
+    assert "_light_scene" in script
+    assert "contype=0" in script
+    assert "for robot in ROBOTS" in script

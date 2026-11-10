@@ -30,6 +30,11 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
     screenshots.mkdir(parents=True, exist_ok=True)
     if not (site / "simulator/manifest.json").is_file():
         raise FileNotFoundError("mjswan bundle missing")
+    catalog = json.loads((site / "catalog.json").read_text(encoding="utf-8"))
+    assert len(catalog["robots"]) >= 10
+    assert (site / "studio.css").is_file()
+    assert (site / "studio.js").is_file()
+    assert (site / "p37-evidence.json").is_file()
 
     class Handler(http.server.SimpleHTTPRequestHandler):
         def translate_path(self, path):
@@ -86,22 +91,39 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             response = page.goto(origin, wait_until="domcontentloaded", timeout=30000)
             assert response is not None and response.status == 200
             assert "P37 Brain Lab" in page.title()
-            page.locator("#fallback.show").wait_for(state="detached", timeout=45000)
+            page.locator("#scene-loading").wait_for(state="hidden", timeout=120000)
+            assert page.locator("#robot-count").inner_text().startswith("10")
+
+            # Research evidence is real native G1 control data, never mislabeled
+            # as the controller attached to the public model-only iframe.
+            page.locator("#tab-p37").click()
+            assert "EXPERIMENTAL" in page.locator("#panel-p37").inner_text()
+            page.locator(".trial-row").first.wait_for(state="visible", timeout=15000)
+            assert "SEED 1000" in page.locator("#evidence-trials").inner_text()
+            page.locator("#tab-scene").click()
+            page.locator('[data-category="Quadrupeds"]').click()
+            assert page.locator('[data-robot="unitree_g1"]').count() == 0
+            page.locator('[data-category="All"]').click()
 
             for key, expected in (
-                ("g1", "Unitree G1"),
-                ("go2", "Unitree Go2"),
-                ("franka", "Franka Panda"),
+                ("unitree_g1", "Unitree G1"),
+                ("unitree_go2", "Unitree Go2"),
+                ("franka_panda", "Franka Panda"),
+                ("boston_dynamics_spot", "Boston Dynamics Spot"),
+                ("crazyflie_2", "Crazyflie 2"),
             ):
                 page.locator(f'[data-robot="{key}"]').click()
                 page.wait_for_function(
-                    "(key) => document.querySelector('#sim').src.includes('scene=' + key)",
-                    arg={"g1": "unitree_g1", "go2": "unitree_go2", "franka": "franka_panda"}[key],
+                    "(key) => new URL(document.querySelector('#sim').src)"
+                    ".searchParams.get('scene') === key",
+                    arg=key,
                     timeout=60000,
                 )
-                assert expected in page.locator("#viewer-label").inner_text()
+                assert expected in page.locator("#scene-title").inner_text()
+                page.locator("#scene-loading").wait_for(state="hidden", timeout=120000)
+                assert not page.locator("#scene-fallback").is_visible()
                 frame = page.frame_locator("#sim")
-                frame.locator("canvas").first.wait_for(state="visible", timeout=60000)
+                frame.locator("canvas").first.wait_for(state="visible", timeout=90000)
                 box = frame.locator("canvas").first.bounding_box()
                 assert box is not None and box["width"] >= 200 and box["height"] >= 150
                 page.wait_for_timeout(1500)
@@ -121,10 +143,12 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                     page.screenshot(path=str(screenshots / "g1-pointer-interaction.png"))
             page.locator("#reset").click()
             page.frame_locator("#sim").locator("canvas").first.wait_for(
-                state="visible", timeout=60000
+                state="visible", timeout=90000
             )
             if failures:
                 raise AssertionError("Browser runtime errors: " + " | ".join(failures[:8]))
+            if console_errors:
+                raise AssertionError("Browser console errors: " + " | ".join(console_errors[:8]))
             browser.close()
     result = {
         "status": "pass",

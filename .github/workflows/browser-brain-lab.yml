@@ -44,7 +44,7 @@ jobs:
           path: _physics/g1-go2-force-results.json
           if-no-files-found: error
           retention-days: 14
-      - name: Build MuJoCo WebAssembly + three robot scenes
+      - name: Build MuJoCo WebAssembly + ten robot scenes
         run: python sim/web/build_mjswan.py --menagerie _menagerie --base-path /simulator/
       - name: Assemble and validate static website
         run: |
@@ -54,9 +54,13 @@ jobs:
           from pathlib import Path
           manifest = json.loads(Path("_site/simulator/manifest.json").read_text())
           scenes = {s["id"] for p in manifest["projects"] for s in p["scenes"]}
-          assert {"unitree_g1", "unitree_go2", "franka_panda"} <= scenes
+          assert {"unitree_g1", "unitree_go2", "franka_panda", "unitree_h1", "booster_t1", "boston_dynamics_spot", "crazyflie_2"} <= scenes
+          assert len(scenes) >= 10
           assert Path("_site/index.html").is_file()
           assert Path("_site/simulator/index.html").is_file()
+          assert Path("_site/catalog.json").is_file()
+          assert Path("_site/studio.css").is_file()
+          assert Path("_site/studio.js").is_file()
           print("Built real robot scenes:", sorted(scenes))
           PY
       - name: Record provenance

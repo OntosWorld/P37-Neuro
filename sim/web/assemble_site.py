@@ -1,4 +1,4 @@
-"""Assemble the public static P37 Brain Lab site after mjswan asset compilation."""
+"""Assemble the production P37 Brain Lab from genuine compiled MuJoCo scenes."""
 
 from __future__ import annotations
 
@@ -6,6 +6,8 @@ import argparse
 import json
 import shutil
 from pathlib import Path
+
+from catalog import ROBOTS
 
 ROOT = Path(__file__).resolve().parent
 
@@ -19,7 +21,7 @@ def assemble(output: Path) -> Path:
     projects = manifest.get("projects", [])
     if not isinstance(projects, list) or not projects:
         raise ValueError("mjswan build has no projects")
-    expected = {"unitree_g1", "unitree_go2", "franka_panda"}
+    expected = {robot.id for robot in ROBOTS}
     scenes = {
         scene.get("id")
         for project in projects
@@ -28,14 +30,24 @@ def assemble(output: Path) -> Path:
         if isinstance(scene, dict)
     }
     if not expected.issubset(scenes):
-        raise ValueError(f"missing generated physical robot models: {sorted(expected - scenes)}")
+        raise ValueError(f"missing robot physics scenes: {sorted(expected - scenes)}")
+
     output = output.resolve()
     if output in (ROOT, viewer):
-        raise ValueError("output must be separate from source and mjswan dist")
+        raise ValueError("output must be separate from source and simulator dist")
     if output.exists():
         shutil.rmtree(output)
     output.mkdir(parents=True)
-    shutil.copy2(ROOT / "index.html", output / "index.html")
+    for file_name in ("index.html", "studio.css", "studio.js", "p37-evidence.json"):
+        shutil.copy2(ROOT / file_name, output / file_name)
+    catalog = {
+        "schema_version": 2,
+        "origin": "Google DeepMind MuJoCo Menagerie",
+        "engine": "mjswan / MuJoCo WASM",
+        "controller_status": "model_only",
+        "robots": [robot.to_public() for robot in ROBOTS],
+    }
+    (output / "catalog.json").write_text(json.dumps(catalog, indent=2) + "\n", encoding="utf-8")
     shutil.copytree(viewer, output / "simulator")
     return output
 
