@@ -56,3 +56,19 @@ def test_builder_keeps_real_mujoco_scenes() -> None:
     assert "_light_scene" in script
     assert "contype=0" in script
     assert "for robot in ROBOTS" in script
+
+
+def test_public_demos_keep_capability_claims_evidence_gated() -> None:
+    html = (ROOT / "demos" / "index.html").read_text(encoding="utf-8")
+    js = (ROOT / "demos" / "demos.js").read_text(encoding="utf-8")
+    evidence = (ROOT / "build_demo_evidence.py").read_text(encoding="utf-8")
+    assert "same trained checkpoint" in html
+    assert "not yet verified" in html
+    assert "not a controlled policy-transfer benchmark" in html
+    assert "Live MuJoCo" in html
+    assert "controller !== \"none\"" in js
+    assert "qualified_for_walking !== false" in js
+    assert "same_checkpoint_control_verified_on_two_bodies" in evidence
+    assert "mujoco.MjModel.from_xml_path" in evidence
+    assert "p37_recovery_claimed" in evidence
+    assert "demos.css" in html and "demos.js" in html
