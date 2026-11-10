@@ -1,0 +1,78 @@
+name: Publish P37 Brain Lab to Cloudflare
+
+on:
+  workflow_run:
+    workflows: ["Browser Brain Lab"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: "Successful Browser Brain Lab GitHub Actions run ID"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  publish:
+    if: >-
+      (github.event_name == 'workflow_dispatch') ||
+      (github.event.workflow_run.event == 'push' &&
+       github.event.workflow_run.conclusion == 'success')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download verified static simulation site
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN: ${{ inputs.build_run_id || github.event.workflow_run.id }}
+        run: |
+          mkdir -p _site
+          gh run download "$SOURCE_RUN" --name p37-browser-brain-lab --dir _site
+          test -f _site/index.html
+          test -f _site/simulator/manifest.json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify Cloudflare deployment credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [[ -z "$CLOUDFLARE_API_TOKEN" || -z "$CLOUDFLARE_ACCOUNT_ID" ]]; then
+            echo "::error::Add CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID as repository or organization Actions secrets."
+            exit 1
+          fi
+      - name: Prepare project-path static content
+        run: |
+          mkdir -p _publish/P37-Neuro
+          cp -a _site/. _publish/P37-Neuro/
+          cat > _publish/index.html <<'HTML'
+          <!doctype html>
+          <html lang="en"><head><meta charset="utf-8">
+          <meta http-equiv="refresh" content="0;url=/P37-Neuro/">
+          <title>P37 Brain Lab</title></head>
+          <body><a href="/P37-Neuro/">Open P37 Brain Lab</a></body></html>
+          HTML
+      - name: Create Pages project when missing
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ vars.P37_CLOUDFLARE_PROJECT || 'p37-brain-lab' }}
+        run: |
+          if ! npx --yes wrangler pages project list | grep -Fq "$PROJECT"; then
+            npx --yes wrangler pages project create "$PROJECT" --production-branch main
+          fi
+      - name: Publish verified site publicly
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          PROJECT: ${{ vars.P37_CLOUDFLARE_PROJECT || 'p37-brain-lab' }}
+        run: |
+          npx --yes wrangler pages deploy _publish \
+            --project-name "$PROJECT" --branch main --commit-hash "$GITHUB_SHA"
+          echo "Site intended at https://${PROJECT}.pages.dev/P37-Neuro/"
