@@ -3,6 +3,7 @@
 Measures a physical force (N), impulse (N*s), and base displacement.
 This is *not* a learned recovery or locomotion benchmark.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -23,10 +24,7 @@ def rollout(
 ) -> dict:
     if force_n < 0 or not 0 < push_start_s < push_end_s < duration_s:
         raise ValueError("invalid force or push timing")
-    free_roots = [
-        j for j in range(model.njnt)
-        if model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE
-    ]
+    free_roots = [j for j in range(model.njnt) if model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE]
     if len(free_roots) != 1:
         raise ValueError("experiment requires exactly one floating base")
     base_body = int(model.jnt_bodyid[free_roots[0]])
@@ -91,13 +89,18 @@ def main() -> None:
     }
     args.out.parent.mkdir(parents=True, exist_ok=True)
     args.out.write_text(json.dumps(runs, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({
-        robot: {
-            "displacement_vs_control_m": trial["displacement_vs_control_m"],
-            "repeat_deterministic": trial["repeat_deterministic"],
-        }
-        for robot, trial in runs.items()
-    }, indent=2))
+    print(
+        json.dumps(
+            {
+                robot: {
+                    "displacement_vs_control_m": trial["displacement_vs_control_m"],
+                    "repeat_deterministic": trial["repeat_deterministic"],
+                }
+                for robot, trial in runs.items()
+            },
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":
