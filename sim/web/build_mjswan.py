@@ -13,7 +13,6 @@ from pathlib import Path
 
 import mjswan
 import mujoco
-
 from catalog import ROBOTS, RobotScene, check_catalog
 
 ROOT = Path(__file__).resolve().parent
@@ -71,10 +70,10 @@ def build(menagerie: Path, base_path: str = "/simulator/") -> Path:
     )
     project = builder.add_project(name="P37 Robot Models", default=True)
     project.set_notice(
-        "Real MuJoCo Menagerie robotic models under their original licenses. "
-        "Lab lighting and reference markers are visual only. "
-        "Robots are not controlled by a trained P37 policy in this build. "
-        "Do not interpret passive physics or manually applied forces as learned skills."
+        "Real MuJoCo Menagerie models under their original licenses.\n"
+        "Lab lights and reference markers are visual only.\n"
+        "No trained P37 policy is attached in this build.\n"
+        "Passive physics and user forces are not learned skills."
     )
 
     built_scenes = []
