@@ -15,6 +15,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+train = ["gymnasium>=1.0,<2", "stable-baselines3>=2.4,<3", "torch>=2.4"]
 learn = ["p37-neuro-ml"]
 
 [tool.uv.sources]

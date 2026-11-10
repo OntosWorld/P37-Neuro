@@ -1,0 +1,47 @@
+name: G1 MuJoCo physics smoke
+
+on:
+  pull_request:
+    paths:
+      - "sim/**"
+      - ".github/workflows/g1-physics.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  physics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install simulator and trainer dependencies
+        run: uv sync --extra train --extra learn --group dev
+        working-directory: sim
+      - name: Compile new Python modules
+        run: uv run python -m compileall -q src/p37_neuro_sim/g1_locomotion_env.py src/p37_neuro_sim/g1_train.py src/p37_neuro_sim/g1_rollout.py src/p37_neuro_sim/g1_p37_train.py
+        working-directory: sim
+      - name: Run actual MuJoCo simulation tests
+        run: uv run pytest -q tests/test_g1_rollout.py tests/test_g1_locomotion_env.py
+        working-directory: sim
+      - name: Fetch official MuJoCo Menagerie G1
+        run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git /tmp/mujoco_menagerie
+      - name: Execute official G1 rigid-body simulation
+        working-directory: sim
+        run: |
+          uv run python -m p37_neuro_sim.g1_rollout \
+            --model /tmp/mujoco_menagerie/unitree_g1/scene.xml \
+            --output artifacts/g1-real-physics \
+            --duration 8 --seed 1000 --push-newtons 45
+          uv run python -c "import json; from pathlib import Path; p=Path('artifacts/g1-real-physics/summary.json'); x=json.loads(p.read_text()); assert x['level']=='simulation_only'; assert x['elapsed_s'] > 0"
+      - name: One real-physics P37 on-policy update (smoke, not qualification)
+        working-directory: sim
+        run: |
+          uv run python -m p37_neuro_sim.g1_p37_train \
+            --model /tmp/mujoco_menagerie/unitree_g1/scene.xml \
+            --output artifacts/g1-p37-smoke --updates 1 --seed 37
+          uv run python -c "from pathlib import Path; p=Path('artifacts/g1-p37-smoke/checkpoint/manifest.json'); assert p.is_file()"
