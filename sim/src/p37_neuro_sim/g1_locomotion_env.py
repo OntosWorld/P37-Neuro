@@ -57,7 +57,7 @@ class G1LocomotionEnv(gym.Env):
             raise ValueError("positive simulation parameters required")
         if min(damping, reset_noise_rad, push_newtons) < 0:
             raise ValueError("damping, noise and force cannot be negative")
-        if not 0 <= push_start_s < push_end_s <= episode_seconds:
+        if push_newtons > 0 and not 0 <= push_start_s < push_end_s <= episode_seconds:
             raise ValueError("invalid push timing")
         steps = round(control_dt / self.model.opt.timestep)
         if steps < 1 or abs(steps * self.model.opt.timestep - control_dt) > 1e-9:
