@@ -39,16 +39,16 @@ def run(
         "qualified_for_cross_body_task_transfer": False,
         "qualified_for_walking": False,
         "mode": "native MuJoCo physical actuation (not browser inference)",
-        "embodiment_features": "prototype joint feature baseline, not a qualified morphology encoder",
+        "embodiment_features": (
+            "prototype joint feature baseline, not a qualified morphology encoder"
+        ),
         "bodies": {},
     }
     for body_id, model_path, threshold in (
         ("unitree_g1", g1_model, 0.45),
         ("unitree_go2", go2_model, 0.16),
     ):
-        env = P37G1Env(
-            model_path, reset_on_done=False, fall_height_m=threshold
-        )
+        env = P37G1Env(model_path, reset_on_done=False, fall_height_m=threshold)
         trials = []
         try:
             for seed in range(1000, 1000 + seeds):
