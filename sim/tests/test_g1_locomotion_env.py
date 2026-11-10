@@ -1,11 +1,13 @@
 """Small real-physics training environment tests (no pretrained checkpoint needed)."""
 
+import importlib
 from pathlib import Path
 
 import numpy as np
 import pytest
 
-from p37_neuro_sim.g1_locomotion_env import G1LocomotionEnv
+pytest.importorskip("gymnasium")
+G1LocomotionEnv = importlib.import_module("p37_neuro_sim.g1_locomotion_env").G1LocomotionEnv
 
 XML = """
 <mujoco model="g1_training_fixture">
