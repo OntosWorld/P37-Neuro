@@ -29,7 +29,7 @@ class Demo:
 DEMOS: tuple[Demo, ...] = (
     Demo(
         "g1_impact_lab",
-        "Impact laboratory",
+        "G1 Impact Lab",
         "unitree_g1",
         "Unitree G1",
         "External contact",
@@ -38,7 +38,7 @@ DEMOS: tuple[Demo, ...] = (
     ),
     Demo(
         "go2_contact_field",
-        "Contact field",
+        "Go2 Contact Field",
         "unitree_go2",
         "Unitree Go2",
         "Obstacle contacts",
@@ -47,7 +47,7 @@ DEMOS: tuple[Demo, ...] = (
     ),
     Demo(
         "franka_gravity_stack",
-        "Gravity and objects",
+        "Franka Gravity Stack",
         "franka_panda",
         "Franka Panda",
         "Object interaction",
