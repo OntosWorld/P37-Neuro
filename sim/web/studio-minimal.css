@@ -152,6 +152,13 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offs
 .scene-initializing strong{font-size:18px}
 .scene-canvas:fullscreen .scene-label-bottom{bottom:108px}
 .scene-canvas:fullscreen{border:0}
+.simulation-column:fullscreen{
+  width:100vw;height:100dvh;min-height:100dvh;
+}
+.simulation-column:fullscreen .scene-canvas{
+  height:100dvh;min-height:100dvh;
+}
+.simulation-column:fullscreen .scene-label-bottom{bottom:111px}
 .app-footer{display:none}
 
 /* The library is a modal workspace, not a permanent sidebar. */
@@ -326,7 +333,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offs
     transform:translateY(105%);box-shadow:0 -24px 75px rgba(0,0,0,.38)
   }
   .library-panel.open,.inspector-panel.open{transform:translateY(0)}
-  .library-top{padding:22px 22px 14px}
+  .library-top{display:block;padding:22px 22px 14px}
   .library-top h1{font-size:27px}
   .library-heading{padding:16px 22px 13px}
   .category-strip{padding:0 19px 14px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
