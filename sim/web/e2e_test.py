@@ -37,7 +37,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             if url_prefix != "/":
                 if not requested.startswith(url_prefix):
                     return str(site / "__not_found__")
-                requested = "/" + requested[len(url_prefix):]
+                requested = "/" + requested[len(url_prefix) :]
             return super().translate_path(requested)
 
         def __init__(self, *args, **kwargs):
