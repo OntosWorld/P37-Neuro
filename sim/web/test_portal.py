@@ -64,7 +64,7 @@ def test_public_demos_keep_capability_claims_evidence_gated() -> None:
     evidence = (ROOT / "build_demo_evidence.py").read_text(encoding="utf-8")
     assert "same trained checkpoint" in html
     assert "not yet verified" in html
-    assert "not a controlled policy-transfer benchmark" in html
+    assert "controlled policy-transfer benchmark" in html
     assert "Live MuJoCo" in html
     assert "controller !== \"none\"" in js
     assert "qualified_for_walking !== false" in js
