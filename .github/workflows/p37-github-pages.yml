@@ -16,8 +16,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: "p37-brain-lab-github-pages"
-  cancel-in-progress: false
+  group: "p37-brain-lab-github-pages-${{ github.ref }}"
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
