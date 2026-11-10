@@ -1,5 +1,6 @@
 """Static invariants for the P37 public physics and research interface."""
 
+import re
 from pathlib import Path
 
 from catalog import ROBOTS, check_catalog
@@ -66,6 +67,9 @@ def test_demos_are_physical_tasks_and_not_fake_p37_policies() -> None:
     assert "performance_qualified !== false" in web
     assert "selectDemo" in web
     assert (ROOT / "demos.css").is_file()
+    html_ids = set(re.findall(r'\\bid="([^"]+)"', (ROOT / "index.html").read_text()))
+    js_ids = set(re.findall(r'\\bdom\\("([^"]+)"\\)', web))
+    assert js_ids <= html_ids, f"missing JavaScript targets: {sorted(js_ids - html_ids)}"
 
 
 def test_builder_keeps_real_mujoco_scenes() -> None:
