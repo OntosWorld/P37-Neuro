@@ -508,10 +508,8 @@
       selectDemo(requestedDemo, false);
     } else if (requestedRobot && first) {
       selectRobot(first.id, false);
-    } else if (state.demos.length) {
-      // Begin with an actual task scene rather than a passive model gallery.
-      selectDemo(state.demos[0].id, false);
     } else if (first) {
+      // Keep startup responsive; load the heavier task scenes on selection.
       selectRobot(first.id, false);
     }
     await Promise.all([loadEvidence(), loadCrossBodyResults()]);
