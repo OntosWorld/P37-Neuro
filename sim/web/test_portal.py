@@ -70,6 +70,7 @@ def test_public_demos_keep_capability_claims_evidence_gated() -> None:
     assert "qualified_for_walking !== false" in js
     assert "same_checkpoint_task_transfer_qualified" in evidence
     assert "same_checkpoint_joint_actions_executed_on_two_bodies" in evidence
-    assert "mujoco.MjModel.from_xml_path" in evidence\n    assert "p37-cross-body-evidence.json" in evidence
+    assert "mujoco.MjModel.from_xml_path" in evidence
+    assert "p37-cross-body-evidence.json" in evidence
     assert "p37_recovery_claimed" in evidence
     assert "demos.css" in html and "demos.js" in html
