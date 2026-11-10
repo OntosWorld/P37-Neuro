@@ -1,0 +1,48 @@
+name: Cross-body MuJoCo recorded baseline
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "scripts/mujoco_cross_body_demo.py"
+      - "src/p37_neuro/data/trace_export.py"
+      - ".github/workflows/cross-body-mujoco.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Record physics-based baseline
+        run: |
+          uv run --project sim python scripts/mujoco_cross_body_demo.py --output artifacts/cross-body-mujoco.json
+      - name: Validate exported provenance and measured samples
+        run: |
+          uv run --project sim python - <<'PY'
+          import json
+          from pathlib import Path
+          payload = json.loads(Path("artifacts/cross-body-mujoco.json").read_text())
+          assert payload["schema_version"] == "p37-trace-v1"
+          assert len(payload["traces"]) == 2
+          assert len({t["embodiment_id"] for t in payload["traces"]}) == 2
+          assert len({t["task_id"] for t in payload["traces"]}) == 1
+          for t in payload["traces"]:
+              assert t["provenance"]["evidence_level"] == "T2"
+              assert t["provenance"]["policy_attached"] is False
+              assert t["provenance"]["checkpoint_sha256"] == ""
+              assert t["frames"]
+              assert "position_error_m" in t["frames"][-1]["state"]
+          print("Baseline physics episode artifacts validated")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p37-cross-body-mujoco-recorded-baseline
+          path: artifacts/cross-body-mujoco.json
+          retention-days: 30
