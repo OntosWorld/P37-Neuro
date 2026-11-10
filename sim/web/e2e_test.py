@@ -160,15 +160,20 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                 box = frame.locator("canvas").first.bounding_box()
                 assert box is not None and box["width"] >= 200 and box["height"] >= 150
                 page.wait_for_timeout(1500)
-                path = screenshots / f"{key}.png" if key in (
-                    "unitree_g1", "boston_dynamics_spot"
-                ) else None
+                path = (
+                    screenshots / f"{key}.png"
+                    if key in ("unitree_g1", "boston_dynamics_spot")
+                    else None
+                )
                 if path:
                     page.screenshot(path=str(path), timeout=90000)
-                results.append({
-                    "robot": key, "canvas": True,
-                    "screenshot": str(path) if path else None,
-                })
+                results.append(
+                    {
+                        "robot": key,
+                        "canvas": True,
+                        "screenshot": str(path) if path else None,
+                    }
+                )
                 if key == "unitree_g1":
                     # Exercise actual pointer routing to the mjswan physics canvas.
                     # The native force test is responsible for quantitative physics proof.
