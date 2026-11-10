@@ -62,6 +62,21 @@
     <section id="embodiments" class="content-width cross-section" aria-labelledby="cross-heading">
       <div class="section-heading"><div><p class="section-index">02 / CROSS-EMBODIMENT LAB</p><h2 id="cross-heading">Different bodies.<br>One evaluation framework.</h2></div><p>Two robot models, viewed side by side under the same simulation engine. Inspect their different joint structures and test them independently.</p></div>
       <div class="cross-claim"><span class="cross-marker" aria-hidden="true"></span><div><strong>What this verifies</strong><p>Different robot embodiments can be loaded, inspected and simulated through the same browser physics interface. <b>Successful transfer of a trained P37 checkpoint across these bodies is not yet verified.</b></p></div></div>
+      <div class="inference-proof" aria-label="Verified unchanged P37 checkpoint inference on two robots">
+        <div class="proof-main">
+          <p class="proof-overline">VERIFIED P37 / NATIVE MUJOCO INFERENCE</p>
+          <h3>One checkpoint.<br>Two actuator layouts.</h3>
+          <p>The same experimental P37 recurrent weights issued joint actions to both G1 and Go2 during short physics trials. The model was not retrained for Go2. This verifies the inference path, <strong>not learned walking or task transfer.</strong></p>
+          <a class="source-link" id="cross-p37-source" href="https://github.com/OntosRobotics/P37-Neuro/actions/runs/42896162520" target="_blank" rel="noopener noreferrer">See the native simulation run <span aria-hidden="true">↗</span></a>
+        </div>
+        <div class="proof-stats" id="cross-p37-stats" aria-live="polite">
+          <div class="proof-stat"><span>UNITREE G1</span><strong id="cross-g1-actions">—</strong><small>actuators controlled</small></div>
+          <div class="proof-stat"><span>UNITREE GO2</span><strong id="cross-go2-actions">—</strong><small>actuators controlled</small></div>
+          <div class="proof-stat"><span>TRIAL DURATION</span><strong id="cross-duration">—</strong><small>per robot / seed</small></div>
+          <div class="proof-stat"><span>RETRAINING FOR GO2</span><strong id="cross-retraining">—</strong><small>same checkpoint reused</small></div>
+          <div class="proof-disclaimer">Short-horizon integration smoke. Cross-body task success and recovery remain unqualified.</div>
+        </div>
+      </div>
       <div class="compare-toolbar"><div class="compare-label">COMPARE BODIES</div><div class="selectors"><label for="body-a">BODY A</label><select id="body-a" aria-label="First robot model"><option value="unitree_g1">Unitree G1</option><option value="unitree_go2">Unitree Go2</option></select><span class="versus" aria-hidden="true">×</span><label for="body-b">BODY B</label><select id="body-b" aria-label="Second robot model"><option value="unitree_go2" selected>Unitree Go2</option><option value="unitree_g1">Unitree G1</option></select></div><button id="compare-run" class="primary" type="button">Launch both simulations <span aria-hidden="true">↗</span></button></div>
       <div class="compare-grid">
         <div class="compare-card"><div class="compare-card-top"><span>01 / BODY A</span><strong id="compare-name-a">Unitree G1</strong></div><div class="compare-viewport" id="compare-view-a"><iframe title="Robot A live MuJoCo simulation" id="compare-frame-a" loading="lazy" allow="fullscreen"></iframe><div class="compare-idle" id="compare-idle-a">Start the comparison to load this model.</div></div><div class="body-stats" id="body-stats-a">Physical model characteristics load from MuJoCo.</div></div>
