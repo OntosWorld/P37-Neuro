@@ -231,9 +231,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert page.locator(".force-row").count() == 2
             assert page.locator(".p37-trial-row").count() == 3
             assert "Unitree G1" in page.locator("#stage-title").inner_text()
-            assert "not yet verified" in page.locator("#cross-heading").locator("..").inner_text().lower() or (
-                "not yet verified" in page.locator(".cross-claim").inner_text().lower()
-            )
+            assert "not yet verified" in page.locator(".cross-claim").inner_text().lower()
             page.set_viewport_size({"width": 1440, "height": 900})
             page.screenshot(path=str(screenshots / "demos-desktop.png"), timeout=90000)
             page.locator('[data-scene="unitree_go2"]').click()
