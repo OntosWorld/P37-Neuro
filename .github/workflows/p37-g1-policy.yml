@@ -1,0 +1,80 @@
+name: P37 G1 native policy qualification smoke
+
+on:
+  pull_request:
+    paths:
+      - "sim/src/p37_neuro_sim/g1_*.py"
+      - "sim/tests/test_g1_locomotion_env.py"
+      - "sim/pyproject.toml"
+      - ".github/workflows/p37-g1-policy.yml"
+  workflow_dispatch:
+    inputs:
+      updates:
+        description: "Experimental P37 PPO updates (not a qualification run)"
+        default: "1"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  g1-policy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Install genuine P37 model, MuJoCo and Gymnasium
+        working-directory: sim
+        run: uv sync --extra learn --extra train --group dev
+      - name: Fetch official G1 model
+        run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
+      - name: Run MuJoCo action/observation smoke
+        working-directory: sim
+        run: uv run pytest -q tests/test_g1_locomotion_env.py
+      - name: Train one genuine P37 recurrent PPO checkpoint
+        working-directory: sim
+        env:
+          OMP_NUM_THREADS: "2"
+          MKL_NUM_THREADS: "2"
+          P37_UPDATES: ${{ inputs.updates || '1' }}
+        run: |
+          uv run python -m p37_neuro_sim.g1_p37_train \
+            --model ../_menagerie/unitree_g1/scene.xml \
+            --output artifacts/g1-p37-experimental \
+            --updates "$P37_UPDATES" --seed 37
+      - name: Load checkpoint and drive held-out MuJoCo episodes
+        working-directory: sim
+        env:
+          OMP_NUM_THREADS: "2"
+          MKL_NUM_THREADS: "2"
+        run: |
+          uv run python -m p37_neuro_sim.g1_p37_train \
+            --model ../_menagerie/unitree_g1/scene.xml \
+            --output artifacts/g1-p37-smoke-eval \
+            --evaluate artifacts/g1-p37-experimental/checkpoint \
+            --eval-seeds 3 --eval-steps 100 --push-newtons 45
+          uv run python - <<'PY'
+          import json
+          from pathlib import Path
+          base=Path("artifacts/g1-p37-experimental")
+          manifest=json.loads((base/"checkpoint/manifest.json").read_text())
+          result=json.loads(Path("artifacts/g1-p37-smoke-eval/heldout.json").read_text())
+          assert manifest["metadata"]["capability_evidence"] == "false"
+          assert result["qualified_for_walking"] is False
+          assert len(result["trials"]) == 3
+          assert all(row["sim_seconds"] > 0 for row in result["trials"])
+          print(json.dumps({"checkpoint_hash": manifest["sha256"], "trials": result["trials"]}, indent=2))
+          PY
+      - name: Upload experimental P37 checkpoint and measured rollouts
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-g1-experimental-not-qualified
+          path: |
+            sim/artifacts/g1-p37-experimental/
+            sim/artifacts/g1-p37-smoke-eval/
+          if-no-files-found: error
+          retention-days: 14
