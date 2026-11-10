@@ -56,20 +56,20 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offs
 .header-source{padding:0 4px 0 10px}
 .lab-grid{
   display:block;position:relative;
-  min-height:0;height:calc(100dvh - 64px);
-  overflow:hidden;
+  min-height:calc(100dvh - 64px);height:calc(100dvh - 64px);
+  flex:0 0 auto;overflow:hidden;
 }
 .simulation-column{
-  height:100%;width:100%;min-width:0;
-  display:block;
+  height:calc(100dvh - 64px);min-height:calc(100dvh - 64px);width:100%;min-width:0;
+  flex:0 0 auto;display:block;
   position:relative;
   margin:0;padding:0;
   background:#292e33;
 }
 .scene-canvas{
   position:absolute;inset:0;overflow:hidden;
-  border:0;border-radius:0;min-height:0;
-  height:100%;width:100%;
+  border:0;border-radius:0;min-height:calc(100dvh - 64px);
+  height:calc(100dvh - 64px);width:100%;
   background:#30353b;
 }
 .scene-canvas::after{box-shadow:inset 0 0 55px rgba(0,0,0,.08),inset 0 -100px 85px -85px rgba(0,0,0,.30)}
@@ -266,7 +266,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offs
 /* The scene must win on narrow screens as well. */
 @media (min-width:1700px){
   .lab-grid{display:block}
-  .scene-canvas{min-height:0}
+  .scene-canvas{min-height:calc(100dvh - 64px)}
   .robot-library{max-height:none}
 }
 @media (max-width:1250px){
@@ -299,9 +299,9 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offs
   .header-source{display:none}
   .secondary-nav .nav-arrow{display:none}
   .nav-count{display:none}
-  .lab-grid{height:calc(100dvh - 58px)}
-  .simulation-column{height:100%;min-height:0;padding:0}
-  .scene-canvas{min-height:0}
+  .lab-grid{height:calc(100dvh - 58px);min-height:calc(100dvh - 58px)}
+  .simulation-column{height:calc(100dvh - 58px);min-height:calc(100dvh - 58px);padding:0}
+  .scene-canvas{height:calc(100dvh - 58px);min-height:calc(100dvh - 58px)}
   .scene-topline{top:18px;left:16px;right:16px}
   .stage-breadcrumb,.stage-status{font-size:10px}
   .stage-status{padding:6px 8px}
