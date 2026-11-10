@@ -28,7 +28,7 @@ jobs:
           python-version: "3.12"
       - name: Install genuine P37 model, MuJoCo and Gymnasium
         working-directory: sim
-        run: uv sync --extra learn --extra train --group dev
+        run: uv sync --extra learn --extra train --extra export --group dev
       - name: Fetch official G1 model
         run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
       - name: Run MuJoCo action/observation smoke
@@ -68,6 +68,27 @@ jobs:
           assert all(row["sim_seconds"] > 0 for row in result["trials"])
           print(json.dumps({"checkpoint_hash": manifest["sha256"], "trials": result["trials"]}, indent=2))
           PY
+      - name: Export ONNX and compare native P37 inference
+        working-directory: sim
+        env:
+          OMP_NUM_THREADS: "2"
+          MKL_NUM_THREADS: "2"
+        run: |
+          uv run python -m p37_neuro_sim.g1_onnx_export \
+            --model ../_menagerie/unitree_g1/scene.xml \
+            --checkpoint artifacts/g1-p37-experimental/checkpoint \
+            --output artifacts/g1-p37-onnx \
+            --parity-steps 16
+          uv run python - <<'PY'
+          import json
+          from pathlib import Path
+          path=Path("artifacts/g1-p37-onnx/policy-contract.json")
+          data=json.loads(path.read_text())
+          assert data["qualified_for_walking"] is False
+          assert data["max_action_difference"] < 2e-3
+          assert data["max_memory_difference"] < 2e-3
+          assert Path("artifacts/g1-p37-onnx/p37-g1-experimental.onnx").is_file()
+          PY
       - name: Upload experimental P37 checkpoint and measured rollouts
         if: success()
         uses: actions/upload-artifact@v4
@@ -76,5 +97,6 @@ jobs:
           path: |
             sim/artifacts/g1-p37-experimental/
             sim/artifacts/g1-p37-smoke-eval/
+            sim/artifacts/g1-p37-onnx/
           if-no-files-found: error
           retention-days: 14
