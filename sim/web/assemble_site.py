@@ -65,10 +65,12 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
             evidence.get("schema_version") != 1
             or set(evidence.get("bodies", {})) != expected
             or evidence.get("cross_embodiment", {}).get(
-                "same_checkpoint_control_verified_on_two_bodies"
+                "same_checkpoint_task_transfer_qualified"
             )
             is not False
             or evidence.get("p37_g1", {}).get("qualified_for_walking") is not False
+            or evidence.get("cross_body_p37", {}).get("qualified_for_cross_body_task_transfer")
+            is not False
         ):
             raise ValueError("Demo experiment data is incomplete or overclaims capability")
         shutil.copy2(demo_evidence, demos / "evidence.json")
