@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0e11"><title>Cross-Embodiment Lab — P37 Neuro</title>
+<meta name="description" content="Explore P37 Neuro's cross-embodiment architecture and inspect reproducible simulation evidence.">
+<style>
+:root{color-scheme:dark;--bg:#080b0e;--panel:#11161b;--muted:#92a0ab;--border:#293039;--ink:#eef3f5;--a:#adf4d4;--amber:#edca85;font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--ink)}
+button,select,a{font:inherit}button{cursor:pointer}button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid var(--a);outline-offset:3px}
+a{color:inherit;text-decoration:none}.shell{max-width:1500px;margin:auto;padding:0 clamp(18px,3.4vw,56px)}
+header{height:76px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border)}
+.brand{letter-spacing:.07em;font-size:13px;font-weight:750}.brand span{color:var(--muted);font-weight:400;margin-left:13px}.nav{display:flex;align-items:center;gap:25px;font-size:13px;color:#b7c3c9}
+.nav a:hover,.under:hover{color:var(--a)}.eyebrow{font-size:11px;letter-spacing:.19em;color:var(--a);font-weight:650;text-transform:uppercase}
+.hero{padding:65px 0 42px;display:grid;grid-template-columns:minmax(0,1fr) minmax(200px,390px);gap:32px;align-items:end}
+h1{font-size:clamp(42px,5.3vw,85px);line-height:1.01;letter-spacing:-.065em;margin:16px 0 22px;font-weight:580;max-width:930px}
+.lede{color:#acb7bf;font-size:17px;max-width:700px;line-height:1.55;margin:0}
+.hero-note{border-left:1px solid #53616a;padding:5px 0 5px 22px;font-size:13px;line-height:1.65;color:#afbac2}
+.hero-note strong{color:var(--ink);display:block;margin-bottom:8px}
+.lab{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#0d1115}
+.toolbar{display:flex;align-items:center;justify-content:space-between;padding:16px 23px;gap:15px;background:#141a1f;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.toolbar b{font-size:13px;font-weight:620}.status{display:inline-flex;gap:8px;align-items:center;font-size:10px;letter-spacing:.1em;color:var(--amber)}
+.status:before{content:"";width:7px;height:7px;background:var(--amber);border-radius:100%}
+.toolbar-actions{display:flex;gap:9px;flex-wrap:wrap}
+button,.action{background:#1d242b;border:1px solid #3a454e;color:var(--ink);padding:10px 14px;border-radius:6px;font-size:12px}
+button:hover,.action:hover{border-color:#7e989e}button.primary,.action.primary{background:#d8eee3;color:#14251d;border-color:#d8eee3;font-weight:650}
+.content{display:grid;grid-template-columns:250px minmax(0,1fr) 275px;min-height:550px}
+.left,.right{padding:24px 20px}.left{border-right:1px solid var(--border)}.right{border-left:1px solid var(--border)}
+.section-label{font-size:10px;color:#8c9aa5;text-transform:uppercase;letter-spacing:.14em;margin:0 0 13px}
+.scenarios{display:grid;gap:7px}.scenario{width:100%;text-align:left;padding:14px;background:transparent;border:1px solid transparent;color:#b2bfc6;line-height:1.4}
+.scenario strong{font-weight:580;display:block;color:#e2e9ed;margin-bottom:5px}.scenario small{color:#8d9ba4}
+.scenario.active{background:#1b2528;border-color:#3a5452}.scenario.active strong{color:var(--a)}
+.scene{min-width:0;display:flex;flex-direction:column;min-height:550px;background:radial-gradient(ellipse at 50% 50%,#17252b 0%,#0d1419 47%,#0a0e12 100%)}
+.scene-top{padding:24px 25px 0;display:flex;justify-content:space-between;align-items:start;gap:18px;flex-wrap:wrap}
+.scene h2{font-size:25px;font-weight:550;letter-spacing:-.04em;margin:7px 0 4px}
+.scene .sub{font-size:12px;color:#a4b4bd;max-width:550px;line-height:1.55}
+#viz{width:100%;flex:1;min-height:310px;display:block}#viz .label{font-family:Inter,Arial,sans-serif;fill:#b9c8ce;font-size:12px}
+.scene-bottom{padding:16px 25px 24px;border-top:1px solid #26333a;display:flex;justify-content:space-between;gap:18px;flex-wrap:wrap;font-size:11px;color:#9aaeb7}
+.selectors{display:flex;gap:10px;align-items:center;flex-wrap:wrap}select{background:#141c22;border:1px solid #40505a;border-radius:5px;color:#ecf5f5;padding:9px 12px;font-size:12px}
+.line{height:1px;background:var(--border);margin:22px 0}.info{font-size:12px;line-height:1.7;color:#adbcc4}
+.kv{display:flex;justify-content:space-between;gap:8px;border-bottom:1px solid #273038;padding:12px 0;font-size:11px}.kv span:first-child{color:#8fa0aa}.kv span:last-child{text-align:right}
+.no{color:var(--amber)}.yes{color:var(--a)}
+.notice{background:#1b2024;border:1px solid #404342;border-radius:6px;padding:14px;color:#bdc5c8;font-size:11px;line-height:1.65}
+.below{padding:90px 0 85px}h3{font-size:clamp(29px,3vw,44px);letter-spacing:-.045em;font-weight:570;margin:12px 0 16px}
+.below-lede{max-width:690px;color:#a8b5bd;line-height:1.6;font-size:15px;margin-bottom:30px}
+.evidence-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.evidence-card{background:var(--panel);border:1px solid var(--border);border-radius:7px;padding:26px;min-height:240px}
+.evidence-card .num{font-size:11px;color:var(--a)}.evidence-card h4{font-size:18px;font-weight:570;margin:23px 0 10px}
+.evidence-card p{font-size:12px;line-height:1.65;color:#a9b6be}.evidence-card .tag{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--amber)}
+.copy{color:#8fa2ad;font-size:11px;margin:18px 0 0}footer{border-top:1px solid var(--border);padding:25px 0 35px;color:#8596a1;font-size:12px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media(max-width:1100px){.content{grid-template-columns:200px minmax(0,1fr)}.right{grid-column:1/-1;border-left:0;border-top:1px solid var(--border);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}.right .line{display:none}}
+@media(max-width:720px){.hero{grid-template-columns:1fr;padding-top:42px}.hero-note{max-width:580px}.nav a:nth-child(2){display:none}.content{display:block}.left{border-right:0;border-bottom:1px solid var(--border)}.scenarios{grid-template-columns:repeat(3,minmax(0,1fr))}.scenario{padding:10px;font-size:11px}.scene{min-height:450px}.right{display:block}.evidence-grid{grid-template-columns:1fr}.scene-top{padding:18px}.scene-bottom{padding:15px 18px}.below{padding:55px 0}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+<header><a class="brand" href="https://ontosrobotics.github.io/P37-Neuro/">ONTOS <span>/ P37 NEURO</span></a><nav class="nav"><a href="https://ontosrobotics.github.io/P37-Neuro/">Robot library</a><a href="compare/index.html">Recorded experiments</a><a href="https://github.com/OntosRobotics/P37-Neuro/blob/main/docs/testing.md">Qualification protocol</a><a href="https://github.com/OntosRobotics/P37-Neuro">GitHub ↗</a></nav></header>
+<section class="hero"><div><div class="eyebrow">P37 / Research interface · Preview</div><h1>One architecture.<br>Different bodies.</h1><p class="lede">Explore how shared task intent can be mapped to different robot embodiments, then inspect what the current experiments actually establish.</p></div><div class="hero-note"><strong>About this preview</strong>This interactive diagram explains the cross-embodiment contract. It is not a physics simulation, trained policy rollout, or evidence of successful skill transfer. Real browser physics is available in the existing robot library.</div></section>
+<main class="lab" aria-label="Cross-embodiment research lab">
+<div class="toolbar"><div><b>Experiment explorer</b> <span class="status" style="margin-left:16px">Architecture visualization</span></div><div class="toolbar-actions"><button id="share" type="button">Copy experiment link</button><a class="action primary" href="compare/index.html">Compare recorded experiments ↗</a><a class="action" href="https://ontosrobotics.github.io/P37-Neuro/">Physics viewer ↗</a></div></div>
+<div class="content">
+<aside class="left"><p class="section-label">01 / Task objective</p><div class="scenarios" role="group" aria-label="Task"><button class="scenario active" data-task="reach"><strong>Reach a target</strong><small>Manipulation contract</small></button><button class="scenario" data-task="transfer"><strong>Transfer an object</strong><small>Cross-body research</small></button><button class="scenario" data-task="recover"><strong>Recover from error</strong><small>Memory and retry</small></button></div><div class="line"></div><p class="section-label">Public evidence</p><p class="info">The current repository documents synthetic learning smoke tests and native robot physics trials. Held-out trained cross-embodiment qualification remains in progress.</p><a class="action" style="display:inline-block;margin-top:12px" target="_blank" rel="noopener noreferrer" href="https://github.com/OntosRobotics/P37-Neuro/blob/main/docs/roadmap.md">Read status ↗</a></aside>
+<section class="scene"><div class="scene-top"><div><div class="eyebrow" style="color:#8faab4">02 / Shared intent → embodiment adapter</div><h2 id="taskTitle">Reach a target</h2><p class="sub" id="taskDescription">The intended end-effector target is represented independently of a particular robot's joints.</p></div><div class="selectors"><label class="section-label" for="robot" style="margin:0">Embodiment</label><select id="robot"><option value="arm6">6-axis arm</option><option value="arm7">7-axis arm</option><option value="mobile">Mobile manipulator</option></select></div></div>
+<svg id="viz" viewBox="0 0 780 380" role="img" aria-labelledby="vizTitle vizDesc"><title id="vizTitle">Cross-embodiment architecture diagram</title><desc id="vizDesc">A shared task goal is projected through robot-specific embodiment mappings. This is a schematic visualization, not a physical simulation.</desc><defs><linearGradient id="arc" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#b5f4db"/><stop offset="1" stop-color="#588e9b"/></linearGradient><pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse"><path d="M32 0H0V32" fill="none" stroke="#31414b" stroke-width=".6" opacity=".5"/></pattern></defs><rect width="780" height="380" fill="url(#grid)" opacity=".38"/>
+<g transform="translate(40 38)"><rect width="188" height="88" rx="8" fill="#1a252a" stroke="#50606a"/><text class="label" x="20" y="25" style="font-size:10px;letter-spacing:1.5px">TASK CONTEXT</text><text x="20" y="56" fill="#eaf8f2" font-size="17" id="svgGoal">Target pose</text><text x="20" y="74" fill="#8fa7af" font-size="10">Shared semantic objective</text></g>
+<path d="M228 83H285" stroke="url(#arc)" stroke-width="2"/><path d="M277 77l9 6-9 6" fill="none" stroke="#c0f6df" stroke-width="2"/>
+<g transform="translate(286 38)"><rect width="198" height="88" rx="8" fill="#1b2a2b" stroke="#679486"/><text x="18" y="25" fill="#aff3d6" font-size="10" letter-spacing="1.4">SHARED POLICY INTERFACE</text><text x="18" y="55" fill="#ebf6f3" font-size="17">Embodiment-neutral</text><text x="18" y="73" fill="#8aada4" font-size="10">Intent contract · architectural</text></g>
+<path d="M484 83H545" stroke="url(#arc)" stroke-width="2"/><path d="M537 77l9 6-9 6" fill="none" stroke="#c0f6df" stroke-width="2"/>
+<g transform="translate(548 38)"><rect width="192" height="88" rx="8" fill="#1a252a" stroke="#50606a"/><text x="16" y="25" fill="#b5c7cf" font-size="10" letter-spacing="1.3">ROBOT ADAPTER</text><text x="16" y="54" fill="#eef7f8" font-size="16" id="svgRobot">6-axis arm</text><text x="16" y="73" fill="#8fa7af" font-size="10">Robot-specific mapping</text></g>
+<path d="M644 126V180" stroke="#649e90" stroke-width="2" stroke-dasharray="5 5"/>
+<path d="M637 172l7 9 7-9" fill="none" stroke="#a9ecce" stroke-width="2"/>
+<g id="robotDrawing"></g><circle cx="450" cy="222" r="9" fill="none" stroke="#afe9ce" stroke-width="1.5"/><path d="M434 222h32M450 206v32" stroke="#afe9ce" stroke-width="1" opacity=".75"/><text x="466" y="246" class="label" style="font-size:10px">Illustrative target</text>
+<text x="40" y="354" fill="#7c929e" font-size="11" letter-spacing=".5">SCHEMATIC / NO SIMULATED MOTION / NO POLICY INFERENCE</text></svg>
+<div class="scene-bottom"><span id="footDescription">Robot-specific kinematic and actuator mapping may differ.</span><span>Research architecture · no outcome claim</span></div></section>
+<aside class="right"><div><p class="section-label">03 / Experiment status</p><div class="kv"><span>Shared architecture</span><span class="yes">Implemented baseline</span></div><div class="kv"><span>Trainable model path</span><span class="yes">Implemented baseline</span></div><div class="kv"><span>Qualified transfer</span><span class="no">Not established</span></div><div class="kv"><span>Live P37 browser policy</span><span class="no">Not attached</span></div></div><div><div class="line"></div><p class="section-label">Reproducibility</p><p class="info">Do not infer joint-level performance from this diagram. Open the primary repository's validation materials and qualification protocol for actual experiment records.</p><div class="notice">Evidence level matters: synthetic smoke tests validate wiring, MuJoCo tests validate simulated execution, and only physical tests can support physical robot claims.</div><a class="action" style="display:inline-block;margin-top:16px" href="https://github.com/OntosRobotics/P37-Neuro/blob/main/docs/testing.md" target="_blank" rel="noopener noreferrer">Inspect protocol ↗</a></div></aside>
+</div></main>
+<section class="below"><div class="eyebrow">Research / Evidence</div><h3>What the software proves today.</h3><p class="below-lede">A research interface should separate implemented infrastructure, simulated trials, and validated capability. These are three different kinds of evidence.</p><div class="evidence-grid"><article class="evidence-card"><span class="num">01 / T1</span><h4>Cross-morphology smoke tests</h4><p>Synthetic CPU tests exercise the training and evaluation path across different joint counts. They do not qualify learned transfer on physical robots.</p><span class="tag">Synthetic · smoke validation</span></article><article class="evidence-card"><span class="num">02 / T2</span><h4>Native MuJoCo trials</h4><p>The existing Brain Lab presents P37 controller trial evidence separately from its browser model-only viewer. Inspect seeds, checkpoint details, and measured actions at the source.</p><span class="tag">Experimental · not walking-qualified</span></article><article class="evidence-card"><span class="num">03 / Qualification</span><h4>Cross-body benchmark</h4><p>The required trained multi-embodiment and held-out morphology benchmarks are future publication gates. Results and comparison plots will appear here only after evidence is published.</p><span class="tag">In progress · no result claimed</span></article></div><p class="copy">Evidence statements reflect the repository roadmap at the time this interface was authored. Check the linked repository for newer results.</p></section>
+<footer><span>ONTOS © 2026 · P37 Neuro Research</span><span><a href="https://ontos.ws">Ontos ↗</a> &nbsp; / &nbsp; <a href="https://github.com/OntosRobotics/P37-Neuro">Source ↗</a></span></footer>
+</div>
+<script>
+"use strict";
+const tasks={
+reach:{title:"Reach a target",description:"The intended end-effector target is represented independently of a particular robot's joints.",goal:"Target pose",foot:"Robot-specific kinematic and actuator mapping may differ."},
+transfer:{title:"Transfer an object",description:"The shared task describes an object relocation goal. Different bodies require distinct action projections and control constraints.",goal:"Object relocation",foot:"Successful cross-body transfer requires measured, held-out policy evidence."},
+recover:{title:"Recover from error",description:"Task progress and recovery history are intended to inform retry behavior across embodiments.",goal:"Retry / recovery",foot:"This diagram does not demonstrate a trained recovery controller."}};
+const robots={arm6:{title:"6-axis arm",joints:6,mobile:false},arm7:{title:"7-axis arm",joints:7,mobile:false},mobile:{title:"Mobile manipulator",joints:7,mobile:true}};
+const taskButtons=[...document.querySelectorAll("[data-task]")];
+const robotSelect=document.querySelector("#robot");
+const drawing=document.querySelector("#robotDrawing");
+const state=new URLSearchParams(location.search);
+let task=Object.prototype.hasOwnProperty.call(tasks,state.get("task"))?state.get("task"):"reach";
+let robot=Object.prototype.hasOwnProperty.call(robots,state.get("robot"))?state.get("robot"):"arm6";
+function render(){
+const t=tasks[task],r=robots[robot];robotSelect.value=robot;
+taskButtons.forEach(b=>{let active=b.dataset.task===task;b.classList.toggle("active",active);b.setAttribute("aria-pressed",String(active));});
+document.querySelector("#taskTitle").textContent=t.title;document.querySelector("#taskDescription").textContent=t.description;
+document.querySelector("#svgGoal").textContent=t.goal;document.querySelector("#svgRobot").textContent=r.title;document.querySelector("#footDescription").textContent=t.foot;
+const points=r.mobile?[[632,304],[602,287],[584,257],[557,232],[529,217],[499,213],[468,220]]:r.joints===6?[[630,307],[619,275],[601,250],[569,227],[532,216],[495,220]]:[[635,309],[627,287],[610,263],[584,245],[551,225],[523,214],[490,220]];
+let s='<path d="M405 329H740" stroke="#41535b" stroke-width="1.5"/>';
+if(r.mobile)s+='<rect x="579" y="303" width="100" height="25" rx="5" fill="#293c42" stroke="#90a6ad"/><circle cx="600" cy="331" r="13" fill="#1d2a31" stroke="#a9c0c8"/><circle cx="656" cy="331" r="13" fill="#1d2a31" stroke="#a9c0c8"/>';
+else s+='<rect x="605" y="311" width="55" height="18" rx="5" fill="#293c42" stroke="#90a6ad"/>';
+s+='<path d="M'+points.map(p=>p.join(" ")).join("L")+'" fill="none" stroke="#8fbbc3" stroke-width="17" stroke-linecap="round" stroke-linejoin="round"/>';
+s+='<path d="M'+points.map(p=>p.join(" ")).join("L")+'" fill="none" stroke="#233942" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>';
+points.forEach(([x,y],i)=>s+='<circle cx="'+x+'" cy="'+y+'" r="9" fill="#a8d6cf" stroke="#162e34" stroke-width="4"/><text x="'+(x+10)+'" y="'+(y-10)+'" fill="#8ba0aa" font-size="10">'+(i+1)+'</text>');
+s+='<path d="M465 219l-17 -13m17 13l-17 13" stroke="#d6f7e7" stroke-width="4" stroke-linecap="round"/>';
+drawing.innerHTML=s;
+const url=new URL(location.href);url.searchParams.set("task",task);url.searchParams.set("robot",robot);history.replaceState(null,"",url);
+}
+taskButtons.forEach(b=>b.addEventListener("click",()=>{task=b.dataset.task;render();}));
+robotSelect.addEventListener("change",()=>{robot=robotSelect.value;render();});
+document.querySelector("#share").addEventListener("click",async()=>{const b=document.querySelector("#share");try{await navigator.clipboard.writeText(location.href);b.textContent="Link copied";setTimeout(()=>b.textContent="Copy experiment link",1800)}catch{b.textContent="Copy URL from address bar";setTimeout(()=>b.textContent="Copy experiment link",2200)}});
+addEventListener("popstate",()=>{const s=new URLSearchParams(location.search);task=tasks[s.get("task")]?s.get("task"):"reach";robot=robots[s.get("robot")]?s.get("robot"):"arm6";render();});
+render();
+</script>
+</body></html>

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P37 Neuro · Recorded Experiment Comparison</title>
+<style>
+:root{color-scheme:dark;font:14px/1.5 Inter,ui-sans-serif,system-ui,sans-serif;--bg:#080b0e;--panel:#12191f;--border:#2c3840;--muted:#94a5af;--mint:#b4edd4;--ink:#edf3f5}*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);margin:0}a{color:var(--mint)}button,input,select{font:inherit}button{color:var(--ink);background:#1d2930;border:1px solid #475860;border-radius:6px;padding:9px 14px;cursor:pointer}button:hover{border-color:var(--mint)}button:focus-visible,input:focus-visible{outline:2px solid var(--mint);outline-offset:3px}
+.wrap{max-width:1460px;padding:0 clamp(16px,3vw,48px);margin:auto}
+header{padding:24px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-size:12px}
+.brand{letter-spacing:.14em;font-weight:700;color:#fff;text-decoration:none}.muted{color:var(--muted)}
+h1{font-weight:590;letter-spacing:-.058em;line-height:1.05;font-size:clamp(38px,5.4vw,72px);margin:38px 0 12px}
+.intro{max-width:780px;color:#a8bac4;font-size:15px;margin:0 0 25px}
+.eyebrow{color:var(--mint);font-size:11px;text-transform:uppercase;letter-spacing:.18em}
+.bar{background:#131b21;border:1px solid var(--border);padding:18px;display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;border-radius:9px}
+.file{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.file input{max-width:230px;font-size:12px}.file label{font-weight:650}
+.message{color:#d4b98a;font-size:12px}.message.good{color:var(--mint)}.notice{padding:16px 18px;margin:15px 0;background:#222322;border:1px solid #49483e;border-radius:6px;color:#cecabb;font-size:12px}
+.controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:20px 0}input[type=range]{accent-color:#b4edd4;flex:1;min-width:180px}output{font-variant-numeric:tabular-nums;color:#b3c6ce}
+.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:23px;min-width:0}
+.card h2{font-size:19px;letter-spacing:-.03em;margin:2px 0 7px}.meta{font-size:12px;color:#a9bac3;margin-bottom:22px;overflow-wrap:anywhere}
+.tracks{display:grid;gap:8px}.track{display:grid;grid-template-columns:135px minmax(0,1fr) 70px;align-items:center;gap:12px;font-size:11px}.track-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#b3c4ca}
+.rail{position:relative;background:#24333c;height:8px;border-radius:10px;overflow:hidden}.fill{height:100%;background:var(--mint);position:absolute;left:0;top:0;transition:width .08s linear}
+.track-value{font-variant-numeric:tabular-nums;text-align:right;color:#c4d9d8}.pill{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--mint)}
+h3{font-size:12px;font-weight:670;letter-spacing:.12em;text-transform:uppercase;color:#b1c2cb;margin:22px 0 12px}
+.evidence{display:grid;grid-template-columns:150px 1fr;gap:8px;font-size:11px;padding:9px 0;border-bottom:1px solid #29343b;overflow-wrap:anywhere}.evidence dt{color:#89a0aa}.evidence dd{margin:0}
+.flags{border:1px solid #4c4c40;padding:12px;border-radius:6px;background:#262720;color:#d9c896;font-size:11px;line-height:1.5;margin:20px 0 0}
+.empty{border:1px dashed #44545d;border-radius:9px;text-align:center;color:#8da3ae;padding:80px 20px;margin-top:16px}.empty strong{display:block;color:#e1eced;font-size:19px;margin-bottom:10px}
+.compare{padding:23px;margin:20px 0 70px;border:1px solid var(--border);border-radius:8px;background:#11181e}
+.compare p{margin:8px 0;color:#a5b7c0}.gridline{border-bottom:1px solid #2c3b43;padding:9px 0;display:flex;justify-content:space-between;gap:14px}
+footer{border-top:1px solid var(--border);margin-top:70px;padding:28px 0;color:#8aa1aa;font-size:12px}
+@media(max-width:850px){.cards{grid-template-columns:1fr}.track{grid-template-columns:95px 1fr 62px}.evidence{grid-template-columns:120px 1fr}}
+@media(prefers-reduced-motion:reduce){.fill{transition:none}}
+</style></head>
+<body><div class="wrap"><header><a class="brand" href="../index.html">ONTOS / P37 NEURO</a><nav><a href="../index.html">Architecture lab</a> &nbsp; · &nbsp; <a href="https://ontosrobotics.github.io/P37-Neuro/">Brain Lab</a> &nbsp; · &nbsp; <a href="https://github.com/OntosRobotics/P37-Neuro/blob/main/docs/testing.md">Evaluation protocol</a></nav></header>
+<div class="eyebrow" style="margin-top:53px">P37 / Trace research · Offline playback</div><h1>Compare recorded<br>robot experiments.</h1><p class="intro">Inspect measured joint states and commands from canonical P37 episodes on one synchronized timeline. Imported traces remain on your device. This viewer does not execute a policy or simulate physics.</p>
+<div class="bar"><div class="file"><label for="upload">Import comparison JSON</label><input id="upload" type="file" accept=".json,application/json" aria-describedby="fileHelp"><span id="fileHelp" class="muted">Exported with <code>p37_neuro.data.trace_export</code></span></div><div id="message" role="status" class="message">No recorded evidence loaded.</div></div>
+<div class="notice" id="warning">This page renders recorded numerical observations only. A shared task does not establish a shared checkpoint, held-out transfer, or physical success. Provenance must be inspected before making such claims.</div>
+<div id="workspace" hidden><div class="controls"><button id="toggle" type="button" aria-pressed="false">Play</button><button id="reset" type="button">Reset</button><label for="time" class="muted">Timeline</label><input id="time" type="range" min="0" max="1000" step="1" value="0"><output id="clock" for="time">0.00 s</output><span class="muted" id="duration"></span></div><div class="cards" id="cards"></div><section class="compare" id="summary" aria-label="Evidence comparison"></section></div>
+<div class="empty" id="empty"><strong>No experiment traces loaded</strong><div>Load two or more recorded episodes exported from P37.<br>There are no fabricated sample runs or simulated results on this page.</div></div>
+<footer>Recorded data viewer · No inference · No physics · <a href="https://github.com/OntosRobotics/P37-Neuro">Source</a></footer></div>
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const upload=$("#upload"),message=$("#message"),workspace=$("#workspace"),empty=$("#empty"),cards=$("#cards"),time=$("#time"),clock=$("#clock"),summary=$("#summary");
+let traces=[],ranges=[],duration=0,elapsed=0,playing=false,lastFrame=0,raf=0;
+function finite(n){return typeof n==="number"&&Number.isFinite(n)}
+function text(s){return String(s??"unknown")}
+function validationError(s){throw new Error(s)}
+function validate(obj){
+ if(!obj||obj.schema_version!=="p37-trace-v1"||!Array.isArray(obj.traces)||obj.traces.length<2||obj.traces.length>8)validationError("Expected a p37-trace-v1 comparison with 2–8 traces");
+ const ids=new Set(),tasks=new Set();
+ for(const t of obj.traces){
+  if(!t||typeof t.episode_id!=="string"||!t.episode_id||ids.has(t.episode_id))validationError("Missing or repeated episode ID");
+  ids.add(t.episode_id);if(typeof t.task_id!=="string"||!t.task_id)validationError("Missing task ID");tasks.add(t.task_id);
+  if(typeof t.embodiment_id!=="string"||!t.embodiment_id)validationError("Missing embodiment ID");
+  const p=t.provenance;if(!p||!["T0","T1","T2","T3","T4","T5","T6"].includes(p.evidence_level)||typeof p.policy_attached!=="boolean"||!["success","failure","unverified"].includes(p.outcome)||!["train","held-out","unknown"].includes(p.training_membership)||!Number.isInteger(p.seed))validationError("Invalid provenance");
+  for(const k of ["code_commit","simulator","simulator_version","robot_description_sha256","adapter_version","evaluation_protocol"]){if(typeof p[k]!=="string"||!p[k].trim())validationError("Missing provenance: "+k)}
+  if(typeof p.checkpoint_sha256!=="string"||(p.policy_attached&&!p.checkpoint_sha256))validationError("Missing policy checkpoint hash");
+  if(!Array.isArray(t.frames)||!t.frames.length||t.frames.length>200000)validationError("Invalid frame count");
+  let previous=-1;
+  for(const f of t.frames){
+   if(!finite(f.t)||f.t<0||f.t<=previous||!finite(f.action_t)||f.action_t<0)validationError("Invalid frame timestamps");
+   previous=f.t;
+   for(const k of ["joint_position","joint_velocity","joint_command","state"]){
+    if(!f[k]||typeof f[k]!=="object"||Array.isArray(f[k]))validationError("Invalid channel map");
+    for(const [name,value] of Object.entries(f[k])){if(!name||!finite(value))validationError("Invalid channel values")}
+   }
+   if(f.reward!==null&&f.reward!==undefined&&!finite(f.reward))validationError("Invalid reward");
+   if(typeof f.terminal!=="boolean"||typeof f.intervention!=="boolean")validationError("Invalid markers");
+  }
+ }
+ if(tasks.size!==1)validationError("Episodes must share a task ID");
+ return obj.traces;
+}
+const node=(tag,className="",value="")=>{const e=document.createElement(tag);if(className)e.className=className;e.textContent=value;return e};
+function row(parent,key,value){const div=node("div","evidence");div.append(node("dt","",key),node("dd","",text(value)));parent.append(div)}
+function sampleAt(frames,t){let lo=0,hi=frames.length-1;if(t<=frames[0].t)return frames[0];if(t>=frames[hi].t)return frames[hi];while(lo<hi){const mid=(lo+hi+1)>>1;if(frames[mid].t<=t)lo=mid;else hi=mid-1}return frames[lo]}
+function trackLine(target,name,value,min,max){
+ const line=node("div","track"),caption=node("span","track-label",name),rail=node("div","rail"),fill=node("div","fill"),val=node("span","track-value",value.toFixed(3));
+ caption.title=name;const fraction=max>min?(value-min)/(max-min):.5;
+ fill.style.width=(100*Math.max(0,Math.min(1,fraction))).toFixed(2)+"%";
+ rail.append(fill);line.append(caption,rail,val);target.append(line);
+}
+function render(){
+ clock.textContent=elapsed.toFixed(2)+" s";time.value=String(duration?Math.round(1000*elapsed/duration):0);
+ for(let i=0;i<traces.length;i++){
+  const t=traces[i],f=sampleAt(t.frames,elapsed),target=document.getElementById("channels-"+i),state=document.getElementById("state-"+i);
+  target.replaceChildren();
+  const keys=Object.keys(f.joint_position).sort().slice(0,24);
+  if(!keys.length)target.append(node("p","muted","No joint-position channels in this frame."));
+  for(const key of keys){
+   const range=ranges[i][key]||[f.joint_position[key],f.joint_position[key]];
+   trackLine(target,key,f.joint_position[key],range[0],range[1]);
+  }
+  const flags=[f.intervention?"Intervention":"No intervention",f.failure_code?"Failure: "+f.failure_code:"No failure marker",f.terminal?"Terminal":"Active"];state.textContent="Recorded t="+f.t.toFixed(2)+" s · action t="+f.action_t.toFixed(2)+" s · "+flags.join(" · ");
+ }
+}
+function makeCards(){
+ cards.replaceChildren();
+ traces.forEach((t,i)=>{
+ const p=t.provenance,article=node("article","card"),label=node("div","pill","Recorded episode "+(i+1)),heading=node("h2","",text(t.label||t.embodiment_id));
+ const meta=node("div","meta",t.episode_id+" · "+t.embodiment_id+" · "+t.frames.length+" frames");
+ const state=node("p","muted");state.id="state-"+i;
+ const head=node("h3","","Joint position (recorded units)"),channels=node("div","tracks");channels.id="channels-"+i;
+ const eh=node("h3","","Source evidence"),dl=node("dl","");
+ row(dl,"Evidence level",p.evidence_level);row(dl,"Outcome",p.outcome);
+ row(dl,"Policy attached",p.policy_attached?"Declared yes":"No");
+ row(dl,"Checkpoint SHA-256",p.checkpoint_sha256||"not provided");
+ row(dl,"Training membership",p.training_membership);row(dl,"Robot description hash",p.robot_description_sha256);
+ row(dl,"Adapter version",p.adapter_version);row(dl,"Simulator",p.simulator+" "+p.simulator_version);
+ row(dl,"Seed",p.seed);row(dl,"Code commit",p.code_commit);row(dl,"Protocol",p.evaluation_protocol);
+ row(dl,"Source",t.source);
+ article.append(label,heading,meta,state,head,channels,eh,dl);cards.append(article);
+ });
+}
+function makeSummary(){
+ summary.replaceChildren(node("div","eyebrow","Evidence comparison"));
+ summary.append(node("h2","","What can this comparison establish?"));
+ const checkpoints=traces.map(t=>t.provenance.checkpoint_sha256);
+ const sameCheckpoint=checkpoints.every(Boolean)&&new Set(checkpoints).size===1;
+ const distinctBodies=new Set(traces.map(t=>t.embodiment_id)).size>=2;
+ const allPolicy=traces.every(t=>t.provenance.policy_attached);
+ const heldOut=traces.some(t=>t.provenance.training_membership==="held-out");
+ const outcomes=traces.map(t=>t.provenance.outcome);
+ const lines=[
+ ["Common task",traces[0].task_id],
+ ["Different embodiment IDs",distinctBodies?"Yes":"No"],
+ ["Exact matching checkpoint hashes",sameCheckpoint?"Yes":"No / not recorded"],
+ ["Policy attached in every trace",allPolicy?"Declared yes":"No"],
+ ["Any held-out embodiment",heldOut?"Declared yes":"Not declared"],
+ ["Outcomes",outcomes.join(" / ")],
+ ["Evidence tiers",traces.map(t=>t.provenance.evidence_level).join(" / ")],
+ ];
+ for(const [k,v] of lines){const line=node("div","gridline");line.append(node("span","muted",k),node("strong","",v));summary.append(line)}
+ const caution=node("div","flags","These fields are imported claims and have not been independently authenticated. Checkpoint identity alone does not prove generalization. For valid cross-embodiment claims, run the held-out qualification protocol and publish complete benchmark coverage, including failures.");
+ summary.append(caution);
+}
+function load(artifact){
+ stop();traces=validate(artifact);ranges=traces.map(t=>{const result={};for(const frame of t.frames){for(const [key,value] of Object.entries(frame.joint_position)){if(!result[key])result[key]=[value,value];else{result[key][0]=Math.min(result[key][0],value);result[key][1]=Math.max(result[key][1],value)}}}return result});duration=Math.max(...traces.map(t=>t.frames.at(-1).t));elapsed=0;
+ makeCards();makeSummary();workspace.hidden=false;empty.hidden=true;$("#duration").textContent="/ "+duration.toFixed(2)+" s";
+ $("#message").textContent=traces.length+" recorded episodes imported";$("#message").classList.add("good");render();
+}
+function stop(){playing=false;cancelAnimationFrame(raf);$("#toggle").textContent="Play";$("#toggle").setAttribute("aria-pressed","false");lastFrame=0}
+function tick(ts){if(!playing)return;if(lastFrame)elapsed+=Math.min(.12,(ts-lastFrame)/1000);lastFrame=ts;if(elapsed>=duration){elapsed=duration;render();stop();return}render();raf=requestAnimationFrame(tick)}
+$("#toggle").addEventListener("click",()=>{if(playing){stop();return}if(elapsed>=duration)elapsed=0;playing=true;lastFrame=0;$("#toggle").textContent="Pause";$("#toggle").setAttribute("aria-pressed","true");raf=requestAnimationFrame(tick)});
+$("#reset").addEventListener("click",()=>{stop();elapsed=0;render()});
+time.addEventListener("input",()=>{stop();elapsed=duration*Number(time.value)/1000;render()});
+upload.addEventListener("change",async()=>{
+ const file=upload.files?.[0];if(!file)return;
+ if(file.size>20*1024*1024){$("#message").textContent="File exceeds 20 MB safety limit";return}
+ try{const data=JSON.parse(await file.text());load(data)}
+ catch(err){stop();traces=[];workspace.hidden=true;empty.hidden=false;$("#message").classList.remove("good");$("#message").textContent="Import rejected: "+(err instanceof Error?err.message:"invalid JSON")}
+});
+</script></body></html>
