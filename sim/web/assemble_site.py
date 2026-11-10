@@ -38,7 +38,7 @@ def assemble(output: Path) -> Path:
     if output.exists():
         shutil.rmtree(output)
     output.mkdir(parents=True)
-    for file_name in ("index.html", "studio.css", "studio.js", "p37-evidence.json"):
+    for file_name in ("index.html", "studio.css", "studio-minimal.css", "studio.js", "p37-evidence.json"):
         shutil.copy2(ROOT / file_name, output / file_name)
     catalog = {
         "schema_version": 2,
