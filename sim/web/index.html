@@ -1,179 +1,187 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#090a0c">
-<meta name="description" content="P37 Brain Lab — interact with real robot models in browser-based MuJoCo physics.">
-<title>P37 Brain Lab — Virtual Robotics</title>
-<style>
-:root{color-scheme:dark;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif;background:#090a0c;color:#eff1f4}
-*{box-sizing:border-box}body{margin:0}button,a{font:inherit}
-button:focus-visible,a:focus-visible{outline:2px solid #cbdaf7;outline-offset:3px}
-.top{border-bottom:1px solid #24262b;height:74px;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(18px,4vw,56px);gap:12px}
-.brand{font-weight:650;letter-spacing:.14em;font-size:14px;white-space:nowrap}.brand span{font-weight:400;letter-spacing:.06em;color:#8b929b}
-.topright{display:flex;align-items:center;gap:18px}.status{display:flex;gap:9px;align-items:center;color:#a8afb9;font-size:12px}
-.dot{height:7px;width:7px;border-radius:100%;background:#d0d6e0}
-a{color:#dce6f6;text-decoration:none}.topright a{font-size:12px;color:#a6adb8}
-main{max-width:1560px;margin:auto;padding:38px clamp(18px,4vw,56px) 60px}
-.kicker{text-transform:uppercase;letter-spacing:.17em;color:#9ea5ae;font-size:11px}
-h1{margin:16px 0 10px;font-weight:550;line-height:1.06;letter-spacing:-.055em;font-size:clamp(34px,5vw,60px)}
-.lead{margin:0;color:#a8afba;max-width:730px;line-height:1.65;font-size:15px}
-.layout{display:grid;grid-template-columns:minmax(0,1fr) 312px;gap:19px;margin-top:32px;align-items:start}
-.viewer{min-width:0;background:#111418;border:1px solid #30343b;border-radius:12px;overflow:hidden;position:relative}
-.viewerbar{min-height:55px;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 17px;border-bottom:1px solid #2c3138;background:#14171c}
-.viewername{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:550}.viewername .dot{background:#9aad9e}
-.viewerhelp{font-size:11px;color:#929aa6}.canvas{height:min(67vh,690px);min-height:400px;position:relative}
-.canvas iframe{height:100%;width:100%;border:0;display:block;background:#171b20}
-.fallback{display:none;position:absolute;inset:0;z-index:3;background:#14181e;align-items:center;justify-content:center;text-align:center;padding:25px}
-.fallback.show{display:flex}.fallback div{max-width:490px}
-.fallback h2{font-size:22px;font-weight:500}.fallback p{color:#afb6c0;line-height:1.65;font-size:14px}
-.fallback a{display:inline-block;border-radius:7px;background:#f1f4f8;color:#16191e;padding:12px 16px;font-size:13px;font-weight:650}
-.viewerfoot{border-top:1px solid #2c3138;display:flex;gap:12px;justify-content:space-between;align-items:center;padding:13px 17px;color:#9ba4af;font-size:12px}
-.actions{display:flex;gap:8px;flex-wrap:wrap}
-.btn{background:#252a31;color:#d5dbe3;border:1px solid #3b434d;padding:10px 12px;border-radius:7px;cursor:pointer;font-size:12px}
-.btn:hover{background:#313842}.btn.primary{color:#111315;background:#f1f4f8;border-color:#f1f4f8;font-weight:650}
-.sidebar{border:1px solid #30343b;border-radius:12px;background:#13161a;padding:24px;display:flex;flex-direction:column;gap:19px}
-.sideheading{font-size:12px;color:#8f98a5;font-weight:650;text-transform:uppercase;letter-spacing:.12em}
-.robotopts{display:grid;gap:9px}
-.robotopt{width:100%;text-align:left;border:1px solid #313942;border-radius:9px;background:#1b1f25;color:#e5e9ef;padding:15px;cursor:pointer;display:grid;gap:6px}
-.robotopt strong{font-size:14px;font-weight:550}.robotopt span{font-size:11px;color:#9aa3b0}
-.robotopt[aria-pressed="true"]{border-color:#d9e0ec;background:#252b33}
-.sep{border:0;border-top:1px solid #323840;width:100%;margin:0}
-details summary{font-size:13px;cursor:pointer;color:#e0e5ed}
-details p{font-size:12px;color:#a8b0bd;line-height:1.6}
-.toolnote{border-left:2px solid #8096b4;padding:4px 0 4px 12px;color:#b6bec9;line-height:1.55;font-size:12px}
-.notice{margin-top:20px;padding:16px 20px;border:1px solid #343d47;background:#11151a;border-radius:9px;color:#adb5c0;line-height:1.65;font-size:13px}
-.notice strong{color:#f0f2f5}
-.bottom{display:grid;grid-template-columns:repeat(3,1fr);gap:17px;margin-top:36px}
-.metric{border-top:1px solid #353941;padding-top:16px}
-.metric strong{display:block;font-size:13px;font-weight:550;margin-bottom:8px}
-.metric span{font-size:12px;color:#a0a8b3;line-height:1.55;display:block}
-footer{margin-top:58px;border-top:1px solid #262a31;padding-top:24px;color:#89929e;font-size:12px;display:flex;justify-content:space-between;gap:16px}
-@media(max-width:950px){.layout{grid-template-columns:1fr}.sidebar{order:-1;gap:15px}.robotopts{grid-template-columns:repeat(3,minmax(0,1fr))}.canvas{height:55vh;min-height:360px}.viewerfoot{align-items:start;flex-wrap:wrap}}
-@media(max-width:600px){.topright a{display:none}.robotopts{grid-template-columns:1fr}.bottom{grid-template-columns:1fr}.viewerhelp{display:none}.viewerfoot{padding:12px}.canvas{height:55vh;min-height:320px}footer{flex-direction:column}main{padding-top:26px}}
-</style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b0e12">
+  <meta name="description" content="Explore ten real robot bodies inside a live MuJoCo physics laboratory. Inspect P37-Neuro experimental control evidence.">
+  <title>P37 Brain Lab — Robotics in Simulation</title>
+  <link rel="stylesheet" href="./studio.css">
+  <script src="./studio.js" defer></script>
 </head>
 <body>
-<header class="top">
-  <div class="brand">P37 <span>/ BRAIN LAB</span></div>
-  <div class="topright"><div class="status"><span class="dot"></span> Real physics · Browser</div><a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noopener noreferrer">Research repository ↗</a></div>
-</header>
-<main>
-<div class="kicker">Robotics research / interactive simulation</div>
-<h1>Explore real robots.<br>Inside your browser.</h1>
-<p class="lead">Unitree G1, Unitree Go2, and Franka Panda in real MuJoCo physics. Rotate the scene, interact with the robot using the simulator's physical interaction tools, and observe what actually happens.</p>
-<div class="layout">
-  <section class="viewer" aria-label="Robot physics simulation">
-    <div class="viewerbar">
-      <div class="viewername"><span class="dot"></span><span id="viewer-label">Unitree G1 · MuJoCo</span></div>
-      <div class="viewerhelp">Actual 3D robot · Gravity · Contact dynamics</div>
-    </div>
-    <div class="canvas" id="viewport">
-      <iframe id="sim" title="Real robot MuJoCo simulation" allow="fullscreen; xr-spatial-tracking" loading="eager"></iframe>
-      <div id="fallback" class="fallback" role="status">
-        <div>
-          <h2>Local simulation bundle unavailable</h2>
-          <p>The integrated mjswan simulator is generated at build time. You can still open this robot immediately in MuJoCo Live, where real physics runs inside your browser.</p>
-          <a id="external" target="_blank" rel="noopener noreferrer" href="https://live.mujoco.org/">Open in MuJoCo Live ↗</a>
+  <div class="app-shell">
+    <header class="app-header">
+      <a class="brand" href="./" aria-label="P37 Brain Lab home">
+        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
+        <span class="brand-name">ONTOS <span class="brand-slash">/</span> <span class="brand-product">P37 BRAIN LAB</span></span>
+      </a>
+      <div class="header-mode"><span class="live-pulse" aria-hidden="true"></span><span>PHYSICAL INTELLIGENCE / RESEARCH PREVIEW</span></div>
+      <div class="header-actions">
+        <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noopener noreferrer" class="header-link">Source <span aria-hidden="true">↗</span></a>
+        <button id="toggle-inspector" class="header-icon-button" type="button" aria-label="Toggle lab inspector" aria-expanded="false">Inspector <span aria-hidden="true">☰</span></button>
+      </div>
+    </header>
+
+    <main class="lab-grid" id="brain-lab">
+      <aside class="library-panel" aria-label="Robot and experiment library">
+        <div class="library-top">
+          <div class="eyebrow">THE LABORATORY <span class="eyebrow-number">01 / 03</span></div>
+          <h1>Explore the<br>physical world<span class="headline-dot">.</span></h1>
+          <p>Different bodies. One place to test what physics and intelligence can do.</p>
         </div>
-      </div>
-    </div>
-    <div class="viewerfoot">
-      <span id="phys-state" aria-live="polite">Checking simulator assets…</span>
-      <div class="actions">
-        <button class="btn" type="button" id="reset">Reset simulation</button>
-        <button class="btn" type="button" id="fullscreen">Fullscreen</button>
-        <a class="btn primary" id="external-mini" target="_blank" rel="noopener noreferrer" href="https://live.mujoco.org/">Open standalone ↗</a>
-      </div>
-    </div>
-  </section>
-  <aside class="sidebar" aria-label="Robot selection and simulator guide">
-    <div class="sideheading">Choose a robot</div>
-    <div class="robotopts" role="group" aria-label="Robot models">
-      <button class="robotopt" type="button" data-robot="g1" aria-pressed="true"><strong>Unitree G1</strong><span>Humanoid · Walking and balance research</span></button>
-      <button class="robotopt" type="button" data-robot="go2" aria-pressed="false"><strong>Unitree Go2</strong><span>Quadruped · Locomotion and terrain</span></button>
-      <button class="robotopt" type="button" data-robot="franka" aria-pressed="false"><strong>Franka Panda</strong><span>Manipulation · Arm and gripper</span></button>
-    </div>
-    <hr class="sep">
-    <div class="sideheading">Interact with the simulation</div>
-    <div class="toolnote">Use the viewer to orbit or zoom the camera. Select its interaction tool to drag or perturb the robot and observe real physics. Use the viewer's built-in playback controls to pause or step.</div>
-    <hr class="sep">
-    <div class="sideheading">Controller</div>
-    <div style="font-size:13px;color:#f0f2f5">Model-only physics</div>
-    <div style="font-size:12px;color:#a5adba;line-height:1.6">A trained P37 locomotion or manipulation policy has not been qualified for this public build. Robots may fall or fail to move purposefully until a real controller is connected.</div>
-    <details><summary>How will P37 be connected?</summary>
-      <p>After model export and native/browser parity tests, a verified P37 ONNX policy can be attached to the same MuJoCo scene through mjswan. Only then will task or velocity control be offered.</p>
-    </details>
-  </aside>
-</div>
-<div class="notice"><strong>Research status:</strong> These are real robot simulation models with physics-based dynamics. They are virtual models, not remotely controlled physical robots. Model-only movement and contact responses do not constitute evidence of trained P37 intelligence. No fabricated results or scripted walking are shown.</div>
-<div class="bottom">
-  <div class="metric"><strong>Real robot geometry</strong><span>Official simulation assets and joint configurations sourced from Google DeepMind's MuJoCo Menagerie.</span></div>
-  <div class="metric"><strong>Physics in your browser</strong><span>MuJoCo WebAssembly computes rigid-body dynamics and contacts on your device. No NVIDIA installation needed.</span></div>
-  <div class="metric"><strong>Next: verified policy</strong><span>Attach a trained, evaluated P37 checkpoint with canonical observation/action mapping and reproducible trials.</span></div>
-</div>
-<footer><span>Ontos / P37-Neuro · Research preview</span><span>Model and software credits available in the simulator's About panel</span></footer>
-</main>
-<script>
-const robots = Object.freeze({
-  g1: {label:"Unitree G1",scene:"unitree_g1",menagerie:"unitree_g1"},
-  go2: {label:"Unitree Go2",scene:"unitree_go2",menagerie:"unitree_go2"},
-  franka: {label:"Franka Panda",scene:"franka_panda",menagerie:"franka_emika_panda"}
-});
-let selected = "g1";
-let bundled = false;
-const frame = document.getElementById("sim");
-const fallback = document.getElementById("fallback");
-const state = document.getElementById("phys-state");
-function externalUrl(robot) {
-  return "https://live.mujoco.org/?model=github:google-deepmind/mujoco_menagerie/main/"
-    + robots[robot].menagerie + "/scene.xml";
-}
-function selectRobot(key) {
-  if (!Object.hasOwn(robots,key)) return;
-  selected=key;
-  document.querySelectorAll("[data-robot]").forEach(btn => {
-    btn.setAttribute("aria-pressed",String(btn.dataset.robot===key));
-  });
-  document.getElementById("viewer-label").textContent=robots[key].label+" · MuJoCo";
-  document.getElementById("external").href=externalUrl(key);
-  document.getElementById("external-mini").href=externalUrl(key);
-  const query=new URLSearchParams({project:"p37_robot_models",scene:robots[key].scene,panel:"1"});
-  if(bundled){
-    frame.hidden=false;
-    fallback.classList.remove("show");
-    state.textContent="Loading "+robots[key].label+"…";
-    frame.src="./simulator/?"+query;
-  }else{
-    frame.hidden=true;
-    fallback.classList.add("show");
-    state.textContent="Open standalone model in MuJoCo Live";
-  }
-}
-document.querySelectorAll("[data-robot]").forEach(btn =>
-  btn.addEventListener("click",()=>selectRobot(btn.dataset.robot)));
-document.getElementById("reset").addEventListener("click",()=>{
-  if(bundled){frame.src=frame.src;}else{window.open(externalUrl(selected),"_blank","noopener,noreferrer");}
-});
-document.getElementById("fullscreen").addEventListener("click",()=>{
-  if(bundled){document.getElementById("viewport").requestFullscreen?.();}
-  else{window.open(externalUrl(selected),"_blank","noopener,noreferrer");}
-});
-frame.addEventListener("load",()=>{if(bundled)state.textContent="Real physics scene loaded · Use simulator controls";});
-async function init(){
-  const url="./simulator/manifest.json";
-  try {
-    const response=await fetch(url,{cache:"no-store"});
-    if(!response.ok)throw new Error("manifest missing");
-    const manifest=await response.json();
-    bundled=Array.isArray(manifest.projects)&&manifest.projects.length>0;
-  }catch {bundled=false;}
-  const urlParams=new URLSearchParams(location.search);
-  const requested=urlParams.get("robot");
-  selectRobot(Object.hasOwn(robots,requested)?requested:"g1");
-}
-init();
-</script>
+
+        <div class="library-heading">
+          <span>ROBOT LIBRARY</span>
+          <span class="asset-count" id="robot-count">10 MODELS</span>
+        </div>
+        <div class="category-strip" id="category-strip" role="group" aria-label="Filter robot types">
+          <button class="category-tab selected" type="button" data-category="All" aria-pressed="true">All</button>
+          <button class="category-tab" type="button" data-category="Humanoids" aria-pressed="false">Humanoid</button>
+          <button class="category-tab" type="button" data-category="Quadrupeds" aria-pressed="false">Quadruped</button>
+          <button class="category-tab" type="button" data-category="Manipulators" aria-pressed="false">Arm</button>
+          <button class="category-tab" type="button" data-category="Mobile" aria-pressed="false">Mobile</button>
+          <button class="category-tab" type="button" data-category="Aerial" aria-pressed="false">Aerial</button>
+        </div>
+        <div class="robot-library" id="robot-library" role="group" aria-label="Select a real robot model">
+          <div class="loading-list" aria-live="polite">Loading certified model catalog…</div>
+        </div>
+
+        <div class="library-bottom">
+          <div class="subtle-rule"></div>
+          <div class="research-stamp">
+            <span class="stamp-sign">P37<span>®</span></span>
+            <div><strong>One shared architecture.</strong><span>Across different robot bodies and tasks.</span></div>
+          </div>
+          <a href="https://github.com/OntosRobotics/P37-Neuro/blob/main/docs/browser-brain-lab.md" target="_blank" rel="noopener noreferrer" class="text-link">Research notes <span aria-hidden="true">↗</span></a>
+        </div>
+      </aside>
+
+      <section class="simulation-column" aria-label="Interactive MuJoCo physics scene">
+        <div class="scene-topline">
+          <div class="stage-breadcrumb"><span>P37 / PHYSICS LAB</span><span class="crumb-divider">/</span><span id="crumb-robot">UNITREE G1</span></div>
+          <div class="stage-status"><span id="engine-dot" class="engine-dot" aria-hidden="true"></span><span id="engine-state" aria-live="polite">INITIALIZING</span><span class="stage-divider">|</span> MUJOCO WASM</div>
+        </div>
+
+        <div class="scene-canvas" id="scene-canvas">
+          <div class="scene-overlay-top">
+            <div class="scene-number" id="scene-number">SIM / 001</div>
+            <div class="scene-badge" id="scene-badge">HUMANOID SYSTEM</div>
+          </div>
+
+          <iframe id="sim" class="sim-frame" title="MuJoCo simulation of the selected physical robot"
+            loading="eager" allow="fullscreen; xr-spatial-tracking"></iframe>
+
+          <div class="scene-initializing" id="scene-loading" role="status">
+            <div class="loader-symbol" aria-hidden="true"><span></span><span></span><span></span></div>
+            <strong id="loading-title">Preparing robot physics</strong>
+            <span id="loading-caption">Compiling scene geometry and contacts on this device</span>
+          </div>
+
+          <div class="scene-fallback" id="scene-fallback" role="alert" hidden>
+            <span class="small-square" aria-hidden="true">◫</span>
+            <h2>Browser scene not available</h2>
+            <p id="fallback-detail">The local MuJoCo build is unavailable. Open the same robot model in MuJoCo Live instead.</p>
+            <a id="fallback-link" class="primary-action" href="https://live.mujoco.org/" target="_blank" rel="noopener noreferrer">Open in MuJoCo Live <span aria-hidden="true">↗</span></a>
+          </div>
+
+          <div class="scene-label-bottom">
+            <div class="current-robot-label"><span class="tiny-label">ACTIVE EMBODIMENT</span><span id="scene-title">Unitree G1</span><span id="scene-subtitle">29-DoF humanoid</span></div>
+            <div class="scene-controls-tooltip">DRAG TO INTERACT <span aria-hidden="true">↗</span></div>
+          </div>
+        </div>
+
+        <div class="simulation-dock">
+          <div class="dock-description">
+            <span class="dock-indicator" aria-hidden="true"></span>
+            <div><strong id="dock-title">Physics enabled</strong><span id="dock-description">Real-time gravity, contacts, collisions and rigid-body motion</span></div>
+          </div>
+          <div class="dock-actions">
+            <button id="reset" class="action-button" type="button" title="Reload this physical scene"><span class="action-glyph" aria-hidden="true">↻</span> Reset</button>
+            <button id="toggle-engine" class="action-button" type="button" title="Toggle the simulator control panel"><span class="action-glyph" aria-hidden="true">⚙</span> Controls</button>
+            <button id="copy-scene" class="action-button" type="button" title="Copy direct scene URL"><span class="action-glyph" aria-hidden="true">↗</span> Share</button>
+            <button id="fullscreen" class="action-button action-button-strong" type="button" title="Expand the 3D scene"><span class="action-glyph" aria-hidden="true">⛶</span> Expand</button>
+          </div>
+        </div>
+
+        <div class="scene-meta-row">
+          <div><span>01</span> REAL ROBOT GEOMETRY</div>
+          <div><span>02</span> SIMULATED CONTACT DYNAMICS</div>
+          <div><span>03</span> NO SCRIPTED ROBOT MOTION</div>
+        </div>
+      </section>
+
+      <aside class="inspector-panel" id="inspector" aria-label="Scene inspector and P37 research evidence">
+        <div class="inspector-heading"><span>INSPECTOR</span><span class="inspector-id">LAB / 2026</span></div>
+        <div class="inspector-tabs" role="tablist" aria-label="Inspector sections">
+          <button id="tab-scene" class="inspector-tab selected" role="tab" aria-selected="true" aria-controls="panel-scene" type="button">Environment</button>
+          <button id="tab-p37" class="inspector-tab" role="tab" aria-selected="false" aria-controls="panel-p37" type="button">P37 research <span class="small-indicator"></span></button>
+        </div>
+
+        <div class="inspector-content" id="panel-scene" role="tabpanel" aria-labelledby="tab-scene">
+          <div class="inspector-section">
+            <span class="panel-kicker">01 / EMBODIMENT</span>
+            <div class="inspector-name" id="inspector-name">Unitree G1</div>
+            <p class="description" id="inspector-description">Real physics model ready to inspect.</p>
+            <div class="spec-grid">
+              <div><span>CATEGORY</span><strong id="inspector-kind">Humanoids</strong></div>
+              <div><span>RENDER MODE</span><strong>WebGL / MuJoCo</strong></div>
+              <div><span>CONTROLLER</span><strong id="inspector-controller">Model-only</strong></div>
+              <div><span>MODEL SOURCE</span><strong>Menagerie</strong></div>
+            </div>
+          </div>
+          <div class="inspector-section">
+            <span class="panel-kicker">02 / SIMULATION TASK</span>
+            <div class="task-card">
+              <div class="task-head"><span class="task-dot" aria-hidden="true"></span><span id="task-title">Balance under perturbation</span></div>
+              <p id="task-detail">Apply physical forces with the built-in interaction controls and observe how the body reacts.</p>
+              <div class="task-instruction"><span class="cursor-cross" aria-hidden="true">⌖</span> Click and drag an object inside the 3D scene to apply force.</div>
+            </div>
+          </div>
+          <div class="inspector-section">
+            <span class="panel-kicker">03 / ENGINE STATE</span>
+            <div class="engine-list">
+              <div><span>Rigid-body physics</span><span class="engine-active">ACTIVE</span></div>
+              <div><span>Gravity &amp; collisions</span><span class="engine-active">ACTIVE</span></div>
+              <div><span>Trained P37 policy</span><span class="engine-inactive">NOT ATTACHED</span></div>
+            </div>
+          </div>
+          <div class="panel-footnote">These robots follow MuJoCo's physical model and viewer controls. A moving body is not evidence of a qualified neural controller.</div>
+        </div>
+
+        <div class="inspector-content" id="panel-p37" role="tabpanel" aria-labelledby="tab-p37" hidden>
+          <div class="research-intro">
+            <span class="panel-kicker">P37 / NEURAL CONTROLLER</span>
+            <div class="research-title">What the brain<br>actually did.</div>
+            <p>The recurrent P37 model produced joint actions in real Unitree G1 MuJoCo physics. This is a native evaluation, separate from the model-only browser scene.</p>
+          </div>
+          <div class="research-tag"><span class="amber-dot"></span> EXPERIMENTAL · NOT WALKING-QUALIFIED</div>
+          <div class="evidence-block">
+            <div class="evidence-header"><span>HELD-OUT SMOKE TRIALS</span><span>03 SEEDS</span></div>
+            <div id="evidence-trials" class="trial-list" aria-live="polite">Loading verified trial evidence…</div>
+          </div>
+          <div class="evidence-block">
+            <div class="evidence-header"><span>INFERENCE PARITY</span><span>16 STEPS</span></div>
+            <div class="parity-metric"><span>Native P37 ↔ ONNX action error</span><strong id="onnx-error">—</strong></div>
+            <div class="parity-note">Numerical equivalence at a fixed robot and action contract. This does not validate transfer or walking.</div>
+          </div>
+          <a class="report-link" id="evidence-link" href="https://github.com/OntosRobotics/P37-Neuro/actions/runs/42826853022" target="_blank" rel="noopener noreferrer">Inspect reproducible results <span aria-hidden="true">↗</span></a>
+          <div class="panel-footnote">An interactive trained P37 policy will only be enabled after extended training, closed-loop qualification and browser inference validation.</div>
+        </div>
+
+        <div class="inspector-footer">
+          <div class="research-footer-icon" aria-hidden="true">P37</div>
+          <p><strong>ONTOS RESEARCH</strong><span>World reasoning for physical machines.</span></p>
+          <a href="https://ontos.ws" target="_blank" rel="noopener noreferrer" title="Ontos website" aria-label="Visit Ontos">↗</a>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="app-footer">
+      <div class="foot-left"><span>ONTOS</span><span>© 2026</span><span>EXPERIMENTAL RESEARCH ENVIRONMENT</span></div>
+      <div class="foot-right"><span class="status-cell"></span> ALL PHYSICS RUNS ON YOUR DEVICE <span class="footer-divider">/</span> <a href="https://github.com/google-deepmind/mujoco_menagerie" target="_blank" rel="noopener noreferrer">MODEL CREDITS ↗</a></div>
+    </footer>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 </body>
 </html>
