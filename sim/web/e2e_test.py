@@ -229,7 +229,10 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                 state="visible", timeout=120000
             )
             assert page.locator(".force-row").count() == 2
-            assert page.locator(".p37-trial-row").count() == 3\n            assert page.locator("#cross-g1-actions").inner_text() == "29"\n            assert page.locator("#cross-go2-actions").inner_text() == "12"\n            assert page.locator("#cross-retraining").inner_text() == "None"
+            assert page.locator(".p37-trial-row").count() == 3
+            assert page.locator("#cross-g1-actions").inner_text() == "29"
+            assert page.locator("#cross-go2-actions").inner_text() == "12"
+            assert page.locator("#cross-retraining").inner_text() == "None"
             assert "Unitree G1" in page.locator("#stage-title").inner_text()
             assert "not yet verified" in page.locator(".cross-claim").inner_text().lower()
             page.set_viewport_size({"width": 1440, "height": 900})
