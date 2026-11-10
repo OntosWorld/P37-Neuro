@@ -34,3 +34,23 @@
 .proof-disclaimer{grid-column:1/-1;padding:17px 26px;color:#a3b8ae;font-size:11px;line-height:1.6}
 @media(max-width:850px){.inference-proof{grid-template-columns:1fr}.proof-main{border-right:0;border-bottom:1px solid #3a4a48}.proof-main .source-link{margin-top:16px}.proof-stats{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:520px){.proof-main{padding:22px}.proof-stat{padding:22px}.proof-disclaimer{padding:16px 22px}.proof-main h3{font-size:32px}}
+
+
+/* Keep the interactive robot visible within the first desktop viewport.
+   The live physics scene is the product, not the editorial introduction. */
+@media (min-width:801px){
+  .intro{padding-top:54px;padding-bottom:30px}
+  .intro-grid{margin:21px 0 31px;gap:48px}
+  .intro h1{font-size:clamp(62px,6.8vw,108px);line-height:.92}
+  .intro-copy>p{font-size:clamp(16px,1.3vw,19px)}
+  .facts{padding:16px 0}
+  .facts strong{font-size:31px}
+  .scene-section{padding-top:43px}
+  .scene-section .section-heading{margin-bottom:23px}
+  .scene-section .section-heading h2{font-size:clamp(34px,3.7vw,54px)}
+}
+@media (max-width:800px){
+  .intro{padding-top:46px;padding-bottom:26px}
+  .intro-grid{margin:21px 0 31px}
+  .scene-section{padding-top:39px}
+}

@@ -234,9 +234,18 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert page.locator("#cross-go2-actions").inner_text() == "12"
             assert page.locator("#cross-retraining").inner_text() == "None"
             assert "Unitree G1" in page.locator("#stage-title").inner_text()
+            assert page.frame_locator("#stage-frame").locator("canvas").first.is_visible()
+            assert (
+                page.frame_locator("#stage-frame")
+                .locator("body")
+                .evaluate("(node) => node.ownerDocument.defaultView.__mjswanReady === true")
+            ), "main demo was captured before native MuJoCo reported a stable frame"
             assert "not yet verified" in page.locator(".cross-claim").inner_text().lower()
             page.set_viewport_size({"width": 1440, "height": 900})
             page.screenshot(path=str(screenshots / "demos-desktop.png"), timeout=90000)
+            page.locator(".sim-layout").screenshot(
+                path=str(screenshots / "demos-live-robot.png"), timeout=90000
+            )
             page.locator('[data-scene="unitree_go2"]').click()
             page.wait_for_function(
                 "() => new URL(document.querySelector('#stage-frame').src)"
@@ -260,12 +269,22 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             page.frame_locator("#compare-frame-b").locator("canvas").first.wait_for(
                 state="visible", timeout=120000
             )
+            page.locator("#compare-idle-a").wait_for(state="hidden", timeout=120000)
+            page.locator("#compare-idle-b").wait_for(state="hidden", timeout=120000)
+            for key in ("a", "b"):
+                assert (
+                    page.frame_locator(f"#compare-frame-{key}")
+                    .locator("body")
+                    .evaluate("(node) => node.ownerDocument.defaultView.__mjswanReady === true")
+                ), f"body {key} is not physically loaded"
             page.locator(".compare-grid").screenshot(
                 path=str(screenshots / "demos-two-bodies.png"), timeout=90000
             )
             page.locator("#compare-stop").click()
             assert page.locator("#compare-stop").is_disabled()
             page.set_viewport_size({"width": 390, "height": 844})
+            page.evaluate("window.scrollTo(0, 0)")
+            page.wait_for_timeout(300)
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             page.screenshot(path=str(screenshots / "demos-mobile.png"), timeout=90000)
 
