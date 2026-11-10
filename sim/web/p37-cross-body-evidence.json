@@ -1,0 +1,73 @@
+{
+  "schema_version": 1,
+  "kind": "p37_variable_morphology_inference_smoke",
+  "model": "P37Neuro recurrent PPO",
+  "checkpoint_sha256": "b3619374aa0f9b44a2fc80fa6005589abdfdac8e84cdcadbd8486df4f2285c95",
+  "trained_on": "unitree_g1",
+  "same_checkpoint_used_for_all_bodies": true,
+  "parameters_retrained_for_go2": false,
+  "qualified_for_cross_body_task_transfer": false,
+  "qualified_for_walking": false,
+  "browser_policy_attached": false,
+  "mode": "native MuJoCo physical actuation, not browser inference",
+  "embodiment_features": "prototype joint feature baseline, not a qualified morphology encoder",
+  "trials_per_body": 2,
+  "horizon_s": 1.2,
+  "bodies": {
+    "unitree_g1": {
+      "actuators": 29,
+      "joint_state_shape": [
+        1,
+        29,
+        2
+      ],
+      "trials": [
+        {
+          "seed": 1000,
+          "commands_sent": 60,
+          "sim_seconds": 1.2,
+          "fell": false,
+          "terminated": false
+        },
+        {
+          "seed": 1001,
+          "commands_sent": 60,
+          "sim_seconds": 1.2,
+          "fell": false,
+          "terminated": false
+        }
+      ],
+      "inference_and_physics_executed": true
+    },
+    "unitree_go2": {
+      "actuators": 12,
+      "joint_state_shape": [
+        1,
+        12,
+        2
+      ],
+      "trials": [
+        {
+          "seed": 1000,
+          "commands_sent": 60,
+          "sim_seconds": 1.2,
+          "fell": false,
+          "terminated": false
+        },
+        {
+          "seed": 1001,
+          "commands_sent": 60,
+          "sim_seconds": 1.2,
+          "fell": false,
+          "terminated": false
+        }
+      ],
+      "inference_and_physics_executed": true
+    }
+  },
+  "provenance": {
+    "workflow": "https://github.com/OntosRobotics/P37-Neuro/actions/runs/42896162520",
+    "artifact": "p37-g1-experimental-not-qualified"
+  },
+  "limitation": "Short 1.2-second native physics command execution only. No learned locomotion, task success or cross-embodiment performance transfer is demonstrated."
+}

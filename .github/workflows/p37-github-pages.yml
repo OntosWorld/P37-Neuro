@@ -33,12 +33,19 @@ jobs:
         run: python -m pip install "mjswan" "pytest>=8.3" "playwright>=1.55,<2"
       - name: Fetch actual robot models
         run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
+      - name: Build reproducible experiment evidence
+        run: |
+          python sim/web/disturbance_test.py --menagerie _menagerie --out _physics/force-results.json
+          python sim/web/build_demo_evidence.py \
+            --menagerie _menagerie --forces _physics/force-results.json \
+            --output _demo_evidence.json
       - name: Build for GitHub Pages project URL
         run: |
+          node --check sim/web/demos/demos.js
           python sim/web/build_mjswan.py \
             --menagerie _menagerie \
             --base-path /P37-Neuro/simulator/
-          python sim/web/assemble_site.py --output _pages
+          python sim/web/assemble_site.py --output _pages --demo-evidence _demo_evidence.json
           python - <<'PY'
           import importlib.metadata
           import json
@@ -59,6 +66,8 @@ jobs:
           assert (site / "catalog.json").is_file()
           assert (site / "studio.css").is_file()
           assert (site / "studio.js").is_file()
+          assert (site / "demos/index.html").is_file()
+          assert (site / "demos/evidence.json").is_file()
           metadata = {
               "host": "github-pages",
               "repository": "OntosRobotics/P37-Neuro",

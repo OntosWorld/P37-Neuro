@@ -44,11 +44,18 @@ jobs:
           path: _physics/g1-go2-force-results.json
           if-no-files-found: error
           retention-days: 14
+      - name: Build verifiable P37 public demo evidence
+        run: |
+          python sim/web/build_demo_evidence.py \
+            --menagerie _menagerie \
+            --forces _physics/g1-go2-force-results.json \
+            --output _demo_evidence.json
+          node --check sim/web/demos/demos.js
       - name: Build MuJoCo WebAssembly + ten robot scenes
         run: python sim/web/build_mjswan.py --menagerie _menagerie --base-path /simulator/
       - name: Assemble and validate static website
         run: |
-          python sim/web/assemble_site.py --output _site
+          python sim/web/assemble_site.py --output _site --demo-evidence _demo_evidence.json
           python - <<'PY'
           import json
           from pathlib import Path
@@ -61,6 +68,8 @@ jobs:
           assert Path("_site/catalog.json").is_file()
           assert Path("_site/studio.css").is_file()
           assert Path("_site/studio.js").is_file()
+          assert Path("_site/demos/index.html").is_file()
+          assert Path("_site/demos/evidence.json").is_file()
           print("Built real robot scenes:", sorted(scenes))
           PY
       - name: Record provenance

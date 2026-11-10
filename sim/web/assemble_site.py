@@ -12,7 +12,7 @@ from catalog import ROBOTS
 ROOT = Path(__file__).resolve().parent
 
 
-def assemble(output: Path) -> Path:
+def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     viewer = ROOT / "dist"
     if not (viewer / "index.html").is_file():
         raise FileNotFoundError("Run build_mjswan.py before assembling the public site")
@@ -54,6 +54,24 @@ def assemble(output: Path) -> Path:
         "robots": [robot.to_public() for robot in ROBOTS],
     }
     (output / "catalog.json").write_text(json.dumps(catalog, indent=2) + "\n", encoding="utf-8")
+    # A dedicated demo gallery keeps capability claims outside the live model viewer.
+    demos = output / "demos"
+    demos.mkdir()
+    for name in ("index.html", "demos.css", "demos.js"):
+        shutil.copy2(ROOT / "demos" / name, demos / name)
+    if demo_evidence is not None:
+        evidence = json.loads(demo_evidence.read_text(encoding="utf-8"))
+        if (
+            evidence.get("schema_version") != 1
+            or set(evidence.get("bodies", {})) != expected
+            or evidence.get("cross_embodiment", {}).get("same_checkpoint_task_transfer_qualified")
+            is not False
+            or evidence.get("p37_g1", {}).get("qualified_for_walking") is not False
+            or evidence.get("cross_body_p37", {}).get("qualified_for_cross_body_task_transfer")
+            is not False
+        ):
+            raise ValueError("Demo experiment data is incomplete or overclaims capability")
+        shutil.copy2(demo_evidence, demos / "evidence.json")
     shutil.copytree(viewer, output / "simulator")
     return output
 
@@ -61,8 +79,9 @@ def assemble(output: Path) -> Path:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=ROOT / "site")
+    parser.add_argument("--demo-evidence", type=Path)
     args = parser.parse_args()
-    print(assemble(args.output))
+    print(assemble(args.output, demo_evidence=args.demo_evidence))
 
 
 if __name__ == "__main__":
