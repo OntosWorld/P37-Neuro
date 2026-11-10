@@ -45,7 +45,7 @@ ROBOTS: tuple[RobotScene, ...] = (
         "Whole-body balance",
         "Balance under perturbation",
         (0, 0, 0.88),
-        3.5,
+        2.95,
         weight=1,
     ),
     RobotScene(
@@ -57,7 +57,7 @@ ROBOTS: tuple[RobotScene, ...] = (
         "Locomotion research",
         "Whole-body physics",
         (0, 0, 0.96),
-        4.1,
+        3.45,
         weight=2,
     ),
     RobotScene(
@@ -69,7 +69,7 @@ ROBOTS: tuple[RobotScene, ...] = (
         "Motor control",
         "Articulated dynamics",
         (0, 0, 0.62),
-        2.9,
+        2.45,
         weight=3,
     ),
     RobotScene(
@@ -81,7 +81,7 @@ ROBOTS: tuple[RobotScene, ...] = (
         "Contact dynamics",
         "External-force challenge",
         (0, 0, 0.39),
-        2.8,
+        2.35,
         weight=4,
     ),
     RobotScene(
@@ -93,7 +93,7 @@ ROBOTS: tuple[RobotScene, ...] = (
         "Terrain mobility",
         "Terrain and balance",
         (0, 0, 0.53),
-        3.0,
+        2.58,
         weight=5,
     ),
     RobotScene(
@@ -105,7 +105,7 @@ ROBOTS: tuple[RobotScene, ...] = (
         "Legged robotics",
         "Body stability",
         (0, 0, 0.48),
-        2.9,
+        2.46,
         weight=6,
     ),
     RobotScene(
@@ -152,8 +152,8 @@ ROBOTS: tuple[RobotScene, ...] = (
         "Micro quadrotor",
         "Flight dynamics",
         "Free-body motion",
-        (0, 0, 0.65),
-        2.0,
+        (0, 0, 0.20),
+        0.75,
         weight=10,
     ),
 )

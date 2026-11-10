@@ -12,6 +12,7 @@
     category: "All",
     controlsOpen: false,
     inspector: "scene",
+    drawer: null,
     frameVersion: 0,
     frameTimeout: null,
     toastTimeout: null
@@ -38,6 +39,53 @@
     {id:"unitree_go2",name:"Unitree Go2",model:"unitree_go2",kind:"Quadrupeds",short:"12-DoF quadruped",capability:"Contact dynamics",task:"External-force challenge"},
     {id:"franka_panda",name:"Franka Panda",model:"franka_emika_panda",kind:"Manipulators",short:"7-axis robot arm",capability:"Grasping research",task:"Contact and interaction"}
   ];
+
+  // Keep the real-time canvas unobstructed by default.
+  // Drawers are modal interactions, never permanent columns.
+  let focusBeforeDrawer = null;
+
+  function closeDrawers({restoreFocus = true} = {}) {
+    const wasOpen = Boolean(state.drawer);
+    state.drawer = null;
+    for (const id of ["robot-library-panel", "inspector"]) {
+      const panel = dom(id);
+      panel.classList.remove("open");
+      panel.inert = true;
+      panel.setAttribute("aria-hidden", "true");
+    }
+    for (const id of ["toggle-library", "browse-models", "toggle-inspector"]) {
+      dom(id).setAttribute("aria-expanded", "false");
+    }
+    dom("surface-scrim").hidden = true;
+    document.body.classList.remove("drawer-open");
+    if (restoreFocus && wasOpen && focusBeforeDrawer?.isConnected) {
+      focusBeforeDrawer.focus({preventScroll: true});
+    }
+    focusBeforeDrawer = null;
+  }
+
+  function openDrawer(name) {
+    if (state.drawer === name) {
+      closeDrawers();
+      return;
+    }
+    if (!state.drawer) focusBeforeDrawer = document.activeElement;
+    state.drawer = name;
+    const library = name === "library";
+    dom("robot-library-panel").classList.toggle("open", library);
+    dom("inspector").classList.toggle("open", !library);
+    dom("robot-library-panel").inert = !library;
+    dom("inspector").inert = library;
+    dom("robot-library-panel").setAttribute("aria-hidden", String(!library));
+    dom("inspector").setAttribute("aria-hidden", String(library));
+    dom("toggle-library").setAttribute("aria-expanded", String(library));
+    dom("browse-models").setAttribute("aria-expanded", String(library));
+    dom("toggle-inspector").setAttribute("aria-expanded", String(!library));
+    dom("surface-scrim").hidden = false;
+    document.body.classList.add("drawer-open");
+    if (library) dom("robot-library").scrollTop = 0;
+    (library ? dom("close-library") : dom("close-inspector")).focus({preventScroll: true});
+  }
 
   function escapeForText(value) {
     return String(value ?? "");
@@ -112,8 +160,8 @@
   function drawSelectedRobot(robot) {
     const index = state.robots.findIndex((candidate) => candidate.id === robot.id);
     dom("crumb-robot").textContent = robot.name.toUpperCase();
-    dom("scene-number").textContent = "SIM / " + String(index + 1).padStart(3, "0");
-    dom("scene-badge").textContent = robot.kind.toUpperCase() + " SYSTEM";
+    dom("scene-number").textContent = String(index + 1).padStart(2, "0") + " / " + String(state.robots.length).padStart(2, "0");
+    dom("scene-badge").textContent = "Model-only physics";
     dom("scene-title").textContent = robot.name;
     dom("scene-subtitle").textContent = robot.short;
     dom("inspector-name").textContent = robot.name;
@@ -184,6 +232,7 @@
       url.searchParams.set("robot", robot.id);
       history.replaceState(null, "", url);
     }
+    closeDrawers();
     loadScene(robot);
   }
 
@@ -206,10 +255,7 @@
     dom("tab-p37").setAttribute("aria-selected", String(evidence));
     dom("panel-scene").hidden = evidence;
     dom("panel-p37").hidden = !evidence;
-    if (window.matchMedia("(max-width:1050px)").matches) {
-      dom("inspector").classList.add("open");
-      dom("toggle-inspector").setAttribute("aria-expanded", "true");
-    }
+    if (state.drawer !== "inspector") openDrawer("inspector");
   }
 
   async function loadEvidence() {
@@ -254,13 +300,32 @@
     dom("tab-scene").addEventListener("click", () => setInspector("scene"));
     dom("tab-p37").addEventListener("click", () => setInspector("p37"));
     dom("toggle-inspector").addEventListener("click", () => {
-      const open = dom("inspector").classList.toggle("open");
-      dom("toggle-inspector").setAttribute("aria-expanded", String(open));
+      if (state.drawer === "inspector") closeDrawers();
+      else setInspector("p37");
     });
+    dom("toggle-library").addEventListener("click", () => openDrawer("library"));
+    dom("browse-models").addEventListener("click", () => openDrawer("library"));
+    dom("close-library").addEventListener("click", () => closeDrawers());
+    dom("close-inspector").addEventListener("click", () => closeDrawers());
+    dom("surface-scrim").addEventListener("click", () => closeDrawers());
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") {
-        dom("inspector").classList.remove("open");
-        dom("toggle-inspector").setAttribute("aria-expanded", "false");
+      if (event.key === "Escape" && state.drawer) {
+        event.preventDefault();
+        closeDrawers();
+      }
+      if (event.key === "Tab" && state.drawer) {
+        const panel = dom(state.drawer === "library" ? "robot-library-panel" : "inspector");
+        const focusables = [...panel.querySelectorAll('button:not([disabled]),a[href]')]
+          .filter((element) => element.getClientRects().length);
+        if (!focusables.length) return;
+        const first = focusables[0], last = focusables[focusables.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
       }
     });
     dom("reset").addEventListener("click", () => {
@@ -268,14 +333,15 @@
     });
     dom("toggle-engine").addEventListener("click", () => {
       state.controlsOpen = !state.controlsOpen;
+      dom("toggle-engine").setAttribute("aria-pressed", String(state.controlsOpen));
       if (state.selected) loadScene(state.selected);
-      showToast(state.controlsOpen ? "Simulator controls visible" : "Simulator controls hidden");
+      showToast(state.controlsOpen ? "Simulator controls visible" : "Scene controls simplified");
     });
     dom("fullscreen").addEventListener("click", async () => {
       try {
-        const canvas = dom("scene-canvas");
+        const stage = document.querySelector(".simulation-column");
         if (document.fullscreenElement) await document.exitFullscreen();
-        else await canvas.requestFullscreen();
+        else await stage.requestFullscreen();
       } catch { showToast("Fullscreen unavailable in this browser"); }
     });
     dom("copy-scene").addEventListener("click", async () => {
@@ -311,7 +377,8 @@
       state.manifestReady = false;
     }
 
-    dom("robot-count").textContent = String(state.robots.length).padStart(2, "0") + " MODELS";
+    dom("robot-count").textContent = String(state.robots.length).padStart(2, "0") + " models";
+    dom("top-robot-count").textContent = String(state.robots.length);
     const requested = new URLSearchParams(location.search).get("robot");
     const first = state.robots.find((robot) => robot.id === requested) || state.robots[0];
     if (first) selectRobot(first.id, Boolean(requested));

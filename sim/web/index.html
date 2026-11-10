@@ -7,32 +7,35 @@
   <meta name="description" content="Explore ten real robot bodies inside a live MuJoCo physics laboratory. Inspect P37-Neuro experimental control evidence.">
   <title>P37 Brain Lab — Robotics in Simulation</title>
   <link rel="stylesheet" href="./studio.css">
+  <link rel="stylesheet" href="./studio-minimal.css">
   <script src="./studio.js" defer></script>
 </head>
 <body>
   <div class="app-shell">
     <header class="app-header">
       <a class="brand" href="./" aria-label="P37 Brain Lab home">
-        <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span><span></span></span>
-        <span class="brand-name">ONTOS <span class="brand-slash">/</span> <span class="brand-product">P37 BRAIN LAB</span></span>
+        <span class="brand-name"><span class="ontos-word">ONTOS</span><span class="brand-slash">/</span><span class="brand-product">P37 Brain Lab</span></span>
       </a>
-      <div class="header-mode"><span class="live-pulse" aria-hidden="true"></span><span>PHYSICAL INTELLIGENCE / RESEARCH PREVIEW</span></div>
-      <div class="header-actions">
-        <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noopener noreferrer" class="header-link">Source <span aria-hidden="true">↗</span></a>
-        <button id="toggle-inspector" class="header-icon-button" type="button" aria-label="Toggle lab inspector" aria-expanded="false">Inspector <span aria-hidden="true">☰</span></button>
-      </div>
+      <div class="header-mode"><span class="live-pulse" aria-hidden="true"></span><span>Real-time MuJoCo simulation</span></div>
+      <nav class="header-actions" aria-label="Lab navigation">
+        <button id="toggle-library" class="header-button main-nav" type="button" aria-controls="robot-library-panel" aria-expanded="false"><span class="nav-dots" aria-hidden="true">▦</span> Robots <span id="top-robot-count" class="nav-count">10</span></button>
+        <button id="toggle-inspector" class="header-button secondary-nav" type="button" aria-controls="inspector" aria-expanded="false">Research <span class="nav-arrow" aria-hidden="true">↗</span></button>
+        <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noopener noreferrer" class="header-source">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
     </header>
 
     <main class="lab-grid" id="brain-lab">
-      <aside class="library-panel" aria-label="Robot and experiment library">
+      <button id="surface-scrim" class="surface-scrim" type="button" aria-label="Close panel" hidden></button>
+      <aside class="library-panel" id="robot-library-panel" aria-label="Select robot" aria-hidden="true" inert>
         <div class="library-top">
-          <div class="eyebrow">THE LABORATORY <span class="eyebrow-number">01 / 03</span></div>
-          <h1>Explore the<br>physical world<span class="headline-dot">.</span></h1>
-          <p>Different bodies. One place to test what physics and intelligence can do.</p>
+          <div class="drawer-kicker">Robot library</div>
+          <h1>Choose a robot</h1>
+          <p>Explore ten real robot models in physics.</p>
+          <button class="close-drawer" id="close-library" type="button" aria-label="Close robot library">×</button>
         </div>
 
         <div class="library-heading">
-          <span>ROBOT LIBRARY</span>
+          <span>All models</span>
           <span class="asset-count" id="robot-count">10 MODELS</span>
         </div>
         <div class="category-strip" id="category-strip" role="group" aria-label="Filter robot types">
@@ -44,7 +47,7 @@
           <button class="category-tab" type="button" data-category="Aerial" aria-pressed="false">Aerial</button>
         </div>
         <div class="robot-library" id="robot-library" role="group" aria-label="Select a real robot model">
-          <div class="loading-list" aria-live="polite">Loading certified model catalog…</div>
+          <div class="loading-list" aria-live="polite">Loading robot models…</div>
         </div>
 
         <div class="library-bottom">
@@ -59,14 +62,14 @@
 
       <section class="simulation-column" aria-label="Interactive MuJoCo physics scene">
         <div class="scene-topline">
-          <div class="stage-breadcrumb"><span>P37 / PHYSICS LAB</span><span class="crumb-divider">/</span><span id="crumb-robot">UNITREE G1</span></div>
-          <div class="stage-status"><span id="engine-dot" class="engine-dot" aria-hidden="true"></span><span id="engine-state" aria-live="polite">INITIALIZING</span><span class="stage-divider">|</span> MUJOCO WASM</div>
+          <div class="stage-breadcrumb"><span class="stage-small-label">Live simulation</span><span class="crumb-divider">/</span><span id="crumb-robot">UNITREE G1</span></div>
+          <div class="stage-status"><span id="engine-dot" class="engine-dot" aria-hidden="true"></span><span id="engine-state" aria-live="polite">INITIALIZING</span></div>
         </div>
 
         <div class="scene-canvas" id="scene-canvas">
           <div class="scene-overlay-top">
-            <div class="scene-number" id="scene-number">SIM / 001</div>
-            <div class="scene-badge" id="scene-badge">HUMANOID SYSTEM</div>
+            <div class="scene-number" id="scene-number">01 / 10</div>
+            <div class="scene-badge" id="scene-badge">MODEL-ONLY PHYSICS</div>
           </div>
 
           <iframe id="sim" class="sim-frame" title="MuJoCo simulation of the selected physical robot"
@@ -86,8 +89,8 @@
           </div>
 
           <div class="scene-label-bottom">
-            <div class="current-robot-label"><span class="tiny-label">ACTIVE EMBODIMENT</span><span id="scene-title">Unitree G1</span><span id="scene-subtitle">29-DoF humanoid</span></div>
-            <div class="scene-controls-tooltip">DRAG TO INTERACT <span aria-hidden="true">↗</span></div>
+            <div class="current-robot-label"><span class="tiny-label">Now viewing</span><span id="scene-title">Unitree G1</span><span id="scene-subtitle">29-DoF humanoid</span></div>
+            <div class="scene-controls-tooltip">Drag the robot to apply force. Drag empty space to orbit.</div>
           </div>
         </div>
 
@@ -97,10 +100,12 @@
             <div><strong id="dock-title">Physics enabled</strong><span id="dock-description">Real-time gravity, contacts, collisions and rigid-body motion</span></div>
           </div>
           <div class="dock-actions">
+            <button id="browse-models" class="action-button action-button-primary" type="button" title="Browse robot models" aria-controls="robot-library-panel" aria-expanded="false"><span class="action-glyph" aria-hidden="true">▦</span> Models</button>
+            <span class="dock-divider" aria-hidden="true"></span>
             <button id="reset" class="action-button" type="button" title="Reload this physical scene"><span class="action-glyph" aria-hidden="true">↻</span> Reset</button>
-            <button id="toggle-engine" class="action-button" type="button" title="Toggle the simulator control panel"><span class="action-glyph" aria-hidden="true">⚙</span> Controls</button>
-            <button id="copy-scene" class="action-button" type="button" title="Copy direct scene URL"><span class="action-glyph" aria-hidden="true">↗</span> Share</button>
-            <button id="fullscreen" class="action-button action-button-strong" type="button" title="Expand the 3D scene"><span class="action-glyph" aria-hidden="true">⛶</span> Expand</button>
+            <button id="toggle-engine" class="action-button" type="button" aria-pressed="false" title="Toggle simulator controls"><span class="action-glyph" aria-hidden="true">☷</span> Controls</button>
+            <button id="copy-scene" class="action-button compact-action" type="button" title="Copy scene link" aria-label="Copy scene link"><span class="action-glyph" aria-hidden="true">↗</span> <span class="action-text">Share</span></button>
+            <button id="fullscreen" class="action-button compact-action" type="button" title="Expand the simulation" aria-label="Toggle fullscreen"><span class="action-glyph" aria-hidden="true">⛶</span> <span class="action-text">Expand</span></button>
           </div>
         </div>
 
@@ -111,8 +116,8 @@
         </div>
       </section>
 
-      <aside class="inspector-panel" id="inspector" aria-label="Scene inspector and P37 research evidence">
-        <div class="inspector-heading"><span>INSPECTOR</span><span class="inspector-id">LAB / 2026</span></div>
+      <aside class="inspector-panel" id="inspector" aria-label="Scene inspector and P37 research evidence" aria-hidden="true" inert>
+        <div class="inspector-heading"><span>About this simulation</span><button class="close-drawer" id="close-inspector" type="button" aria-label="Close inspector">×</button></div>
         <div class="inspector-tabs" role="tablist" aria-label="Inspector sections">
           <button id="tab-scene" class="inspector-tab selected" role="tab" aria-selected="true" aria-controls="panel-scene" type="button">Environment</button>
           <button id="tab-p37" class="inspector-tab" role="tab" aria-selected="false" aria-controls="panel-p37" type="button">P37 research <span class="small-indicator"></span></button>
@@ -178,7 +183,7 @@
     </main>
 
     <footer class="app-footer">
-      <div class="foot-left"><span>ONTOS</span><span>© 2026</span><span>EXPERIMENTAL RESEARCH ENVIRONMENT</span></div>
+      <div class="foot-left"><span>ONTOS</span><span>© 2026</span><span>Research preview</span></div>
       <div class="foot-right"><span class="status-cell"></span> ALL PHYSICS RUNS ON YOUR DEVICE <span class="footer-divider">/</span> <a href="https://github.com/google-deepmind/mujoco_menagerie" target="_blank" rel="noopener noreferrer">MODEL CREDITS ↗</a></div>
     </footer>
   </div>
