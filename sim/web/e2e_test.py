@@ -59,15 +59,17 @@ def test(site: Path, screenshots: Path) -> dict:
             page.on("pageerror", lambda error: failures.append(str(error)))
             page.on(
                 "response",
-                lambda response: failures.append(f"HTTP {response.status}: {response.url}")
-                if response.status >= 400
-                else None,
+                lambda response: (
+                    failures.append(f"HTTP {response.status}: {response.url}")
+                    if response.status >= 400
+                    else None
+                ),
             )
             page.on(
                 "console",
-                lambda message: console_errors.append(message.text)
-                if message.type == "error"
-                else None,
+                lambda message: (
+                    console_errors.append(message.text) if message.type == "error" else None
+                ),
             )
             response = page.goto(origin, wait_until="domcontentloaded", timeout=30000)
             assert response is not None and response.status == 200
