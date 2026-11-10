@@ -68,6 +68,28 @@ def build_evidence(menagerie: Path, forces: Path, output: Path) -> Path:
 
     if len(p37["evaluation"]["seeds"]) != 3:
         raise ValueError("Expected three evidenced P37 G1 policy smoke trials")
+    cross = json.loads(
+        (ROOT / "p37-cross-body-evidence.json").read_text(encoding="utf-8")
+    )
+    if (
+        cross["qualified_for_cross_body_task_transfer"] is not False
+        or cross["qualified_for_walking"] is not False
+        or cross["browser_policy_attached"] is not False
+        or cross["same_checkpoint_used_for_all_bodies"] is not True
+        or cross["parameters_retrained_for_go2"] is not False
+        or cross["trained_on"] != "unitree_g1"
+        or set(cross["bodies"]) != {"unitree_g1", "unitree_go2"}
+    ):
+        raise ValueError("Cross-body inference smoke does not have verified boundaries")
+    for robot_id, body in cross["bodies"].items():
+        if (
+            body["actuators"] != bodies[robot_id]["actuators"]
+            or body["inference_and_physics_executed"] is not True
+            or len(body["trials"]) != 2
+            or any(trial["commands_sent"] != 60 for trial in body["trials"])
+        ):
+            raise ValueError(f"Inconsistent native P37 inference evidence for {robot_id}")
+
     result = {
         "schema_version": 1,
         "title": "P37 Brain Lab — reproducible experiment data",
@@ -85,13 +107,16 @@ def build_evidence(menagerie: Path, forces: Path, output: Path) -> Path:
             "onnx": p37["onnx"],
             "provenance": p37["provenance"],
         },
+        "cross_body_p37": cross,
         "cross_embodiment": {
-            "status": "not_yet_qualified",
-            "same_checkpoint_control_verified_on_two_bodies": False,
+            "status": "inference_smoke_verified_task_transfer_unqualified",
+            "same_checkpoint_joint_actions_executed_on_two_bodies": True,
+            "same_checkpoint_task_transfer_qualified": False,
             "different_models_share_a_physics_browser": True,
             "scope": (
                 "Ten physical robot scene contracts and a side-by-side viewer. "
-                "No trained P37 policy transfer is claimed."
+                "One unchanged P37 checkpoint drove G1 and Go2 joint actuators for short "
+                "native MuJoCo smoke trials; learned task transfer remains unverified."
             ),
             "required_evidence": (
                 "Identical P37 checkpoint evaluated on at least two materially different "
