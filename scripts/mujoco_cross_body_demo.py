@@ -51,6 +51,7 @@ def robot_xml(config: RobotConfig) -> str:
     """Generate a small, deterministic, *physical* MuJoCo arm, not a CAD replica."""
     a, b = config.first_link_m, config.second_link_m
     return f"""<mujoco model="{config.name}">
+  <compiler angle="radian"/>
   <option timestep="{DT_S}" gravity="0 0 -9.81" integrator="implicitfast"/>
   <worldbody>
     <geom type="plane" size="4 4 .1" rgba=".09 .13 .16 1"/>
