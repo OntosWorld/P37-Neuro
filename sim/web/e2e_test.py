@@ -104,7 +104,8 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert page.locator("#demo-panel").get_attribute("aria-hidden") == "false"
             assert page.locator(".demo-entry").count() >= 3
             assert "One checkpoint. Two bodies." in page.locator("#demo-panel").inner_text()
-            assert "without a trained controller" in page.locator(".compare-disclaimer").inner_text().lower()
+            disclaimer = page.locator(".compare-disclaimer").inner_text().lower()
+            assert "without a trained controller" in disclaimer
             page.locator("#close-demos").click()
             for demo_id in ("g1_impact_lab", "go2_contact_field", "franka_gravity_stack"):
                 page.locator(f'[data-demo="{demo_id}"]').click()
