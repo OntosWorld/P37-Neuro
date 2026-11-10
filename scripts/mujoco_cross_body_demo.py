@@ -55,10 +55,12 @@ def robot_xml(config: RobotConfig) -> str:
   <worldbody>
     <geom type="plane" size="4 4 .1" rgba=".09 .13 .16 1"/>
     <body name="root" pos="0 0 {BASE_Z_M}">
-      <joint name="shoulder" type="hinge" axis="0 1 0" range="-2.7 2.7" limited="true" damping="0.25"/>
+      <joint name="shoulder" type="hinge" axis="0 1 0" range="-2.7 2.7"
+             limited="true" damping="0.25"/>
       <geom name="upper" type="capsule" fromto="0 0 0 {a} 0 0" size=".035" mass="1.2"/>
       <body name="forearm" pos="{a} 0 0">
-        <joint name="elbow" type="hinge" axis="0 1 0" range="-2.7 2.7" limited="true" damping="0.18"/>
+        <joint name="elbow" type="hinge" axis="0 1 0" range="-2.7 2.7"
+               limited="true" damping="0.18"/>
         <geom name="lower" type="capsule" fromto="0 0 0 {b} 0 0" size=".03" mass="0.85"/>
         <site name="tip" pos="{b} 0 0" size=".016" rgba=".7 1 .8 1"/>
       </body>
