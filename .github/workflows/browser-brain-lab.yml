@@ -109,13 +109,13 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Prepare GitHub Pages artifact on main
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.P37_ENABLE_GITHUB_PAGES == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _site/
 
   deploy:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.P37_ENABLE_GITHUB_PAGES == 'true'
     needs: build
     runs-on: ubuntu-latest
     permissions:
