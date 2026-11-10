@@ -75,7 +75,12 @@ jobs:
           python -m pip install "playwright>=1.55,<2"
           python -m playwright install --with-deps chromium
       - name: Run real browser scene, selection and reset test
-        run: python sim/web/e2e_test.py --site _site --screenshots _screenshots
+        run: |
+          SITE_PREFIX="/"
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/main" ]]; then
+            SITE_PREFIX="/${GITHUB_REPOSITORY#*/}/"
+          fi
+          python sim/web/e2e_test.py --site _site --screenshots _screenshots --url-prefix "$SITE_PREFIX"
       - name: Upload browser screenshots and errors
         if: always()
         uses: actions/upload-artifact@v4
