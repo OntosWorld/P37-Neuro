@@ -114,7 +114,8 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             ):
                 page.locator(f'[data-robot="{key}"]').click()
                 page.wait_for_function(
-                    "(key) => new URL(document.querySelector('#sim').src).searchParams.get('scene') === key",
+                    "(key) => new URL(document.querySelector('#sim').src)"
+                    ".searchParams.get('scene') === key",
                     arg=key,
                     timeout=60000,
                 )
