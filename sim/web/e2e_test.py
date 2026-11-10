@@ -36,6 +36,8 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
     assert (site / "studio-minimal.css").is_file()
     assert (site / "studio.js").is_file()
     assert (site / "p37-evidence.json").is_file()
+    assert (site / "demos/index.html").is_file()
+    assert (site / "demos/evidence.json").is_file()
 
     class Handler(http.server.SimpleHTTPRequestHandler):
         def translate_path(self, path):
@@ -216,6 +218,59 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             )
             page.locator("#surface-scrim").click(position={"x": 380, "y": 25}, force=True)
             assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "true"
+
+            # P37 demos are separate from the physics viewer. Verify their
+            # actual MuJoCo canvas, measured native evidence and UI controls.
+            demo = page.goto(origin + "demos/", wait_until="domcontentloaded", timeout=30000)
+            assert demo is not None and demo.status == 200
+            assert "Robotics Demos" in page.title()
+            page.locator("#stage-loading").wait_for(state="hidden", timeout=120000)
+            page.frame_locator("#stage-frame").locator("canvas").first.wait_for(
+                state="visible", timeout=120000
+            )
+            assert page.locator(".force-row").count() == 2
+            assert page.locator(".p37-trial-row").count() == 3
+            assert "Unitree G1" in page.locator("#stage-title").inner_text()
+            assert "not yet verified" in page.locator("#cross-heading").locator("..").inner_text().lower() or (
+                "not yet verified" in page.locator(".cross-claim").inner_text().lower()
+            )
+            page.set_viewport_size({"width": 1440, "height": 900})
+            page.screenshot(path=str(screenshots / "demos-desktop.png"), timeout=90000)
+            page.locator('[data-scene="unitree_go2"]').click()
+            page.wait_for_function(
+                "() => new URL(document.querySelector('#stage-frame').src)"
+                ".searchParams.get('scene') === 'unitree_go2'",
+                timeout=30000,
+            )
+            page.locator("#stage-loading").wait_for(state="hidden", timeout=120000)
+            page.frame_locator("#stage-frame").locator("canvas").first.wait_for(
+                state="visible", timeout=120000
+            )
+            assert "Unitree Go2" in page.locator("#stage-title").inner_text()
+            page.locator("#compare-run").click()
+            assert not page.locator("#compare-stop").is_disabled()
+            assert page.locator("#compare-frame-a").get_attribute("src").startswith(
+                "../simulator/"
+            )
+            assert page.locator("#compare-frame-b").get_attribute("src").startswith(
+                "../simulator/"
+            )
+            assert "ACTUATORS" in page.locator("#body-stats-a").inner_text()
+            assert "ACTUATORS" in page.locator("#body-stats-b").inner_text()
+            page.frame_locator("#compare-frame-a").locator("canvas").first.wait_for(
+                state="visible", timeout=120000
+            )
+            page.frame_locator("#compare-frame-b").locator("canvas").first.wait_for(
+                state="visible", timeout=120000
+            )
+            page.locator(".compare-grid").screenshot(
+                path=str(screenshots / "demos-two-bodies.png"), timeout=90000
+            )
+            page.locator("#compare-stop").click()
+            assert page.locator("#compare-stop").is_disabled()
+            page.set_viewport_size({"width": 390, "height": 844})
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
+            page.screenshot(path=str(screenshots / "demos-mobile.png"), timeout=90000)
 
             if failures:
                 raise AssertionError("Browser runtime errors: " + " | ".join(failures[:8]))
