@@ -11,8 +11,8 @@ import json
 import os
 from pathlib import Path
 
-import mujoco
 import mjswan
+import mujoco
 
 ROOT = Path(__file__).resolve().parent
 ROBOTS = (
