@@ -102,6 +102,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert stage["height"] >= 700, "MuJoCo viewport collapsed vertically"
             sim_box = page.locator("#sim").bounding_box()
             assert sim_box and sim_box["height"] >= 700, "simulator iframe is vertically collapsed"
+            page.frame_locator("#sim").locator("canvas").first.wait_for(
+                state="visible", timeout=90000
+            )
             assert page.locator("#scene-title").is_visible()
             assert page.locator("#reset").is_visible()
             assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "true"
@@ -115,7 +118,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert "EXPERIMENTAL" in page.locator("#panel-p37").inner_text()
             page.locator(".trial-row").first.wait_for(state="visible", timeout=15000)
             assert "SEED 1000" in page.locator("#evidence-trials").inner_text()
-            page.screenshot(path=str(screenshots / "ui-research.png"), timeout=90000)
+            page.locator("#inspector").screenshot(
+                path=str(screenshots / "ui-research.png"), timeout=60000
+            )
             page.locator("#close-inspector").click()
             assert page.locator("#inspector").get_attribute("aria-hidden") == "true"
 
@@ -125,7 +130,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             page.locator('[data-category="Quadrupeds"]').click()
             assert page.locator('[data-robot="unitree_g1"]').count() == 0
             page.locator('[data-category="All"]').click()
-            page.screenshot(path=str(screenshots / "ui-library.png"), timeout=90000)
+            page.locator("#robot-library-panel").screenshot(
+                path=str(screenshots / "ui-library.png"), timeout=60000
+            )
             page.locator("#close-library").click()
             assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "true"
 
@@ -153,10 +160,16 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                 box = frame.locator("canvas").first.bounding_box()
                 assert box is not None and box["width"] >= 200 and box["height"] >= 150
                 page.wait_for_timeout(1500)
-                path = screenshots / f"{key}.png"
-                page.screenshot(path=str(path), timeout=90000)
-                results.append({"robot": key, "canvas": True, "screenshot": str(path)})
-                if key == "g1":
+                path = screenshots / f"{key}.png" if key in (
+                    "unitree_g1", "boston_dynamics_spot"
+                ) else None
+                if path:
+                    page.screenshot(path=str(path), timeout=90000)
+                results.append({
+                    "robot": key, "canvas": True,
+                    "screenshot": str(path) if path else None,
+                })
+                if key == "unitree_g1":
                     # Exercise actual pointer routing to the mjswan physics canvas.
                     # The native force test is responsible for quantitative physics proof.
                     x = box["x"] + box["width"] * 0.5
@@ -186,7 +199,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "false"
             gallery = page.locator("#robot-library-panel").bounding_box()
             assert gallery and gallery["width"] <= 391
-            page.screenshot(path=str(screenshots / "ui-mobile-library.png"), timeout=90000)
+            page.locator("#robot-library-panel").screenshot(
+                path=str(screenshots / "ui-mobile-library.png"), timeout=60000
+            )
             page.locator("#surface-scrim").click(position={"x": 380, "y": 25}, force=True)
             assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "true"
 
