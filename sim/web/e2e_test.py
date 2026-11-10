@@ -14,6 +14,7 @@ import json
 import socketserver
 import threading
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from playwright.sync_api import sync_playwright
 
@@ -22,13 +23,23 @@ class LocalServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads = True
 
 
-def test(site: Path, screenshots: Path) -> dict:
+def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
+    if not url_prefix.startswith("/") or not url_prefix.endswith("/"):
+        raise ValueError("url_prefix must start and end with a slash")
     site = site.resolve()
     screenshots.mkdir(parents=True, exist_ok=True)
     if not (site / "simulator/manifest.json").is_file():
         raise FileNotFoundError("mjswan bundle missing")
 
     class Handler(http.server.SimpleHTTPRequestHandler):
+        def translate_path(self, path):
+            requested = urlsplit(path).path
+            if url_prefix != "/":
+                if not requested.startswith(url_prefix):
+                    return str(site / "__not_found__")
+                requested = "/" + requested[len(url_prefix):]
+            return super().translate_path(requested)
+
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=str(site), **kwargs)
 
@@ -38,7 +49,7 @@ def test(site: Path, screenshots: Path) -> dict:
     server = LocalServer(("127.0.0.1", 0), Handler)
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
-    origin = f"http://127.0.0.1:{server.server_port}"
+    origin = f"http://127.0.0.1:{server.server_port}{url_prefix}"
     results = []
     failures = []
     console_errors = []
@@ -121,8 +132,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--site", type=Path, default=Path("_site"))
     parser.add_argument("--screenshots", type=Path, default=Path("_screenshots"))
+    parser.add_argument("--url-prefix", default="/")
     args = parser.parse_args()
-    print(json.dumps(test(args.site, args.screenshots), indent=2))
+    print(json.dumps(test(args.site, args.screenshots, url_prefix=args.url_prefix), indent=2))
 
 
 if __name__ == "__main__":
