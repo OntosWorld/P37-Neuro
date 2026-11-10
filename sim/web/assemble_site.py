@@ -1,4 +1,5 @@
 """Assemble the public static P37 Brain Lab site after mjswan asset compilation."""
+
 from __future__ import annotations
 
 import argparse
