@@ -57,7 +57,7 @@ ROBOTS: tuple[RobotScene, ...] = (
         (0, 0, 0.39), 2.8, weight=4,
     ),
     RobotScene(
-        "spot", "Boston Dynamics Spot", "boston_dynamics_spot", "Quadrupeds",
+        "boston_dynamics_spot", "Boston Dynamics Spot", "boston_dynamics_spot", "Quadrupeds",
         "Industrial quadruped", "Terrain mobility", "Terrain and balance",
         (0, 0, 0.53), 3.0, weight=5,
     ),
@@ -72,12 +72,12 @@ ROBOTS: tuple[RobotScene, ...] = (
         (0, 0, 0.45), 2.15, weight=7,
     ),
     RobotScene(
-        "ur5e", "Universal Robots UR5e", "universal_robots_ur5e", "Manipulators",
+        "universal_robots_ur5e", "Universal Robots UR5e", "universal_robots_ur5e", "Manipulators",
         "Industrial robot arm", "Precision motion", "Reach and articulation",
         (0, 0, 0.38), 2.65, weight=8,
     ),
     RobotScene(
-        "stretch", "Hello Robot Stretch", "hello_robot_stretch", "Mobile",
+        "hello_robot_stretch", "Hello Robot Stretch", "hello_robot_stretch", "Mobile",
         "Mobile manipulator", "Mobile manipulation", "Body and arm control",
         (0, 0, 0.72), 3.3, weight=9,
     ),
