@@ -219,8 +219,12 @@ def main() -> None:
         train(args.model, args.output, updates=args.updates, seed=args.seed)
     else:
         evaluate(
-            args.model, args.evaluate, args.output / "heldout.json",
-            seeds=args.eval_seeds, steps=args.eval_steps, push_newtons=args.push_newtons,
+            args.model,
+            args.evaluate,
+            args.output / "heldout.json",
+            seeds=args.eval_seeds,
+            steps=args.eval_steps,
+            push_newtons=args.push_newtons,
         )
 
 
