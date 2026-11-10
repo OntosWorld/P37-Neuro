@@ -26,7 +26,13 @@ WebAssembly physics**, not recorded animation or a fake P37 controller.
   walking, recovery, transfer, or improved performance relative to any
   competitor.
 
-**Verified shared-checkpoint inference smoke:** the unchanged experimental P37\ncheckpoint generated 60 joint-actuator commands for G1 (29 actuators) and Go2\n(12 actuators), over two 1.2-second native MuJoCo trials per robot. No Go2\nretraining occurred. See the original [GitHub Actions experiment](https://github.com/OntosRobotics/P37-Neuro/actions/runs/42896162520).\nThis is a model interface and actuation test, **not useful task transfer**.\n\nNo live gallery robot is labeled P37-controlled until a **trained,
+**Verified shared-checkpoint inference smoke:** the unchanged experimental P37
+checkpoint generated 60 joint-actuator commands for G1 (29 actuators) and Go2
+(12 actuators), over two 1.2-second native MuJoCo trials per robot. No Go2
+retraining occurred. See the original [GitHub Actions experiment](https://github.com/OntosRobotics/P37-Neuro/actions/runs/42896162520).
+This is a model interface and actuation test, **not useful task transfer**.
+
+No live gallery robot is labeled P37-controlled until a **trained,
 qualified** policy is attached, tested and replicated on that body.
 
 ## Why this is useful for P37
@@ -53,9 +59,11 @@ success criteria, and a comparable baseline. Include failures.
    measurement and verifies deterministic repeated trials.
 3. `sim/web/p37-evidence.json`, which links native training and ONNX
    inference-parity artifacts.
+4. `sim/web/p37-cross-body-evidence.json`, which records the native
+   unchanged-checkpoint G1/Go2 inference test with its original workflow.
 
 The build **fails** if body models or measurements are missing, if the
-same-checkpoint across bodies field is wrongly marked verified, or if the
+cross-embodiment task success is wrongly claimed, or if the
 P37 checkpoint is represented as qualified to walk.
 
 Build locally:
