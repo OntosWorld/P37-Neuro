@@ -13,9 +13,8 @@ import numpy as np
 import onnx
 import onnxruntime as ort
 import torch
-from torch import nn
-
 from p37_neuro_ml.checkpoint import load_checkpoint
+from torch import nn
 
 from p37_neuro_sim.g1_p37_train import P37G1Env
 
