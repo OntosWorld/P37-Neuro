@@ -458,7 +458,13 @@
     dom("copy-scene").addEventListener("click", async () => {
       if (!state.selected) return;
       const url = new URL(location.href);
-      url.searchParams.set("robot", state.selected.id);
+      if (state.selected.isDemo) {
+        url.searchParams.set("demo", state.selected.id);
+        url.searchParams.delete("robot");
+      } else {
+        url.searchParams.set("robot", state.selected.id);
+        url.searchParams.delete("demo");
+      }
       try {
         await navigator.clipboard.writeText(url.toString());
         showToast("Link copied to clipboard");
