@@ -64,9 +64,7 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         if (
             evidence.get("schema_version") != 1
             or set(evidence.get("bodies", {})) != expected
-            or evidence.get("cross_embodiment", {}).get(
-                "same_checkpoint_task_transfer_qualified"
-            )
+            or evidence.get("cross_embodiment", {}).get("same_checkpoint_task_transfer_qualified")
             is not False
             or evidence.get("p37_g1", {}).get("qualified_for_walking") is not False
             or evidence.get("cross_body_p37", {}).get("qualified_for_cross_body_task_transfer")
