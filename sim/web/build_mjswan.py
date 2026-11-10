@@ -4,6 +4,7 @@ Generate a self-contained mjswan site. No trained P37 policy is bundled.
 Run from the repository root:
   python sim/web/build_mjswan.py --menagerie /path/to/mujoco_menagerie
 """
+
 from __future__ import annotations
 
 import argparse
