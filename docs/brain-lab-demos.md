@@ -26,7 +26,7 @@ WebAssembly physics**, not recorded animation or a fake P37 controller.
   walking, recovery, transfer, or improved performance relative to any
   competitor.
 
-No live gallery robot is labeled P37-controlled until a **trained,
+**Verified shared-checkpoint inference smoke:** the unchanged experimental P37\ncheckpoint generated 60 joint-actuator commands for G1 (29 actuators) and Go2\n(12 actuators), over two 1.2-second native MuJoCo trials per robot. No Go2\nretraining occurred. See the original [GitHub Actions experiment](https://github.com/OntosRobotics/P37-Neuro/actions/runs/42896162520).\nThis is a model interface and actuation test, **not useful task transfer**.\n\nNo live gallery robot is labeled P37-controlled until a **trained,
 qualified** policy is attached, tested and replicated on that body.
 
 ## Why this is useful for P37
