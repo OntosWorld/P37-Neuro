@@ -1,10 +1,9 @@
-"""Build the P37 browser physics viewer from actual MuJoCo Menagerie models.
+"""Build physically simulated robot scenes with an editorial lab presentation.
 
-Generate a self-contained mjswan site. No trained P37 policy is bundled.
-Run from the repository root:
-  python sim/web/build_mjswan.py --menagerie /path/to/mujoco_menagerie
+This bundles true Menagerie MJCF geometry and MuJoCo WebAssembly. Styling
+adds lights and non-colliding visual markers, never hidden locomotion scripts.
+Only verified trained controllers may be attached as P37 policies.
 """
-
 from __future__ import annotations
 
 import argparse
@@ -15,15 +14,50 @@ from pathlib import Path
 import mjswan
 import mujoco
 
+from catalog import ROBOTS, RobotScene, check_catalog
+
 ROOT = Path(__file__).resolve().parent
-ROBOTS = (
-    ("Unitree G1", "unitree_g1", "scene.xml", (0.0, 0.0, 0.85), 3.5),
-    ("Unitree Go2", "unitree_go2", "scene.xml", (0.0, 0.0, 0.40), 2.8),
-    ("Franka Panda", "franka_emika_panda", "scene.xml", (0.0, 0.0, 0.45), 2.1),
-)
+
+
+def _light_scene(spec: mujoco.MjSpec, robot: RobotScene) -> None:
+    """Three practical light sources for legible white/black robot surfaces."""
+    # All lights are non-physical presentation assets; dynamics are unchanged.
+    spec.worldbody.add_light(
+        name="p37_key",
+        pos=[-3.8, -3.2, 5.5],
+        dir=[0.65, 0.55, -1.0],
+        diffuse=[0.70, 0.73, 0.78],
+        specular=[0.24, 0.26, 0.29],
+    )
+    spec.worldbody.add_light(
+        name="p37_fill",
+        pos=[3.4, 2.3, 4.2],
+        dir=[-0.65, -0.55, -1.0],
+        diffuse=[0.38, 0.42, 0.48],
+        specular=[0.09, 0.11, 0.14],
+    )
+    # Subtle static reference edges help place the robot in 3D.
+    radius = 1.65 if robot.kind in ("Humanoids", "Quadrupeds") else 1.15
+    color = [0.23, 0.29, 0.34, 0.60]
+    for i, (x, y, sx, sy) in enumerate((
+        (-radius, 0, 0.012, radius),
+        (radius, 0, 0.012, radius),
+        (0, -radius, radius, 0.012),
+        (0, radius, radius, 0.012),
+    )):
+        spec.worldbody.add_geom(
+            name=f"p37_marker_{i}",
+            type=mujoco.mjtGeom.mjGEOM_BOX,
+            pos=[x, y, -0.005],
+            size=[sx, sy, 0.004],
+            rgba=color,
+            contype=0,
+            conaffinity=0,
+        )
 
 
 def build(menagerie: Path, base_path: str = "/simulator/") -> Path:
+    check_catalog()
     menagerie = menagerie.resolve()
     if not menagerie.is_dir():
         raise FileNotFoundError(f"MuJoCo Menagerie checkout missing: {menagerie}")
@@ -37,26 +71,30 @@ def build(menagerie: Path, base_path: str = "/simulator/") -> Path:
     )
     project = builder.add_project(name="P37 Robot Models", default=True)
     project.set_notice(
-        "These are third-party robot simulation models from MuJoCo Menagerie. "
-        "Physics and model exploration are not evidence of a trained P37 policy. "
-        "Check scene credits and original model licenses before redistribution."
+        "Real MuJoCo Menagerie robotic models under their original licenses. "
+        "Lab lighting and reference markers are visual only. "
+        "Robots are not controlled by a trained P37 policy in this build. "
+        "Do not interpret passive physics or manually applied forces as learned skills."
     )
 
-    for name, directory, filename, lookat, distance in ROBOTS:
-        path = menagerie / directory / filename
+    built_scenes = []
+    for robot in ROBOTS:
+        path = menagerie / robot.model / "scene.xml"
         if not path.is_file():
-            raise FileNotFoundError(f"Missing robot scene: {path}")
+            raise FileNotFoundError(f"Missing physical robot model: {path}")
         spec = mujoco.MjSpec.from_file(str(path))
-        scene = project.add_scene(spec=spec, name=name)
+        _light_scene(spec, robot)
+        scene = project.add_scene(spec=spec, name=robot.name)
         scene.set_viewer(
             mjswan.ViewerConfig(
-                lookat=lookat,
-                distance=distance,
-                elevation=-20.0,
-                azimuth=-135.0,
+                lookat=robot.camera,
+                distance=robot.distance,
+                elevation=robot.elevation,
+                azimuth=robot.azimuth,
                 origin_type=mjswan.ViewerConfig.OriginType.WORLD,
             )
         )
+        built_scenes.append(robot.id)
 
     old_cwd = Path.cwd()
     try:
@@ -70,8 +108,15 @@ def build(menagerie: Path, base_path: str = "/simulator/") -> Path:
     if not manifest.is_file():
         raise RuntimeError(f"mjswan build produced no manifest at {manifest}")
     metadata = json.loads(manifest.read_text(encoding="utf-8"))
-    if not metadata.get("projects"):
-        raise RuntimeError("mjswan manifest contains no projects")
+    generated_ids = {
+        scene["id"]
+        for project_data in metadata.get("projects", [])
+        for scene in project_data.get("scenes", [])
+    }
+    if not set(built_scenes).issubset(generated_ids):
+        raise RuntimeError(
+            f"missing compiled scenes: {sorted(set(built_scenes) - generated_ids)}"
+        )
     return output
 
 
