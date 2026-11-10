@@ -66,7 +66,7 @@ def test_public_demos_keep_capability_claims_evidence_gated() -> None:
     assert "not yet verified" in html
     assert "controlled policy-transfer benchmark" in html
     assert "Live MuJoCo" in html
-    assert "controller !== \"none\"" in js
+    assert 'controller !== "none"' in js
     assert "qualified_for_walking !== false" in js
     assert "same_checkpoint_control_verified_on_two_bodies" in evidence
     assert "mujoco.MjModel.from_xml_path" in evidence
