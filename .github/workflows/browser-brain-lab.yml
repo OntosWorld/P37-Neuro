@@ -70,6 +70,20 @@ jobs:
           }
           Path("_site/build-info.json").write_text(json.dumps(info, indent=2) + "\n")
           PY
+      - name: Install Chromium browser test tools
+        run: |
+          python -m pip install "playwright>=1.55,<2"
+          python -m playwright install --with-deps chromium
+      - name: Run real browser scene, selection and reset test
+        run: python sim/web/e2e_test.py --site _site --screenshots _screenshots
+      - name: Upload browser screenshots and errors
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-browser-e2e-evidence
+          path: _screenshots/
+          if-no-files-found: warn
+          retention-days: 14
       - name: Publish preview artifact
         uses: actions/upload-artifact@v4
         with:
