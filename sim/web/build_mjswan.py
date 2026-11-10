@@ -22,6 +22,17 @@ ROOT = Path(__file__).resolve().parent
 def _light_scene(spec: mujoco.MjSpec, robot: RobotScene) -> None:
     """Three practical light sources for legible white/black robot surfaces."""
     # All lights are non-physical presentation assets; dynamics are unchanged.
+    # Recolor Menagerie's saturated blue procedural ground and sky into
+    # neutral graphite. These are purely visual texture parameters.
+    for texture in spec.textures:
+        name = getattr(texture, "name", "")
+        if name == "groundplane":
+            texture.rgb1 = [0.22, 0.23, 0.25]
+            texture.rgb2 = [0.19, 0.20, 0.22]
+            texture.markrgb = [0.26, 0.28, 0.30]
+        elif texture.type == mujoco.mjtTexture.mjTEXTURE_SKYBOX:
+            texture.rgb1 = [0.22, 0.25, 0.28]
+            texture.rgb2 = [0.07, 0.08, 0.10]
     spec.worldbody.add_light(
         name="p37_key",
         pos=[-3.8, -3.2, 5.5],
