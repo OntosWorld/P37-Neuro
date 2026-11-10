@@ -61,9 +61,7 @@ The Python adapter `p37_neuro.data.trace_export` serializes canonical `Episode` 
 Example for existing in-memory canonical episodes:
 
 ```python
-from p37_neuro.data.trace_export import (
-    TraceProvenance, export_comparison, write_comparison
-)
+from p37_neuro.data.trace_export import TraceProvenance, export_comparison, write_comparison
 
 # Supply actual recorded Episode objects from your real P37 run.
 episodes = [recorded_arm_a, recorded_arm_b]
