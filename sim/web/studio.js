@@ -231,7 +231,7 @@
       url.searchParams.set("robot", robot.id);
       history.replaceState(null, "", url);
     }
-    closeDrawers({restoreFocus: false});
+    closeDrawers();
     loadScene(robot);
   }
 
@@ -298,7 +298,10 @@
     });
     dom("tab-scene").addEventListener("click", () => setInspector("scene"));
     dom("tab-p37").addEventListener("click", () => setInspector("p37"));
-    dom("toggle-inspector").addEventListener("click", () => openDrawer("inspector"));
+    dom("toggle-inspector").addEventListener("click", () => {
+      if (state.drawer === "inspector") closeDrawers();
+      else setInspector("p37");
+    });
     dom("toggle-library").addEventListener("click", () => openDrawer("library"));
     dom("browse-models").addEventListener("click", () => openDrawer("library"));
     dom("close-library").addEventListener("click", () => closeDrawers());
