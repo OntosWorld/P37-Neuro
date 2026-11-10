@@ -2,6 +2,7 @@
 
 This is an inference-format and observation-contract check, not proof of walking.
 """
+
 from __future__ import annotations
 
 import argparse
