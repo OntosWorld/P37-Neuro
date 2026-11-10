@@ -164,6 +164,36 @@
     $("compare-run").textContent = "Restart comparison ↻";
   }
 
+  function displayCrossBodyP37() {
+    const cross = state.evidence?.cross_body_p37;
+    const capability = state.evidence?.cross_embodiment;
+    if (!cross ||
+        cross.same_checkpoint_used_for_all_bodies !== true ||
+        cross.parameters_retrained_for_go2 !== false ||
+        cross.qualified_for_cross_body_task_transfer !== false ||
+        cross.browser_policy_attached !== false ||
+        capability?.same_checkpoint_task_transfer_qualified !== false) {
+      $("cross-p37-stats").textContent =
+        "The shared-checkpoint experiment has not been validated for this build.";
+      return;
+    }
+    const g1 = cross.bodies.unitree_g1;
+    const go2 = cross.bodies.unitree_go2;
+    if (g1?.inference_and_physics_executed !== true ||
+        go2?.inference_and_physics_executed !== true) {
+      $("cross-p37-stats").textContent = "Verified native P37 actuation data unavailable.";
+      return;
+    }
+    $("cross-g1-actions").textContent = String(g1.actuators);
+    $("cross-go2-actions").textContent = String(go2.actuators);
+    $("cross-duration").textContent = Number(cross.horizon_s).toFixed(1) + " s";
+    $("cross-retraining").textContent = "None";
+    const url = cross.provenance?.workflow;
+    if (/^https:\/\/github\.com\/OntosRobotics\/P37-Neuro\/actions\/runs\/\d+$/.test(url)) {
+      $("cross-p37-source").href = url;
+    }
+  }
+
   function displayForces() {
     const root = $("force-results");
     root.replaceChildren();
@@ -266,6 +296,7 @@
     renderStats($("body-b").value, "b");
     displayForces();
     displayP37();
+    displayCrossBodyP37();
     startStage(state.selected);
   }
 
