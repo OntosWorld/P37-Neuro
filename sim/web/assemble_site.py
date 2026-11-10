@@ -43,6 +43,7 @@ def assemble(output: Path) -> Path:
         "index.html",
         "studio.css",
         "studio-minimal.css",
+        "demos.css",
         "studio.js",
         "p37-evidence.json",
     ):
