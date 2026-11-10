@@ -33,7 +33,12 @@ jobs:
       - name: Fetch official virtual robot models
         run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
       - name: Build MuJoCo WebAssembly + three robot scenes
-        run: python sim/web/build_mjswan.py --menagerie _menagerie --base-path /simulator/
+        run: |
+          BASE_PATH="/simulator/"
+          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/main" ]]; then
+            BASE_PATH="/${GITHUB_REPOSITORY#*/}/simulator/"
+          fi
+          python sim/web/build_mjswan.py --menagerie _menagerie --base-path "$BASE_PATH"
       - name: Assemble and validate static website
         run: |
           python sim/web/assemble_site.py --output _site
