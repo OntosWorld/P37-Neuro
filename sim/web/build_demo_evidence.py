@@ -11,7 +11,6 @@ import json
 from pathlib import Path
 
 import mujoco
-
 from catalog import ROBOTS
 
 ROOT = Path(__file__).resolve().parent
