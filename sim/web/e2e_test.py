@@ -108,6 +108,17 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                 path = screenshots / f"{key}.png"
                 page.screenshot(path=str(path))
                 results.append({"robot": key, "canvas": True, "screenshot": str(path)})
+                if key == "g1":
+                    # Exercise actual pointer routing to the mjswan physics canvas.
+                    # The native force test is responsible for quantitative physics proof.
+                    x = box["x"] + box["width"] * 0.5
+                    y = box["y"] + box["height"] * 0.5
+                    page.mouse.move(x, y)
+                    page.mouse.down()
+                    page.mouse.move(x + 55, y + 25, steps=12)
+                    page.mouse.up()
+                    page.wait_for_timeout(600)
+                    page.screenshot(path=str(screenshots / "g1-pointer-interaction.png"))
             page.locator("#reset").click()
             page.frame_locator("#sim").locator("canvas").first.wait_for(
                 state="visible", timeout=60000
