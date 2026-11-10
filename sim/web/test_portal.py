@@ -24,6 +24,7 @@ def test_browser_has_real_interaction_and_honest_policy_status() -> None:
     page = (ROOT / "index.html").read_text(encoding="utf-8")
     js = (ROOT / "studio.js").read_text(encoding="utf-8")
     css = (ROOT / "studio.css").read_text(encoding="utf-8")
+    minimal_css = (ROOT / "studio-minimal.css").read_text(encoding="utf-8")
     for marker in (
         "P37 Brain Lab",
         "studio.css",
@@ -39,6 +40,12 @@ def test_browser_has_real_interaction_and_honest_policy_status() -> None:
     assert "NOT ATTACHED" in page
     assert "not walking-qualified" in js.lower() or "not walking-qualified" in page.lower()
     assert len(css) > 4000
+    assert len(minimal_css) > 4000
+    for marker in ("toggle-library", "browse-models", "surface-scrim", "close-inspector"):
+        assert marker in page
+    assert "openDrawer" in js and "closeDrawers" in js
+    assert "height:calc(100dvh - 64px)" in minimal_css
+    assert "studio-minimal.css" in page
 
 
 def test_builder_keeps_real_mujoco_scenes() -> None:
