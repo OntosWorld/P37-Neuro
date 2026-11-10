@@ -62,6 +62,6 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PROJECT: ${{ vars.P37_CLOUDFLARE_PROJECT || 'p37-brain-lab' }}
         run: |
-          npx --yes wrangler pages deploy _publish \
+          npx --yes wrangler pages deploy _site \
             --project-name "$PROJECT" --branch main --commit-hash "$GITHUB_SHA"
           echo "Site intended at https://${PROJECT}.pages.dev/"
