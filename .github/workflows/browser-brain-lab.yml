@@ -45,12 +45,7 @@ jobs:
           if-no-files-found: error
           retention-days: 14
       - name: Build MuJoCo WebAssembly + three robot scenes
-        run: |
-          BASE_PATH="/simulator/"
-          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/main" ]]; then
-            BASE_PATH="/${GITHUB_REPOSITORY#*/}/simulator/"
-          fi
-          python sim/web/build_mjswan.py --menagerie _menagerie --base-path "$BASE_PATH"
+        run: python sim/web/build_mjswan.py --menagerie _menagerie --base-path /simulator/
       - name: Assemble and validate static website
         run: |
           python sim/web/assemble_site.py --output _site
@@ -87,12 +82,7 @@ jobs:
           python -m pip install "playwright>=1.55,<2"
           python -m playwright install --with-deps chromium
       - name: Run real browser scene, selection and reset test
-        run: |
-          SITE_PREFIX="/"
-          if [[ "$GITHUB_EVENT_NAME" == "push" && "$GITHUB_REF" == "refs/heads/main" ]]; then
-            SITE_PREFIX="/${GITHUB_REPOSITORY#*/}/"
-          fi
-          python sim/web/e2e_test.py --site _site --screenshots _screenshots --url-prefix "$SITE_PREFIX"
+        run: python sim/web/e2e_test.py --site _site --screenshots _screenshots --url-prefix /
       - name: Upload browser screenshots and errors
         if: always()
         uses: actions/upload-artifact@v4
