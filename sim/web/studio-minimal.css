@@ -38,7 +38,7 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offs
 .ontos-word{font-size:16px;font-weight:750;letter-spacing:.115em;color:#f3f6f9}
 .brand-slash{font-size:16px;font-weight:350;color:#66727c;margin:0}
 .brand-product{font-size:13px;letter-spacing:-.012em;font-weight:490;color:#c9d0d6}
-.header-mode{display:flex;align-items:center;gap:10px;padding:0;font-size:12px;color:#8c969e;letter-spacing:0;font-weight:460}
+.header-mode{display:none}
 .live-pulse{width:6px;height:6px;box-shadow:none;background:#9dbbac}
 .header-actions{display:flex;gap:10px;align-items:center;justify-content:flex-end;height:100%}
 .header-button,.header-source{
@@ -105,13 +105,13 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offs
 .current-robot-label{
   display:flex;flex-direction:column;gap:8px;
   background:transparent;border:0;border-radius:0;padding:0;
-  backdrop-filter:none;max-width:480px;
+  backdrop-filter:none;max-width:min(55vw,700px);
   text-shadow:0 1px 18px rgba(0,0,0,.42);
 }
 .current-robot-label .tiny-label{
   color:#d7e0e6;font-size:12px;letter-spacing:0;text-transform:none;font-weight:500;
 }
-#scene-title{font-size:clamp(36px,4.4vw,68px);line-height:.96;color:#fff;letter-spacing:-.065em;font-weight:540}
+#scene-title{font-size:clamp(36px,3.8vw,58px);line-height:1.02;color:#fff;letter-spacing:-.065em;font-weight:540}
 #scene-subtitle{font-size:14px;color:#d4dce2;font-weight:450}
 .scene-controls-tooltip{
   font-size:12px;line-height:1.5;letter-spacing:0;font-weight:480;
@@ -198,11 +198,11 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offs
 }
 .asset-count{color:#82909d;letter-spacing:0;font-size:11px}
 .category-strip{
-  padding:0 19px 14px 23px;gap:4px;flex-wrap:wrap;overflow:visible
+  padding:0 19px 14px 23px;gap:3px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none
 }
 .category-tab{
   font-size:11px;font-weight:530;line-height:1;
-  padding:11px 10px;border-radius:6px;color:#acb6bf;
+  padding:10px 8px;border-radius:6px;color:#acb6bf;white-space:nowrap;
 }
 .category-tab.selected{
   background:#343b42;border-color:#46535e;color:#f5f7f8
