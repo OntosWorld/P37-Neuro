@@ -29,7 +29,7 @@ def assemble(output: Path) -> Path:
     if not expected.issubset(scenes):
         raise ValueError(f"missing generated physical robot models: {sorted(expected - scenes)}")
     output = output.resolve()
-    if output in (ROOT, viewer) or ROOT in output.parents and output == ROOT / "dist":
+    if output in (ROOT, viewer):
         raise ValueError("output must be separate from source and mjswan dist")
     if output.exists():
         shutil.rmtree(output)
