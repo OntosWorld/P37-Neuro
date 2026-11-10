@@ -22,8 +22,12 @@ from p37_neuro_sim.g1_locomotion_env import G1LocomotionEnv
 class P37G1Env:
     """Single-physics-environment vector adapter for P37's PPO collector."""
 
-    def __init__(self, model_path: Path) -> None:
-        self.sim = G1LocomotionEnv(model_path)
+    def __init__(
+        self, model_path: Path, *, reset_on_done: bool = True, push_newtons: float = 0.0
+    ) -> None:
+        self.sim = G1LocomotionEnv(model_path, push_newtons=push_newtons)
+        self.reset_on_done = reset_on_done
+        self.last_info: dict = {}
         self.joints = len(self.sim._actuators)
         self.features = torch.zeros(1, self.joints, 10, dtype=torch.float32)
         self.features[..., 0] = -1.0
@@ -61,9 +65,10 @@ class P37G1Env:
         if actions.shape != (1, self.joints):
             raise ValueError("P37 G1 output shape mismatch")
         action = actions[0].detach().cpu().numpy()
-        self._obs, reward, done, truncated, _ = self.sim.step(action)
+        self._obs, reward, done, truncated, info = self.sim.step(action)
+        self.last_info = dict(info)
         terminal = bool(done or truncated)
-        if terminal:
+        if terminal and self.reset_on_done:
             self._seed += 1
             self._obs, _ = self.sim.reset(seed=self._seed)
         return (
@@ -127,18 +132,28 @@ def train(model_path: Path, output: Path, *, updates: int, seed: int) -> None:
     (output / "history.json").write_text(json.dumps(history, indent=2) + "\n")
 
 
-def evaluate(model_path: Path, checkpoint: Path, output: Path) -> None:
+def evaluate(
+    model_path: Path,
+    checkpoint: Path,
+    output: Path,
+    *,
+    seeds: int = 100,
+    steps: int = 500,
+    push_newtons: float = 0.0,
+) -> None:
+    if seeds <= 0 or steps <= 0:
+        raise ValueError("seeds and steps must be positive")
     brain, manifest = load_checkpoint(checkpoint)
     brain.eval()
-    env = P37G1Env(model_path)
+    env = P37G1Env(model_path, reset_on_done=False, push_newtons=push_newtons)
     trials = []
     try:
-        for seed in range(1000, 1100):
+        for seed in range(1000, 1000 + seeds):
             state = env.reset(seed)
             memory = None
             reward_total = 0.0
             count = 0
-            for _ in range(500):
+            for _ in range(steps):
                 count += 1
                 with torch.no_grad():
                     result = brain(
@@ -161,6 +176,9 @@ def evaluate(model_path: Path, checkpoint: Path, output: Path) -> None:
                     "total_reward": reward_total,
                     "steps": count,
                     "episode_ended": bool(done[0]),
+                    "fallen": bool(env.last_info.get("fallen", False)),
+                    "sim_seconds": float(env.last_info.get("elapsed_s", 0.0)),
+                    "final_velocity_m_s": float(env.last_info.get("forward_velocity_m_s", 0.0)),
                 }
             )
     finally:
@@ -172,6 +190,9 @@ def evaluate(model_path: Path, checkpoint: Path, output: Path) -> None:
                 "kind": "P37Neuro_unqualified_g1_simulation",
                 "checkpoint_sha256": manifest["sha256"],
                 "trials": trials,
+                "push_newtons": push_newtons,
+                "survival_fraction": sum(not row["fallen"] for row in trials) / len(trials),
+                "qualified_for_walking": False,
                 "warning": (
                     "Evaluation does not yet distinguish timeout from falls or "
                     "measure walking recovery."
@@ -190,11 +211,17 @@ def main() -> None:
     p.add_argument("--updates", type=int, default=1000)
     p.add_argument("--seed", type=int, default=37)
     p.add_argument("--evaluate", type=Path, help="P37 checkpoint directory")
+    p.add_argument("--eval-seeds", type=int, default=100)
+    p.add_argument("--eval-steps", type=int, default=500)
+    p.add_argument("--push-newtons", type=float, default=0.0)
     args = p.parse_args()
     if args.evaluate is None:
         train(args.model, args.output, updates=args.updates, seed=args.seed)
     else:
-        evaluate(args.model, args.evaluate, args.output / "heldout.json")
+        evaluate(
+            args.model, args.evaluate, args.output / "heldout.json",
+            seeds=args.eval_seeds, steps=args.eval_steps, push_newtons=args.push_newtons,
+        )
 
 
 if __name__ == "__main__":
