@@ -36,6 +36,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
     assert (site / "studio-minimal.css").is_file()
     assert (site / "studio.js").is_file()
     assert (site / "p37-evidence.json").is_file()
+    demos = json.loads((site / "demo-catalog.json").read_text(encoding="utf-8"))
+    assert len(demos["scenes"]) >= 3
+    assert (site / "demos.css").is_file()
 
     class Handler(http.server.SimpleHTTPRequestHandler):
         def translate_path(self, path):
@@ -94,6 +97,29 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert "P37 Brain Lab" in page.title()
             page.locator("#scene-loading").wait_for(state="hidden", timeout=120000)
             assert page.locator("#robot-count").inner_text().startswith("10")
+
+            # Skild-style task scenes are truly separate MuJoCo models.
+            # Their collision objects, not pre-recorded motion, create the action.
+            page.locator("#toggle-demos").click()
+            assert page.locator("#demo-panel").get_attribute("aria-hidden") == "false"
+            assert page.locator(".demo-entry").count() >= 3
+            assert "One checkpoint. Two bodies." in page.locator("#demo-panel").inner_text()
+            assert "not" in page.locator(".compare-disclaimer").inner_text().lower()
+            page.locator("#close-demos").click()
+            for demo_id in ("g1_impact_lab", "go2_contact_field", "franka_gravity_stack"):
+                page.locator(f'[data-demo="{demo_id}"]').click()
+                page.wait_for_function(
+                    "(key) => new URL(document.querySelector('#sim').src)"
+                    ".searchParams.get('scene') === key",
+                    arg=demo_id,
+                    timeout=60000,
+                )
+                page.locator("#scene-loading").wait_for(state="hidden", timeout=120000)
+                assert not page.locator("#scene-fallback").is_visible()
+                page.frame_locator("#sim").locator("canvas").first.wait_for(
+                    state="visible", timeout=90000
+                )
+                assert "physics" in page.locator("#scene-badge").inner_text().lower()
 
             # The 3D scene, rather than either library/inspector sidebar,
             # occupies the full viewport on desktop.
