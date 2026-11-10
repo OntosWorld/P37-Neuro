@@ -66,7 +66,8 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
             or set(evidence.get("bodies", {})) != expected
             or evidence.get("cross_embodiment", {}).get(
                 "same_checkpoint_control_verified_on_two_bodies"
-            ) is not False
+            )
+            is not False
             or evidence.get("p37_g1", {}).get("qualified_for_walking") is not False
         ):
             raise ValueError("Demo experiment data is incomplete or overclaims capability")
