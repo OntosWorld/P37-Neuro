@@ -83,6 +83,7 @@
     dom("toggle-inspector").setAttribute("aria-expanded", String(!library));
     dom("surface-scrim").hidden = false;
     document.body.classList.add("drawer-open");
+    if (library) dom("robot-library").scrollTop = 0;
     (library ? dom("close-library") : dom("close-inspector")).focus({preventScroll: true});
   }
 
@@ -338,9 +339,9 @@
     });
     dom("fullscreen").addEventListener("click", async () => {
       try {
-        const canvas = dom("scene-canvas");
+        const stage = document.querySelector(".simulation-column");
         if (document.fullscreenElement) await document.exitFullscreen();
-        else await canvas.requestFullscreen();
+        else await stage.requestFullscreen();
       } catch { showToast("Fullscreen unavailable in this browser"); }
     });
     dom("copy-scene").addEventListener("click", async () => {
