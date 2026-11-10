@@ -107,6 +107,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             )
             assert page.locator("#scene-title").is_visible()
             assert page.locator("#reset").is_visible()
+            page.wait_for_timeout(2200)
             assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "true"
             assert page.locator("#inspector").get_attribute("aria-hidden") == "true"
             page.screenshot(path=str(screenshots / "ui-desktop.png"), timeout=90000)
@@ -202,8 +203,14 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             page.screenshot(path=str(screenshots / "ui-mobile.png"), timeout=90000)
             page.locator("#toggle-library").click()
             assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "false"
+            page.wait_for_function(
+                "() => document.querySelector('#robot-library-panel')"
+                ".getBoundingClientRect().top < innerHeight - 300",
+                timeout=10000,
+            )
             gallery = page.locator("#robot-library-panel").bounding_box()
             assert gallery and gallery["width"] <= 391
+            assert gallery["y"] < 300
             page.locator("#robot-library-panel").screenshot(
                 path=str(screenshots / "ui-mobile-library.png"), timeout=60000
             )
