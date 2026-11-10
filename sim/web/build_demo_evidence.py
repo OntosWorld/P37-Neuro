@@ -68,9 +68,7 @@ def build_evidence(menagerie: Path, forces: Path, output: Path) -> Path:
 
     if len(p37["evaluation"]["seeds"]) != 3:
         raise ValueError("Expected three evidenced P37 G1 policy smoke trials")
-    cross = json.loads(
-        (ROOT / "p37-cross-body-evidence.json").read_text(encoding="utf-8")
-    )
+    cross = json.loads((ROOT / "p37-cross-body-evidence.json").read_text(encoding="utf-8"))
     if (
         cross["qualified_for_cross_body_task_transfer"] is not False
         or cross["qualified_for_walking"] is not False
