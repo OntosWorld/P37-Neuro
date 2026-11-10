@@ -8,6 +8,7 @@
   <title>P37 Brain Lab — Robotics in Simulation</title>
   <link rel="stylesheet" href="./studio.css">
   <link rel="stylesheet" href="./studio-minimal.css">
+  <link rel="stylesheet" href="./demos.css">
   <script src="./studio.js" defer></script>
 </head>
 <body>
@@ -18,7 +19,8 @@
       </a>
       <div class="header-mode"><span class="live-pulse" aria-hidden="true"></span><span>Real-time MuJoCo simulation</span></div>
       <nav class="header-actions" aria-label="Lab navigation">
-        <button id="toggle-library" class="header-button main-nav" type="button" aria-controls="robot-library-panel" aria-expanded="false"><span class="nav-dots" aria-hidden="true">▦</span> Robots <span id="top-robot-count" class="nav-count">10</span></button>
+        <button id="toggle-demos" class="header-button main-nav" type="button" aria-controls="demo-panel" aria-expanded="false">Demos <span class="nav-arrow" aria-hidden="true">↗</span></button>
+        <button id="toggle-library" class="header-button secondary-nav" type="button" aria-controls="robot-library-panel" aria-expanded="false"><span class="nav-dots" aria-hidden="true">▦</span> Robots <span id="top-robot-count" class="nav-count">10</span></button>
         <button id="toggle-inspector" class="header-button secondary-nav" type="button" aria-controls="inspector" aria-expanded="false">Research <span class="nav-arrow" aria-hidden="true">↗</span></button>
         <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noopener noreferrer" class="header-source">GitHub <span aria-hidden="true">↗</span></a>
       </nav>
@@ -60,12 +62,44 @@
         </div>
       </aside>
 
+      <aside class="demo-panel" id="demo-panel" aria-label="Interactive simulations and cross-embodiment research" aria-hidden="true" inert>
+        <div class="demo-panel-header">
+          <div><span class="demo-kicker">P37 BRAIN LAB</span><h2>Interactive simulations</h2><p>Real physics. Real robot bodies. Move objects, test contacts, and repeat the experiment.</p></div>
+          <button id="close-demos" class="close-drawer" type="button" aria-label="Close demos">×</button>
+        </div>
+        <div class="demo-panel-body">
+          <div class="demo-section-label">Explore physical tasks <span>03 scenes</span></div>
+          <div id="demo-list" class="demo-list" role="group" aria-label="Run a physics demo"></div>
+          <section class="compare-feature" id="cross-body-comparison">
+            <span class="demo-kicker">P37 CROSS-EMBODIMENT TEST</span>
+            <h3>One checkpoint. Two bodies.</h3>
+            <p>We run the same frozen P37 recurrent model on G1 and Go2, each with a different number of controlled joints.</p>
+            <div id="cross-body-results" class="compare-results" aria-live="polite">Checking verified results…</div>
+            <div class="compare-switch">
+              <button id="compare-g1" type="button">View G1 physics</button>
+              <button id="compare-go2" type="button">View Go2 physics</button>
+            </div>
+            <p class="compare-disclaimer">The numbers come from a separate native P37/MuJoCo rollout. The browser scenes use physics without a trained controller. Variable-joint inference is verified separately from successful skill transfer.</p>
+            <a id="cross-body-source" href="https://github.com/OntosRobotics/P37-Neuro/actions/workflows/p37-g1-policy.yml" target="_blank" rel="noopener noreferrer">View reproducible test ↗</a>
+          </section>
+        </div>
+      </aside>
+
       <section class="simulation-column" aria-label="Interactive MuJoCo physics scene">
         <div class="scene-topline">
           <div class="stage-breadcrumb"><span class="stage-small-label">Live simulation</span><span class="crumb-divider">/</span><span id="crumb-robot">UNITREE G1</span></div>
           <div class="stage-status"><span id="engine-dot" class="engine-dot" aria-hidden="true"></span><span id="engine-state" aria-live="polite">INITIALIZING</span></div>
         </div>
 
+        <div class="experience-strip" aria-label="Live physics demonstrations">
+          <span class="strip-label">Try a live experiment</span>
+          <div class="experience-actions" id="experience-actions">
+            <button class="experience-chip" type="button" data-demo="g1_impact_lab">Impact lab</button>
+            <button class="experience-chip" type="button" data-demo="go2_contact_field">Obstacle field</button>
+            <button class="experience-chip" type="button" data-demo="franka_gravity_stack">Object dynamics</button>
+            <button id="show-cross-body" class="experience-chip experience-compare" type="button">Cross-embodiment ↗</button>
+          </div>
+        </div>
         <div class="scene-canvas" id="scene-canvas">
           <div class="scene-overlay-top">
             <div class="scene-number" id="scene-number">01 / 10</div>
