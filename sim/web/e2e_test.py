@@ -82,8 +82,7 @@ def test(site: Path, screenshots: Path) -> dict:
             ):
                 page.locator(f'[data-robot="{key}"]').click()
                 page.wait_for_function(
-                    "(key) => document.querySelector('#sim').src.includes('scene=' + key) || "
-                    "(key === 'franka' && document.querySelector('#sim').src.includes('franka_panda'))",
+                    "(key) => document.querySelector('#sim').src.includes('scene=' + key)",
                     arg={"g1": "unitree_g1", "go2": "unitree_go2", "franka": "franka_panda"}[key],
                     timeout=10000,
                 )
