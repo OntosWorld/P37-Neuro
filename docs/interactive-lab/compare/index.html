@@ -40,7 +40,7 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:28px 0;color:#
 "use strict";
 const $=s=>document.querySelector(s);
 const upload=$("#upload"),message=$("#message"),workspace=$("#workspace"),empty=$("#empty"),cards=$("#cards"),time=$("#time"),clock=$("#clock"),summary=$("#summary");
-let traces=[],duration=0,elapsed=0,playing=false,lastFrame=0,raf=0;
+let traces=[],ranges=[],duration=0,elapsed=0,playing=false,lastFrame=0,raf=0;
 function finite(n){return typeof n==="number"&&Number.isFinite(n)}
 function text(s){return String(s??"unknown")}
 function validationError(s){throw new Error(s)}
@@ -87,9 +87,8 @@ function render(){
   const keys=Object.keys(f.joint_position).sort().slice(0,24);
   if(!keys.length)target.append(node("p","muted","No joint-position channels in this frame."));
   for(const key of keys){
-   const values=t.frames.map(frame=>frame.joint_position[key]).filter(finite);
-   const min=Math.min(...values),max=Math.max(...values);
-   trackLine(target,key,f.joint_position[key],min,max);
+   const range=ranges[i][key]||[f.joint_position[key],f.joint_position[key]];
+   trackLine(target,key,f.joint_position[key],range[0],range[1]);
   }
   const flags=[f.intervention?"Intervention":"No intervention",f.failure_code?"Failure: "+f.failure_code:"No failure marker",f.terminal?"Terminal":"Active"];state.textContent="Recorded t="+f.t.toFixed(2)+" s · action t="+f.action_t.toFixed(2)+" s · "+flags.join(" · ");
  }
@@ -135,7 +134,7 @@ function makeSummary(){
  summary.append(caution);
 }
 function load(artifact){
- stop();traces=validate(artifact);duration=Math.max(...traces.map(t=>t.frames.at(-1).t));elapsed=0;
+ stop();traces=validate(artifact);ranges=traces.map(t=>{const result={};for(const frame of t.frames){for(const [key,value] of Object.entries(frame.joint_position)){if(!result[key])result[key]=[value,value];else{result[key][0]=Math.min(result[key][0],value);result[key][1]=Math.max(result[key][1],value)}}}return result});duration=Math.max(...traces.map(t=>t.frames.at(-1).t));elapsed=0;
  makeCards();makeSummary();workspace.hidden=false;empty.hidden=true;$("#duration").textContent="/ "+duration.toFixed(2)+" s";
  $("#message").textContent=traces.length+" recorded episodes imported";$("#message").classList.add("good");render();
 }
