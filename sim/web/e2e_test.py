@@ -106,6 +106,11 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert "One checkpoint. Two bodies." in page.locator("#demo-panel").inner_text()
             disclaimer = page.locator(".compare-disclaimer").inner_text().lower()
             assert "without a trained controller" in disclaimer
+            page.locator(".compare-result").first.wait_for(state="visible", timeout=15000)
+            assert page.locator(".compare-result").count() == 2
+            page.locator("#demo-panel").screenshot(
+                path=str(screenshots / "cross-body-research.png"), timeout=90000
+            )
             page.locator("#close-demos").click()
             for demo_id in ("g1_impact_lab", "go2_contact_field", "franka_gravity_stack"):
                 page.locator(f'[data-demo="{demo_id}"]').click()
@@ -121,6 +126,11 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                     state="visible", timeout=90000
                 )
                 assert "physics" in page.locator("#scene-badge").inner_text().lower()
+                if demo_id in ("g1_impact_lab", "franka_gravity_stack"):
+                    page.screenshot(
+                        path=str(screenshots / f"demo-{demo_id}.png"),
+                        timeout=90000,
+                    )
 
             # The 3D scene, rather than either library/inspector sidebar,
             # occupies the full viewport on desktop.
