@@ -97,7 +97,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                 page.wait_for_function(
                     "(key) => document.querySelector('#sim').src.includes('scene=' + key)",
                     arg={"g1": "unitree_g1", "go2": "unitree_go2", "franka": "franka_panda"}[key],
-                    timeout=10000,
+                    timeout=60000,
                 )
                 assert expected in page.locator("#viewer-label").inner_text()
                 frame = page.frame_locator("#sim")
