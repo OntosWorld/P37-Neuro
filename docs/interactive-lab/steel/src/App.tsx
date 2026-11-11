@@ -38,6 +38,9 @@ function MuJoCoFallback({ reason }: { reason:string }) {
   const params='?project=p37_robot_models&scene=franka_panda&panel=0';
   const url=(isPublished?local:remote)+params;
   return <div className="mujoco-fallback" role="region" aria-label="MuJoCo fallback simulation">
+    <img className="mujoco-fallback-artwork"
+      src="https://www.ontos.ws/_next/image?url=%2Fontos-general-purpose-robot-v2.png&w=1920&q=75"
+      alt="" aria-hidden="true" decoding="async"/>
     <iframe
       className="mujoco-fallback-frame"
       src={url}
