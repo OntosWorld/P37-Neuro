@@ -177,11 +177,17 @@ export function App() {
       </nav>
     </div>
     <main id="page-content">
+      <section ref={stage} className="experiment-stage" aria-label="Interactive industrial robot simulation">
+        <div className="stage-canvas">
       <section className="intro">
         <div>
           <p className="eyebrow">P37-Neuro / Experimental workcell</p>
           <h1>Intelligence in the physical world.</h1>
           <p className="lede">Explore real-time robot dynamics. Move objects, change the environment and inspect two reference robot configurations in an interactive simulation.</p>
+          <div className="hero-actions">
+            <a className="hero-action-primary" href="#interaction-controls">Explore workcell <span aria-hidden="true">↗</span></a>
+            <a className="hero-action-secondary" href="../compare/?sample=mimicgen">View recorded data <span aria-hidden="true">↗</span></a>
+          </div>
         </div>
         <div className="intro-aside">
           <span className="status-circle"/>
@@ -189,8 +195,6 @@ export function App() {
         </div>
       </section>
 
-      <section ref={stage} className="experiment-stage" aria-label="Interactive industrial robot simulation">
-        <div className="stage-canvas">
           {steelFailed&&<MuJoCoFallback reason="The WebGPU device or pipeline was lost."/>}
           <LiveScene key={preset+'-'+robot} preset={preset} robot={robot}
             items={items} paused={paused} collision={collision} pose={pose} baseline={baseline}
@@ -229,7 +233,7 @@ export function App() {
             <small>This path does not drive the reference robot.</small>
           </div>}
         </div>
-        <div className="command-bar">
+        <div className="command-bar" id="interaction-controls">
           <div className="command-leading">
             <span className="command-label">OBJECT INTERACTION</span>
             <select aria-label="Object type" value={selectedObject}
