@@ -54,3 +54,15 @@
   .intro-grid{margin:21px 0 31px}
   .scene-section{padding-top:39px}
 }
+
+/* Keep every research route reachable without widening the mobile viewport. */
+@media(max-width:520px){
+  .topbar{gap:8px;padding:0 12px;max-width:100vw}
+  .wordmark{flex:0 0 auto}
+  .wordmark span:last-child{display:none}
+  .nav{flex:1 1 auto;min-width:0;max-width:calc(100vw - 115px);
+    margin-left:0;gap:13px;overflow-x:auto;overflow-y:hidden;
+    scrollbar-width:none;white-space:nowrap;overscroll-behavior-inline:contain}
+  .nav::-webkit-scrollbar{display:none}
+  .nav a{flex:0 0 auto;white-space:nowrap;font-size:11px}
+}
