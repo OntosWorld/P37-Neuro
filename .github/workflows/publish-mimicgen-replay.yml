@@ -1,0 +1,74 @@
+name: Publish verified MimicGen replay
+
+on:
+  push:
+    branches:
+      - feat/public-mimicgen-evidence-replay
+    paths:
+      - "scripts/publish_mimicgen_replay.py"
+      - ".github/workflows/publish-mimicgen-replay.yml"
+      - "src/p37_neuro/data/mimicgen_import.py"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  extract-source-demonstrations:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Download one official MimicGen source file
+        run: |
+          mkdir -p /tmp/p37-source
+          curl --fail --location --silent --show-error --retry 3 --max-time 420 \
+            "https://huggingface.co/datasets/amandlek/mimicgen_datasets/resolve/main/source/square.hdf5" \
+            --output /tmp/p37-source/square.hdf5
+          echo "c917e99362fd9bd11978d6e2642c1ea88272702fbf55b50367ed471febf550e2  /tmp/p37-source/square.hdf5" | sha256sum --check
+      - name: Convert two genuine recorded episodes using P37 contracts
+        run: |
+          uv run --with h5py python scripts/publish_mimicgen_replay.py \
+            --source /tmp/p37-source/square.hdf5 \
+            --demos demo_0 demo_1 \
+            --control-hz 20 \
+            --output docs/interactive-lab/compare/samples/mimicgen-square-source.json
+      - name: Verify honest offline evidence labels and numeric records
+        run: |
+          uv run python - <<'PY'
+          import json
+          from pathlib import Path
+          path = Path("docs/interactive-lab/compare/samples/mimicgen-square-source.json")
+          data = json.loads(path.read_text(encoding="utf-8"))
+          assert data["schema_version"] == "p37-trace-v1"
+          assert len(data["traces"]) == 2
+          assert len({item["episode_id"] for item in data["traces"]}) == 2
+          assert data["publication"]["learned_policy_attached"] is False
+          assert data["publication"]["cross_embodiment_evaluation"] is False
+          for trace in data["traces"]:
+              assert trace["frames"]
+              assert trace["provenance"]["policy_attached"] is False
+              assert trace["provenance"]["outcome"] == "unverified"
+              assert trace["provenance"]["evidence_level"] == "T1"
+              assert trace["frames"][0]["joint_position"]
+              assert trace["frames"][0]["state"]["source_action_0"] is not None
+          print("Genuine source demonstrations validated:", path.stat().st_size, "bytes")
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p37-official-mimicgen-replay
+          path: docs/interactive-lab/compare/samples/
+          retention-days: 30
+      - name: Commit verified small JSON into the feature branch
+        if: github.event_name == 'push' && github.ref_name == 'feat/public-mimicgen-evidence-replay'
+        run: |
+          git config user.name "p37-evidence-bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/interactive-lab/compare/samples/
+          if ! git diff --cached --quiet; then
+            git commit -m "data: publish verified source-attributed MimicGen Square replay"
+            git push origin HEAD:feat/public-mimicgen-evidence-replay
+          fi
