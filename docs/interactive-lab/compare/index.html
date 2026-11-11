@@ -28,6 +28,43 @@ h3{font-size:12px;font-weight:670;letter-spacing:.12em;text-transform:uppercase;
 footer{border-top:1px solid var(--border);margin-top:70px;padding:28px 0;color:#8aa1aa;font-size:12px}
 @media(max-width:850px){.cards{grid-template-columns:1fr}.track{grid-template-columns:95px 1fr 62px}.evidence{grid-template-columns:120px 1fr}}
 @media(prefers-reduced-motion:reduce){.fill{transition:none}}
+
+/* Unified P37 Steel playground design: original styling and existing behaviors. */
+:root{--bg:#080909;--panel:#131613;--card:#131613;--border:#3d433b;--line:#3d433b;
+ --ink:#f4f5f1;--text:#f4f5f1;--muted:#b1b8ae;--mint:#edf0e8;--a:#edf0e8;
+ --gold:#bfc4b9;font-family:Arial,Helvetica,sans-serif}
+body{background:#080909;color:#f4f5f1;font-family:Arial,Helvetica,sans-serif}
+header{border-color:#3d433b}
+.brand{color:#f4f5f1;letter-spacing:.09em}
+.nav{color:#c0c6bb}
+h1{font-size:clamp(54px,6.8vw,106px);line-height:.94;font-weight:470;letter-spacing:-.065em}
+h2{letter-spacing:-.055em;font-weight:490}
+.intro,.lede,.lead,.hero-note,.note{color:#b9c0b6}
+.eyebrow,.over{color:#c1c8bc;letter-spacing:.13em}
+button,.action,select{border-radius:999px;background:#20251f;color:#f1f3ed;border:1px solid #5d6659}
+button:hover,.action:hover,select:hover{background:#31392e;border-color:#e3e8df}
+button.active,button[aria-pressed=true],button.primary,.action.primary,.source-replay button{
+ background:#f2f4ed;color:#0a0c09;border-color:#f2f4ed;font-weight:500}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
+ outline:2px solid #fff;outline-offset:3px}
+.lab,.workspace,.bar,.card,.compare,.scene{background:#111511;border-color:#434b40;border-radius:13px}
+.toolbar,.topbar{background:#141914;border-color:#434b40}
+.left,.right,aside{background:#101410;border-color:#434b40}
+.scenario,.robot{border-radius:9px}
+.scenario.active,.robot.active{background:#edf0e8;color:#0b0d0b;border-color:#edf0e8}
+.scenario.active strong,.robot.active strong,.robot.active span{color:#0b0d0b}
+.scene,.stage{background:radial-gradient(ellipse at 50% 38%,#30382f,#111611 67%,#090b09)}
+.scene-top,.scene-bottom,.stagefoot{border-color:#434b40}
+.trajectory,#field{background-color:#0c100c}
+.rail{background:#3b433a}.fill{background:#e7ece3}
+input[type=range]{accent-color:#e8ede4}
+.flag,.flags,.notice{background:#22261f;color:#d1d6ca;border-color:#596052}
+.card,.compare,.empty{border-radius:13px}
+.status:before{background:#edf0e8}
+@media(max-width:800px){h1{font-size:clamp(50px,10vw,77px)}}
+@media(max-width:520px){h1{font-size:clamp(45px,11.5vw,63px)}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
 </style></head>
 <body><div class="wrap"><header><a class="brand" href="../index.html">ONTOS / P37 NEURO</a><nav><a href="../index.html">Architecture lab</a> &nbsp; · &nbsp; <a href="https://ontosrobotics.github.io/P37-Neuro/">Brain Lab</a> &nbsp; · &nbsp; <a href="https://github.com/OntosRobotics/P37-Neuro/blob/main/docs/testing.md">Evaluation protocol</a></nav></header>
 <div class="eyebrow" style="margin-top:53px">P37 / Trace research · Offline playback</div><h1>Compare recorded<br>robot experiments.</h1><p class="intro">Inspect measured joint states and commands from canonical P37 episodes on one synchronized timeline. Imported traces remain on your device. This viewer does not execute a policy or simulate physics.</p>
