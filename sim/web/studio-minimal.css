@@ -359,24 +359,34 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--focus);outline-offs
 }
 
 
-/* Unified P37 playground treatment for the full MuJoCo robot browser. */
-:root{--surface:#101210;--surface-elevated:#191c18;--surface-hover:#2b3029;
- --ink:#f4f5f1;--ink-secondary:#b3b9af;--hairline:#3d433b;--focus:#f4f5f1;
- font-family:Arial,Helvetica,sans-serif}
-html,body{background:#080909}
-.app-shell{background:#080909}
-.app-header{background:#080909;border-bottom:1px solid #383e35}
-.ontos-word{color:#f4f5f1;letter-spacing:.12em}
-.brand-product{color:#b7beb3}
-.header-button,.header-source{border-radius:999px;color:#d4d9d0;padding:0 17px}
-.header-button:hover,.header-source:hover{background:#262b24}
-.header-button.main-nav{background:#f2f4ed;border-color:#f2f4ed;color:#0c0e0b}
-.header-button.main-nav:hover{background:#fff}
-.nav-count{background:#d5dad0;color:#141713;border-radius:999px}
-.lab-grid,.simulation-column{background:#0d100d}
-#scene-canvas{background:radial-gradient(ellipse at 50% 42%,#343a33,#101410 70%,#090b09)}
-#robot-library-panel,#inspector{background:#111411;border-color:#40473e}
-#robot-library-panel button,#inspector button{border-radius:999px}
-#robot-library-panel button:focus-visible,#inspector button:focus-visible{outline:2px solid #fff}
-@media(max-width:700px){.header-button,.header-source{padding:0 11px}}
-@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
+/* P37 MuJoCo Brain Lab — Steel-playground light interface. */
+:root{color-scheme:light;--surface:#fff;--surface-elevated:#fff;
+ --surface-hover:#eef2ed;--ink:#21372b;--ink-secondary:#7d8a7f;
+ --hairline:#dce3db;--focus:#f77b24;font-family:Arial,Helvetica,sans-serif}
+html,body{background:#fff!important;color:#22352b!important}
+.app-shell{background:#fff!important}
+.app-header{height:75px!important;min-height:75px!important;
+ background:#fff!important;border-bottom:1px solid #dce3dc!important}
+.ontos-word{color:#25372a!important;letter-spacing:.09em}
+.brand-product{color:#7d897d!important}
+.brand-slash{color:#a0aaa0!important}
+.header-button,.header-source{border-radius:999px!important;color:#536b58!important;
+ padding:0 16px!important;font-size:12px!important}
+.header-button:hover,.header-source:hover{background:#e7eee7!important;color:#21392b!important}
+.header-button.main-nav{background:#1c3127!important;border-color:#1c3127!important;color:#fff!important}
+.header-button.main-nav:hover{background:#385641!important}
+.nav-count{background:#e2ede2!important;color:#1a3423!important;border-radius:999px!important}
+.nav-arrow{color:#77887a!important}
+.lab-grid,.simulation-column{background:#fff!important}
+.lab-grid{height:calc(100dvh - 75px)!important;min-height:calc(100dvh - 75px)!important}
+.simulation-column{height:calc(100dvh - 75px)!important;min-height:calc(100dvh - 75px)!important}
+#scene-canvas{background:radial-gradient(ellipse at 50% 35%,#d8deda,#b9c3b9 70%,#adb7ae)!important}
+#robot-library-panel,#inspector{background:#fff!important;border-color:#dce3dc!important;color:#23372a!important}
+#robot-library-panel button,#inspector button{border-radius:999px!important}
+#robot-library-panel button:focus-visible,#inspector button:focus-visible{outline:2px solid #e56b18!important}
+@media(max-width:700px){
+ .header-button,.header-source{padding:0 10px!important}
+ .lab-grid,.simulation-column{height:calc(100dvh - 75px)!important}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{
+ scroll-behavior:auto!important;transition:none!important;animation:none!important}}
