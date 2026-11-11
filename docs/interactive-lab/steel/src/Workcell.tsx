@@ -98,15 +98,49 @@ function LooseObject({ item }: { item: LooseItem }) {
     <FollowPbr type={item.type} body={ref} initial={item.position}/>
   </>;
 }
-function ReferenceRobotControl({ refRobot, target }: {
-  refRobot: React.RefObject<RobotHandle | null>; target: number
+// Deterministic reference reaching motion. Explicitly NOT P37 policy inference.
+// The target is a fixed reference location above the table; this cycle does not
+// claim to grasp, lift, or complete any task.
+export function referenceReachPose(body: RobotType): [number, number, number] {
+  const upper = body === 'compact' ? .40 : .52;
+  const lower = (body === 'compact' ? .28 : .39) + .095;
+  const dx = -.06 - (-.63), dy = -.08 - .05;
+  const radius = Math.hypot(dx, dy);
+  const dz = .95 - (.805 + .12 + .29);
+  const cosine = Math.max(-1, Math.min(1,
+    (radius * radius + dz * dz - upper * upper - lower * lower) / (2 * upper * lower)));
+  const fold = Math.acos(cosine);
+  const planarAngle = Math.atan2(dz, radius) -
+    Math.atan2(lower * Math.sin(fold), upper + lower * Math.cos(fold));
+  // MuJoCo/URDF Y-axis hinge positive pitch rotates the X-pointing link down.
+  return [Math.atan2(dy, dx), -planarAngle, -fold];
+}
+function smooth(t: number): number {
+  const x = Math.max(0, Math.min(1, t));
+  return x * x * (3 - 2 * x);
+}
+function ReferenceRobotControl({ refRobot, target, body, baseline }: {
+  refRobot: React.RefObject<RobotHandle | null>;
+  target: number;
+  body: RobotType;
+  baseline: boolean;
 }) {
-  useBeforeStep(() => {
+  const goal = referenceReachPose(body);
+  useBeforeStep((sim) => {
     const robot = refRobot.current;
     if (!robot) return;
-    if (robot.dofs.has('shoulder')) robot.setJointTarget('shoulder', target);
-    if (robot.dofs.has('elbow')) robot.setJointTarget('elbow', -.64);
-    if (robot.dofs.has('wrist')) robot.setJointTarget('wrist', .52);
+    const phase = sim.time % 8.5;
+    const fraction = !baseline ? 0 :
+      phase < .5 ? 0 :
+      phase < 3.2 ? smooth((phase - .5) / 2.7) :
+      phase < 5 ? 1 :
+      phase < 7.8 ? 1 - smooth((phase - 5) / 2.8) : 0;
+    const shoulder = target * (1 - fraction) + goal[0] * fraction;
+    const elbow = -.64 * (1 - fraction) + goal[1] * fraction;
+    const wrist = .52 * (1 - fraction) + goal[2] * fraction;
+    if (robot.dofs.has('shoulder')) robot.setJointTarget('shoulder', shoulder);
+    if (robot.dofs.has('elbow')) robot.setJointTarget('elbow', elbow);
+    if (robot.dofs.has('wrist')) robot.setJointTarget('wrist', wrist);
   });
   return null;
 }
@@ -115,9 +149,9 @@ function StatsFeed({ onSample }: { onSample: (s: SimStatsSample | null) => void 
   useEffect(() => onSample(stats), [stats, onSample]);
   return null;
 }
-export function Workcell({ preset, robot, items, pose, onStats, sourceFrames, sourcePlaying }: {
+export function Workcell({ preset, robot, items, pose, baseline, onStats, sourceFrames, sourcePlaying }: {
   preset: Preset; robot: RobotType; items: LooseItem[];
-  pose: number; onStats: (s: SimStatsSample | null) => void;
+  pose: number; baseline: boolean; onStats: (s: SimStatsSample | null) => void;
   sourceFrames: SourceFrame[]; sourcePlaying: boolean;
 }) {
   const robotRef = useRef<RobotHandle>(null);
@@ -126,7 +160,7 @@ export function Workcell({ preset, robot, items, pose, onStats, sourceFrames, so
     {items.map(item => <LooseObject key={item.id} item={item}/>)}
     <URDF src={import.meta.env.BASE_URL + 'robots/' + robot + '.urdf'} ref={robotRef}
       xform={[-.63,.05,.805,0,0,0,1]}/>
-    <ReferenceRobotControl refRobot={robotRef} target={pose}/>
+    <ReferenceRobotControl refRobot={robotRef} target={pose} body={robot} baseline={baseline}/>
     <IndustrialSet preset={preset}/>
     {sourceFrames.length >= 2 && <SourceTrajectory frames={sourceFrames} playing={sourcePlaying}/>}
     <StatsFeed onSample={onStats}/>
