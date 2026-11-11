@@ -213,3 +213,21 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .footer div{gap:15px;flex-wrap:wrap}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;scroll-behavior:auto!important;transition:none!important}}
+
+/* When a GPU cannot create Steel's required compute device, show the existing
+   real-manufacturer MuJoCo model instead of leaving a dead or blank canvas. */
+.mujoco-fallback{position:absolute;inset:0;z-index:11;display:flex;
+  align-items:center;justify-content:center;background:radial-gradient(ellipse at 55% 40%,#27373b,#11191e)}
+.mujoco-fallback-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#1d282d}
+.mujoco-fallback-info{position:absolute;left:23px;bottom:26px;max-width:455px;
+  background:#0f1a1deb;color:#d5e3e2;border:1px solid #536a68;border-radius:5px;
+  backdrop-filter:blur(14px);padding:18px 20px}
+.fallback-tag{font-size:9px;letter-spacing:.14em;color:#b8c6bc;font-weight:670}
+.mujoco-fallback-info strong{font-size:20px;letter-spacing:-.035em;display:block;margin-top:9px}
+.mujoco-fallback-info p{font-size:11px;line-height:1.6;color:#aabec1;margin:9px 0}
+.mujoco-fallback-info a{display:inline-block;margin-top:8px;border-bottom:1px solid #9aafab;
+  padding-bottom:2px;font-size:11px;font-weight:600}
+@media(max-width:500px){
+  .mujoco-fallback-info{left:10px;right:10px;bottom:10px;padding:14px}
+  .mujoco-fallback-info strong{font-size:16px}
+}
