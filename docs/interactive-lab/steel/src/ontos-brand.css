@@ -350,3 +350,27 @@ a:hover{color:#fff}
  .official-search-scrim{padding-top:95px}
  .official-search-dialog{padding:18px}
 }
+
+/* Keep the editorial hero visible over unsupported/WebGPU-loss backdrops. */
+.stage-canvas>.intro{z-index:7}
+.stage-canvas>.stage-bottom,.stage-canvas>.scene-tabs,.stage-canvas>.stage-top{z-index:9}
+.mujoco-fallback{z-index:4;
+  background:linear-gradient(0deg,#000e,#0006 50%,#0008),
+    url("https://www.ontos.ws/ontos-general-purpose-robot-v2.png") center 38%/cover no-repeat,
+    #090909}
+.mujoco-fallback:after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,#0008,transparent 85%);z-index:1}
+.mujoco-fallback-frame{opacity:0;transition:opacity .25s ease}
+.mujoco-fallback-info{z-index:4;left:auto;right:var(--site-gutter);bottom:30px;
+  max-width:325px}
+@media(max-width:790px){
+ .mujoco-fallback-info{left:auto;right:20px;max-width:250px;bottom:20px}
+}
+@media(max-width:500px){
+ .stage-canvas>.intro{bottom:108px}
+ .mujoco-fallback-info{bottom:11px;left:11px;right:11px;max-width:none;
+   padding:9px 12px;border-radius:9px}
+ .mujoco-fallback-info strong{font-size:12px;margin-top:4px}
+ .mujoco-fallback-info p{display:none}
+ .mujoco-fallback-info a{font-size:10px;margin-top:6px}
+}
