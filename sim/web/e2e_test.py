@@ -38,6 +38,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
     assert (site / "p37-evidence.json").is_file()
     assert (site / "demos/index.html").is_file()
     assert (site / "demos/evidence.json").is_file()
+    assert (site / "lab/index.html").is_file()
+    assert (site / "lab/steel/index.html").is_file()
+    assert (site / "lab/compare/samples/mimicgen-square-source.json").is_file()
 
     class Handler(http.server.SimpleHTTPRequestHandler):
         def translate_path(self, path):
@@ -287,6 +290,26 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             page.wait_for_timeout(300)
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             page.screenshot(path=str(screenshots / "demos-mobile.png"), timeout=90000)
+
+            # The new evidence pages are additive and must work at the same Pages prefix.
+            assert page.request.get(origin + "lab/steel/").status == 200
+            original = page.request.get(origin + "lab/compare/samples/mimicgen-square-source.json")
+            assert original.status == 200
+            source = original.json()
+            assert source["publication"]["source"] == "amandlek/mimicgen_datasets"
+            assert source["publication"]["learned_policy_attached"] is False
+            assert len(source["traces"]) == 2
+            response = page.goto(
+                origin + "lab/compare/?sample=mimicgen",
+                wait_until="domcontentloaded", timeout=30000,
+            )
+            assert response is not None and response.status == 200
+            page.locator(".card").first.wait_for(state="visible", timeout=30000)
+            assert page.locator(".card").count() == 2
+            assert "Original data: amandlek/mimicgen_datasets" in page.locator(
+                "#sourceCredit"
+            ).inner_text()
+            page.screenshot(path=str(screenshots / "mimicgen-real-data.png"), timeout=30000)
 
             if failures:
                 raise AssertionError("Browser runtime errors: " + " | ".join(failures[:8]))
