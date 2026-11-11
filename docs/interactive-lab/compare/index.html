@@ -11,7 +11,7 @@ h1{font-weight:590;letter-spacing:-.058em;line-height:1.05;font-size:clamp(38px,
 .intro{max-width:780px;color:#a8bac4;font-size:15px;margin:0 0 25px}
 .eyebrow{color:var(--mint);font-size:11px;text-transform:uppercase;letter-spacing:.18em}
 .bar{background:#131b21;border:1px solid var(--border);padding:18px;display:flex;gap:12px;justify-content:space-between;align-items:center;flex-wrap:wrap;border-radius:9px}
-.file{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.file input{max-width:230px;font-size:12px}.file label{font-weight:650}
+.file{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.source-replay{border-top:1px solid var(--border);margin:18px 0 0;padding:17px 0 0;display:flex;align-items:center;gap:14px;flex-wrap:wrap}.source-replay button{background:#b4edd4;color:#0e2820;border-color:#b4edd4;font-weight:680}.source-replay .explain{max-width:640px;font-size:12px;color:#a9b9bf}.credit{font-size:11px;color:#b6c5c8;padding:11px 14px;border:1px solid var(--border);border-radius:6px;margin:15px 0}.file input{max-width:230px;font-size:12px}.file label{font-weight:650}
 .message{color:#d4b98a;font-size:12px}.message.good{color:var(--mint)}.notice{padding:16px 18px;margin:15px 0;background:#222322;border:1px solid #49483e;border-radius:6px;color:#cecabb;font-size:12px}
 .controls{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:20px 0}input[type=range]{accent-color:#b4edd4;flex:1;min-width:180px}output{font-variant-numeric:tabular-nums;color:#b3c6ce}
 .cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.card{background:var(--panel);border:1px solid var(--border);border-radius:9px;padding:23px;min-width:0}
@@ -32,9 +32,9 @@ footer{border-top:1px solid var(--border);margin-top:70px;padding:28px 0;color:#
 <body><div class="wrap"><header><a class="brand" href="../index.html">ONTOS / P37 NEURO</a><nav><a href="../index.html">Architecture lab</a> &nbsp; · &nbsp; <a href="https://ontosrobotics.github.io/P37-Neuro/">Brain Lab</a> &nbsp; · &nbsp; <a href="https://github.com/OntosRobotics/P37-Neuro/blob/main/docs/testing.md">Evaluation protocol</a></nav></header>
 <div class="eyebrow" style="margin-top:53px">P37 / Trace research · Offline playback</div><h1>Compare recorded<br>robot experiments.</h1><p class="intro">Inspect measured joint states and commands from canonical P37 episodes on one synchronized timeline. Imported traces remain on your device. This viewer does not execute a policy or simulate physics.</p>
 <div class="bar"><div class="file"><label for="upload">Import comparison JSON</label><input id="upload" type="file" accept=".json,application/json" aria-describedby="fileHelp"><span id="fileHelp" class="muted">Exported with <code>p37_neuro.data.trace_export</code></span></div><div id="message" role="status" class="message">No recorded evidence loaded.</div></div>
-<div class="notice" id="warning">This page renders recorded numerical observations only. A shared task does not establish a shared checkpoint, held-out transfer, or physical success. Provenance must be inspected before making such claims.</div>
+<div class="source-replay"><button id="mimicgen" type="button">Play real MimicGen demonstration</button><div class="explain">Actual source robot recordings normalized into P37 episodes. Two episodes from the same Panda robot, no trained P37 policy. Includes source and dataset attribution.</div></div><div class="credit" id="sourceCredit" hidden></div><div class="notice" id="warning">This page renders recorded numerical observations only. A shared task does not establish a shared checkpoint, held-out transfer, or physical success. Provenance must be inspected before making such claims.</div>
 <div id="workspace" hidden><div class="controls"><button id="toggle" type="button" aria-pressed="false">Play</button><button id="reset" type="button">Reset</button><label for="time" class="muted">Timeline</label><input id="time" type="range" min="0" max="1000" step="1" value="0"><output id="clock" for="time">0.00 s</output><span class="muted" id="duration"></span></div><div class="cards" id="cards"></div><section class="compare" id="summary" aria-label="Evidence comparison"></section></div>
-<div class="empty" id="empty"><strong>No experiment traces loaded</strong><div>Load two or more recorded episodes exported from P37.<br>There are no fabricated sample runs or simulated results on this page.</div></div>
+<div class="empty" id="empty"><strong>No experiment traces loaded</strong><div>Load the official MimicGen example above, or import recorded P37 episodes.<br>The example contains actual published robot data, not generated demonstration outcomes.</div></div>
 <footer>Recorded data viewer · No inference · No physics · <a href="https://github.com/OntosRobotics/P37-Neuro">Source</a></footer></div>
 <script>
 "use strict";
@@ -169,7 +169,16 @@ function makeSummary(){
 function load(artifact){
  stop();traces=validate(artifact);ranges=traces.map(t=>{const result={};for(const frame of t.frames){for(const [key,value] of Object.entries(frame.joint_position)){if(!result[key])result[key]=[value,value];else{result[key][0]=Math.min(result[key][0],value);result[key][1]=Math.max(result[key][1],value)}}}return result});duration=Math.max(...traces.map(t=>t.frames.at(-1).t));elapsed=0;
  makeCards();makeSummary();workspace.hidden=false;empty.hidden=true;$("#duration").textContent="/ "+duration.toFixed(2)+" s";
- $("#message").textContent=traces.length+" recorded episodes imported";$("#message").classList.add("good");render();
+ $("#message").textContent=traces.length+" recorded episodes imported";$("#message").classList.add("good");
+ const credit=$("#sourceCredit");credit.hidden=!artifact.publication;
+ if(artifact.publication){
+  credit.replaceChildren();
+  credit.append(node("strong","","Original data: "+artifact.publication.source+" / "+artifact.publication.source_file+" · CC BY 4.0"));
+  credit.append(node("p","",artifact.publication.p37_use+". Two source Panda episodes; no policy checkpoint, no trained cross-embodiment result."));
+  const link=document.createElement("a");
+  link.href=artifact.publication.source_url;link.textContent="View original public dataset";link.target="_blank";link.rel="noopener noreferrer";credit.append(link)
+ }
+ render();
 }
 function stop(){playing=false;cancelAnimationFrame(raf);$("#toggle").textContent="Play";$("#toggle").setAttribute("aria-pressed","false");lastFrame=0}
 function tick(ts){if(!playing)return;if(lastFrame)elapsed+=Math.min(.12,(ts-lastFrame)/1000);lastFrame=ts;if(elapsed>=duration){elapsed=duration;render();stop();return}render();raf=requestAnimationFrame(tick)}
@@ -177,10 +186,21 @@ $("#toggle").addEventListener("click",()=>{if(playing){stop();return}if(elapsed>
 $("#reset").addEventListener("click",()=>{stop();elapsed=0;render()});
 time.addEventListener("input",()=>{stop();elapsed=duration*Number(time.value)/1000;render()});
 window.addEventListener("resize",()=>{if(traces.length)render()});
+$("#mimicgen").addEventListener("click",async()=>{
+ const button=$("#mimicgen");button.disabled=true;button.textContent="Loading verified source recording…";
+ try{
+  const response=await fetch("samples/mimicgen-square-source.json",{cache:"no-store"});
+  if(!response.ok)throw new Error("Official recording has not been published here yet ("+response.status+")");
+  const data=await response.json();if(data.publication?.learned_policy_attached!==false||data.publication?.source!=="amandlek/mimicgen_datasets")throw new Error("Unexpected or missing source attribution");
+  load(data);button.textContent="Replay official source recordings";$("#toggle").click();
+ }catch(error){$("#message").classList.remove("good");$("#message").textContent="Dataset unavailable: "+(error instanceof Error?error.message:String(error));button.textContent="Retry source replay"}
+ finally{button.disabled=false}
+});
 upload.addEventListener("change",async()=>{
  const file=upload.files?.[0];if(!file)return;
  if(file.size>20*1024*1024){$("#message").textContent="File exceeds 20 MB safety limit";return}
  try{const data=JSON.parse(await file.text());load(data)}
  catch(err){stop();traces=[];workspace.hidden=true;empty.hidden=false;$("#message").classList.remove("good");$("#message").textContent="Import rejected: "+(err instanceof Error?err.message:"invalid JSON")}
 });
+if(new URLSearchParams(location.search).get("sample")==="mimicgen")$("#mimicgen").click();
 </script></body></html>

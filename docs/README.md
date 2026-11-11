@@ -10,6 +10,8 @@ Documentation is organized by responsibility. Each document should have one clea
 
 - [Steel WebGPU Physics Workcell](interactive-lab/steel/README.md) — standalone physics viewer with furnished tabletop scenes, movable objects, reference URDF arms and optional MimicGen offline data bridge; requires an independent build and has no trained P37 checkpoint attached.
 
+- [P37-Neuro Real MimicGen Demo](interactive-lab/compare/index.html?sample=mimicgen) — two checksum-verified source robot recordings normalized and replayed through P37, with explicit provenance and no trained-policy claim.
+
 ## Start here
 
 New users should begin with the repository [Quickstart](../QUICKSTART.md).

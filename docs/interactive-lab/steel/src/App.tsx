@@ -1,7 +1,11 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Physics, Scene, type SceneHandle, type SimStatsSample } from '@skild-ai/steel-webgpu/react';
 import { Workcell, PRESETS, initialItems, nextItemId } from './Workcell';
 import type { LooseItem, ObjectType, Preset, RobotType } from './Workcell';
+import type { SourceFrame } from './SourceTrajectory';
+
+type SourceData = { publication: { source: string; learned_policy_attached: boolean }; traces: { frames: SourceFrame[] }[] };
+
 
 const CAMERA = {
   position: [2.65, -3.2, 2.2] as [number,number,number],
@@ -9,10 +13,11 @@ const CAMERA = {
   fov: 40,
 };
 function LiveScene({ preset, robot, items, paused, collision, pose,
-  sceneRef, onSample, onReady, onError }: {
+  sceneRef, onSample, onReady, onError, sourceFrames, sourcePlaying }: {
   preset: Preset; robot: RobotType; items: LooseItem[]; paused: boolean; collision: boolean;
   pose: number; sceneRef: React.RefObject<SceneHandle | null>;
   onSample: (s: SimStatsSample | null) => void; onReady: () => void; onError: (s: string) => void;
+  sourceFrames: SourceFrame[]; sourcePlaying: boolean;
 }) {
   return <Physics
     style={{ position: 'absolute', inset: 0 }}
@@ -25,7 +30,7 @@ function LiveScene({ preset, robot, items, paused, collision, pose,
   >
     <Scene ref={sceneRef} gravity={[0,0,-9.81]} fps={60} paused={paused} collision={collision}
       pickable controls camera={CAMERA} onLoaded={onReady} onError={e=>onError(String(e))}>
-      <Workcell preset={preset} robot={robot} items={items} pose={pose} onStats={onSample}/>
+      <Workcell preset={preset} robot={robot} items={items} pose={pose} onStats={onSample} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
     </Scene>
   </Physics>;
 }
@@ -39,7 +44,35 @@ export function App() {
   const [collision, setCollision] = useState(false);
   const [status, setStatus] = useState('Requesting WebGPU');
   const [stats, setStats] = useState<SimStatsSample | null>(null);
+  const [sourceData, setSourceData] = useState<SourceData | null>(null);
+  const [showSource, setShowSource] = useState(false);
+  const [sourceEpisode, setSourceEpisode] = useState(0);
+  const [sourcePlaying, setSourcePlaying] = useState(true);
   const scene = useRef<SceneHandle>(null);
+  useEffect(() => {
+    if (!showSource || sourceData) return;
+    const abort = new AbortController();
+    const sourceUrl = import.meta.env.BASE_URL + 'samples/mimicgen-square-source.json';
+    fetch(sourceUrl, { signal: abort.signal }).then(async response => {
+      if (!response.ok) throw new Error('Source example is not published in this build');
+      const value = await response.json() as SourceData;
+      if (value.publication?.source !== 'amandlek/mimicgen_datasets' ||
+          value.publication.learned_policy_attached !== false ||
+          value.traces.length < 2 ||
+          value.traces.some(item => item.frames.length < 2 ||
+            item.frames.some(f => ![0, 1, 2].every(i => Number.isFinite(f.state['eef_position_' + i]))))) {
+        throw new Error('Source replay metadata or coordinates invalid');
+      }
+      setSourceData(value);
+      setStatus('Genuine MimicGen Panda source trajectory loaded');
+    }).catch(error => {
+      if (!abort.signal.aborted) {
+        setStatus('Source data unavailable: ' + String(error));
+        setShowSource(false);
+      }
+    });
+    return () => abort.abort();
+  }, [showSource, sourceData]);
   const changePreset = (next: Preset) => {
     setPreset(next); setItems(initialItems(next)); setStatus('Loading physics environment');
   };
@@ -60,7 +93,7 @@ export function App() {
       <a className="brand" href="../index.html">ONTOS <span>/ P37 NEURO</span></a>
       <nav aria-label="Research navigation">
         <a href="../index.html">Architecture</a>
-        <a href="../compare/index.html">Recorded evidence</a>
+        <a href="../compare/index.html?sample=mimicgen">Recorded evidence</a>
         <a href="https://ontosrobotics.github.io/P37-Neuro/">Existing Brain Lab ↗</a>
       </nav>
       <span className="build-tag">EXPERIMENT / 01</span>
@@ -104,8 +137,24 @@ export function App() {
           <button className="primary" onClick={addItem}>+ Drop object into scene</button>
           <p className="helper">Objects have mass and contact geometry. Adding an object rebuilds the scene, resetting existing bodies.</p>
           <div className="rule"/>
+          <label>Source-data replay</label>
+          <button className="primary" onClick={() => setShowSource(!showSource)}>
+            {showSource ? 'Hide recorded path' : 'Show real MimicGen motion'}
+          </button>
+          {showSource && sourceData && <>
+            <label htmlFor="source-episode">Recorded episode</label>
+            <select id="source-episode" value={sourceEpisode} onChange={e=>setSourceEpisode(Number(e.target.value))}>
+              <option value={0}>Panda / Source episode 0</option>
+              <option value={1}>Panda / Source episode 1</option>
+            </select>
+            <button onClick={() => setSourcePlaying(!sourcePlaying)}>
+              {sourcePlaying ? 'Pause recorded motion' : 'Play recorded motion'}
+            </button>
+          </>}
+          <p className="helper">The green line and moving marker follow original source end-effector coordinates, independent of the reference arm. This is P37 data playback, not trained policy inference or verified contact replay.</p>
+          <div className="rule"/>
           <a className="small-link" href="https://huggingface.co/datasets/amandlek/mimicgen_datasets" target="_blank" rel="noreferrer">MimicGen source dataset ↗</a>
-          <a className="small-link" href="../compare/index.html">Compare P37 data episodes ↗</a>
+          <a className="small-link" href="../compare/index.html?sample=mimicgen">Watch official source motion in P37 ↗</a>
         </aside>
         <div className="viewport">
           <div className="viewport-top">
@@ -116,7 +165,8 @@ export function App() {
             <LiveScene key={preset + '-' + robot} preset={preset} robot={robot} items={items}
               paused={paused} collision={collision} pose={pose} sceneRef={scene}
               onSample={setStats} onReady={()=>setStatus('Steel physics active')}
-              onError={setStatus}/>
+              onError={setStatus} sourceFrames={showSource ? (sourceData?.traces[sourceEpisode]?.frames ?? []) : []}
+              sourcePlaying={showSource && sourcePlaying && !paused}/>
             <div className="camera-tip">DRAG OBJECTS TO PULL · DRAG EMPTY SPACE TO ORBIT</div>
           </div>
           <div className="viewport-controls">
@@ -137,10 +187,11 @@ export function App() {
           <div className="info-row"><span>Solver contacts</span><strong>{stats?.contacts ?? '—'}</strong></div>
           <div className="info-row"><span>Movable objects</span><strong>{items.length}</strong></div>
           <div className="info-row"><span>Robot geometry</span><strong>{robot}</strong></div>
+          <div className="info-row"><span>Recorded dataset</span><strong>{showSource ? "MimicGen Panda source" : "None"}</strong></div>
           <div className="rule"/>
           <div className="section-cap">What is running</div>
           <p className="evidence-copy">Steel simulates rigid-body contacts. The reference robot receives deterministic joint position commands. All furniture and materials were created for this demo.</p>
-          <div className="flag">Policy checkpoint: <b>None</b><br/>MimicGen model training: <b>Not executed</b><br/>Learned cross-body transfer: <b>Unverified</b></div>
+          <div className="flag">Policy checkpoint: <b>None</b><br/>MimicGen model training: <b>Not executed</b><br/>Recorded source playback: <b>{showSource ? "Active" : "Off"}</b><br/>Learned cross-body transfer: <b>Unverified</b></div>
           <div className="section-cap">P37 integration</div>
           <p className="evidence-copy">The <a href="../compare/index.html">recorded experiment viewer</a> accepts canonical P37 episodes. The MimicGen HDF5 adapter preserves dataset-native actions without claiming they are joint commands.</p>
         </aside>

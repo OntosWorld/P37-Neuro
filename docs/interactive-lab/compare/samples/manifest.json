@@ -1,0 +1,12 @@
+{
+  "episode_ids": [
+    "demo_0",
+    "demo_1"
+  ],
+  "license": "CC BY 4.0",
+  "policy_attached": false,
+  "produced_by": "abbcd4cbbb49556b18b79c36ecb3d4470f879592",
+  "source": "https://huggingface.co/datasets/amandlek/mimicgen_datasets/resolve/main/source/square.hdf5",
+  "source_sha256": "c917e99362fd9bd11978d6e2642c1ea88272702fbf55b50367ed471febf550e2",
+  "status": "source data replay, no learned model"
+}

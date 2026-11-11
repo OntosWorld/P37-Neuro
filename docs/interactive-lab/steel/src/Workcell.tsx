@@ -7,6 +7,7 @@ import {
 } from '@skild-ai/steel-webgpu/react';
 import type { Vec3 } from '@skild-ai/steel-webgpu';
 import { CanvasTexture, Group, RepeatWrapping, SRGBColorSpace } from 'three';
+import { SourceTrajectory, type SourceFrame } from './SourceTrajectory';
 
 export type Preset = 'workcell' | 'packing' | 'inspection';
 export type RobotType = 'compact' | 'extended';
@@ -192,9 +193,10 @@ function StatsFeed({ onSample }: { onSample: (s: SimStatsSample | null) => void 
   useEffect(() => onSample(stats), [stats, onSample]);
   return null;
 }
-export function Workcell({ preset, robot, items, pose, onStats }: {
+export function Workcell({ preset, robot, items, pose, onStats, sourceFrames, sourcePlaying }: {
   preset: Preset; robot: RobotType; items: LooseItem[];
   pose: number; onStats: (s: SimStatsSample | null) => void;
+  sourceFrames: SourceFrame[]; sourcePlaying: boolean;
 }) {
   const robotRef = useRef<RobotHandle>(null);
   return <>
@@ -204,6 +206,7 @@ export function Workcell({ preset, robot, items, pose, onStats }: {
       xform={[-.63,.05,.805,0,0,0,1]}/>
     <ReferenceRobotControl refRobot={robotRef} target={pose}/>
     <FurnitureVisuals preset={preset}/>
+    {sourceFrames.length >= 2 && <SourceTrajectory frames={sourceFrames} playing={sourcePlaying}/>}
     <StatsFeed onSample={onStats}/>
   </>;
 }
