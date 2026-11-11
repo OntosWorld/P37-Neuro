@@ -31,19 +31,24 @@ const OBJECTS: {id:ObjectType; name:string; detail:string}[] = [
 const MAX_ITEMS=12;
 
 function MuJoCoFallback({ reason }: { reason:string }) {
-  const hasOriginalPortal=location.pathname.includes('/lab/steel/');
+  const isPublished=location.pathname.includes('/lab/steel/');
+  const remote='https://ontosrobotics.github.io/P37-Neuro/simulator/';
+  const local='../../simulator/';
+  const params='?project=p37_robot_models&scene=franka_panda&panel=0';
+  const url=(isPublished?local:remote)+params;
   return <div className="mujoco-fallback" role="region" aria-label="MuJoCo fallback simulation">
-    {hasOriginalPortal&&<iframe
+    <iframe
       className="mujoco-fallback-frame"
-      src="../../simulator/?project=p37_robot_models&scene=franka_panda&panel=0"
-      title="Original Franka Panda model with live MuJoCo physics"
+      src={url}
+      title="Official Franka Panda model running browser MuJoCo physics"
       loading="eager"
-    />}
+      allow="fullscreen"
+    />
     <div className="mujoco-fallback-info">
-      <span className="fallback-tag">PHYSICS FALLBACK</span>
-      <strong>MuJoCo robot simulation</strong>
-      <p>Steel WebGPU could not start on this GPU. The existing Franka Panda model remains available in MuJoCo. {reason}</p>
-      <a href="../../?robot=franka_panda">Open the full Panda simulation ↗</a>
+      <span className="fallback-tag">ALTERNATIVE PHYSICS ENGINE / MUJOCO</span>
+      <strong>Real robot geometry. Interactive physics.</strong>
+      <p>Steel's WebGPU device could not start on this browser. The manufacturer-derived Franka Panda model remains accessible through our existing MuJoCo simulation. {reason}</p>
+      <a href={isPublished?'../../?robot=franka_panda':'https://ontosrobotics.github.io/P37-Neuro/?robot=franka_panda'}>Open the full Panda simulator ↗</a>
     </div>
   </div>;
 }
