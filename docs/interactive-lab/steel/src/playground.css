@@ -151,3 +151,44 @@ button[disabled]{opacity:.45;cursor:not-allowed}
  .playground-embodiment{padding:12px}
  .playground-disclaimer{width:100%;margin:3px 0 0}
 }
+
+
+/* Final layout gate: the physics stage owns the full width.
+   Configuration and provenance remain available below the workcell.
+   Avoid the previous cramped 3-column developer-dashboard framing. */
+@media(min-width:791px){
+ .title-row{padding-top:43px!important;padding-bottom:28px!important}
+ .title-row h1{margin:12px 0 12px;font-size:clamp(57px,5.9vw,94px)!important}
+ .lab-grid{display:grid!important;
+   grid-template-columns:minmax(0,1fr) minmax(270px,350px)!important;
+   grid-template-areas:"simulation simulation" "configuration evidence"!important;
+   grid-auto-rows:auto!important;min-height:0!important;gap:0}
+ .lab-grid>.viewport{grid-area:simulation;min-width:0}
+ .lab-grid>.side-panel{grid-area:configuration;border-right:1px solid #414740!important;
+   border-top:1px solid #414740!important;border-bottom:0!important}
+ .lab-grid>.evidence-panel{grid-area:evidence;display:block!important;grid-column:auto!important;
+   border-top:1px solid #414740!important;border-left:1px solid #414740!important}
+ .lab-grid .canvas-wrap{min-height:clamp(530px,63vh,820px)!important;
+   height:clamp(530px,63vh,820px)!important}
+ .lab-grid .section-heading{margin-bottom:19px}
+ .lab-grid .viewport-top{padding:14px 19px}
+ .lab-grid .playground-scenes{padding:13px 22px}
+ .lab-grid .playground-embodiment{padding:13px 22px}
+ .lab-grid .viewport-controls{padding:14px 22px}
+ .lab-grid .side-panel{padding:28px!important}
+ .lab-grid .evidence-panel{padding:28px!important}
+}
+@media(max-width:790px){
+ .lab-grid{display:grid!important;grid-template-columns:minmax(0,1fr)!important;
+   grid-template-areas:"simulation" "configuration" "evidence"!important}
+ .lab-grid>.viewport{grid-area:simulation}
+ .lab-grid>.side-panel{grid-area:configuration;border-bottom:1px solid #414740!important}
+ .lab-grid>.evidence-panel{grid-area:evidence;grid-column:auto!important;display:block!important}
+ .lab-grid .canvas-wrap{min-height:480px!important}
+ .title-row{padding-top:28px!important;padding-bottom:22px!important}
+}
+@media(max-width:490px){
+ .lab-grid .canvas-wrap{min-height:410px!important}
+ .lab-grid{border-radius:12px!important}
+ .playground-scenes{padding:12px 12px!important}
+}
