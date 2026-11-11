@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "sim/web/**"
+      - "docs/interactive-lab/**"
       - ".github/workflows/p37-github-pages.yml"
   push:
     branches: [main]
@@ -39,6 +40,15 @@ jobs:
           python sim/web/build_demo_evidence.py \
             --menagerie _menagerie --forces _physics/force-results.json \
             --output _demo_evidence.json
+      - name: Setup Node for Steel WebGPU workcell
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Build additive Steel WebGPU research workcell
+        working-directory: docs/interactive-lab/steel
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
       - name: Build for GitHub Pages project URL
         run: |
           node --check sim/web/demos/demos.js
@@ -68,6 +78,12 @@ jobs:
           assert (site / "studio.js").is_file()
           assert (site / "demos/index.html").is_file()
           assert (site / "demos/evidence.json").is_file()
+          assert (site / "lab/index.html").is_file()
+          assert (site / "lab/sim/index.html").is_file()
+          assert (site / "lab/compare/index.html").is_file()
+          assert (site / "lab/compare/samples/mimicgen-square-source.json").is_file()
+          assert (site / "lab/steel/index.html").is_file()
+          assert (site / "lab/steel/samples/mimicgen-square-source.json").is_file()
           metadata = {
               "host": "github-pages",
               "repository": "OntosRobotics/P37-Neuro",
