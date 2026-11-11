@@ -112,6 +112,7 @@ def export_episode(
         "task_id": episode.task_id,
         "label": label or episode.embodiment_id,
         "source": episode.source,
+        "metadata": dict(episode.metadata),
         "provenance": {
             "checkpoint_sha256": provenance.checkpoint_sha256,
             "code_commit": provenance.code_commit,
