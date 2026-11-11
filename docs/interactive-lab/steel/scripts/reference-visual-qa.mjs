@@ -148,18 +148,12 @@ async function qa(){
   catch(error){results.webgpu.runtime={status:'unavailable',msg:String(error)}}
   if(results.webgpu.runtime.status!=='running'){
     results.webgpu.status='device-not-qualified';
-    await page.evaluate(()=>window.scrollTo(0,0));
-    await capture(page,'p37-desktop-gpu-unavailable.png');
     if(required)throw new Error('WebGPU physics never started: '+JSON.stringify(results.webgpu));
-    // Linux headless SwiftShader can lose the swapchain even when its adapter
-    // initializes. Hardware/actual physics is gated by the separate Metal job.
+    // A dead SwiftShader swapchain can hang Chromium's screenshot and viewport
+    // APIs even after a successful adapter request. The reference screenshots
+    // and static layout metrics are already collected above. Keep this report,
+    // then let the strict Apple Metal job prove real rendering and interaction.
     results.webgpu.status='software-device-unavailable';
-    await page.setViewportSize({width:390,height:844});
-    await page.evaluate(()=>window.scrollTo(0,0));
-    await capture(page,'p37-mobile-gpu-unavailable.png');
-    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
-    if(overflow>2)throw new Error('Responsive P37 UI overflows by '+overflow+'px');
-    results.p37.mobile={viewport:390,width:390+overflow};
     return;
   }
   const firstFrame=await page.locator('.canvas-wrap').screenshot({timeout:60000});
