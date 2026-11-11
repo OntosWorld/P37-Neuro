@@ -35,6 +35,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
     assert (site / "studio.css").is_file()
     assert (site / "studio-minimal.css").is_file()
     assert (site / "steel-playground.css").is_file()
+    assert (site / "steel-site-shell.css").is_file()
     assert (site / "studio.js").is_file()
     assert (site / "p37-evidence.json").is_file()
     assert (site / "demos/index.html").is_file()
@@ -103,7 +104,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             bg = page.locator(".app-header").evaluate(
                 "(node) => getComputedStyle(node).backgroundColor"
             )
-            assert bg == "rgb(22, 25, 28)", f"unexpected playground header: {bg}"
+            assert bg == "rgb(255, 255, 255)", f"unexpected Skild-style header: {bg}"
             page.locator("#scene-loading").wait_for(state="hidden", timeout=120000)
             assert page.locator("#robot-count").inner_text().startswith("10")
 
@@ -348,7 +349,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             replay_bg = page.locator("body").evaluate(
                 "(node) => getComputedStyle(node).backgroundColor"
             )
-            assert replay_bg == "rgb(22, 25, 28)"
+            assert replay_bg == "rgb(255, 255, 255)"
             # Explore both lightweight research interfaces in fresh pages.
             for route, expected_class, expected_control in (
                 ("lab/", "playground-architecture", "[data-task='reach']"),
