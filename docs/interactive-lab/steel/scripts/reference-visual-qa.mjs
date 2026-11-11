@@ -157,7 +157,10 @@ async function qa(){
   await wait(1600);
   const after=await page.locator('.info-row').filter({hasText:'Simulation time'}).innerText();
   if(before===after)throw new Error('Live Steel simulation time did not advance');
+  await page.evaluate(()=>window.scrollTo(0,0));
+  await wait(160);
   await capture(page,'p37-skild-style-desktop.png');
+  await capture(page,'p37-full-page-desktop.png',true);
   await page.getByRole('button',{name:'Packing station'}).click();
   await sceneStatus(page);
   const second=await page.locator('.canvas-wrap').screenshot({timeout:60000});
@@ -189,6 +192,8 @@ async function qa(){
   }));
   if(results.p37.mobile.width>392)throw new Error('P37 has horizontal mobile overflow');
   if(results.p37.mobile.sceneWidth<330)throw new Error('P37 physics scene too narrow on mobile');
+  await page.evaluate(()=>window.scrollTo(0,0));
+  await wait(180);
   await capture(page,'p37-skild-style-mobile.png');
 }
 try{
