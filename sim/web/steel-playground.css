@@ -491,3 +491,26 @@ body.playground-brain .robot-license-credit a{color:#9fd3ff;text-decoration:unde
  body.playground-brain .robot-option strong{font-size:11px}
  body.playground-brain .robot-option small{font-size:10px}
 }
+
+/* Image-led simulation picker, using exact source robot model previews. */
+body.playground-demos .scene-choice{
+ grid-template-columns:20px 51px minmax(0,1fr) 12px;
+ gap:11px;padding:11px 12px;min-height:75px
+}
+body.playground-demos .scene-choice .choice-thumb{
+ display:block;height:51px;width:51px;overflow:hidden;
+ border-radius:5px;border:1px solid #4a5d68;
+ background:radial-gradient(ellipse at center,#536472,#25313a)
+}
+body.playground-demos .choice-thumb img{width:100%;height:100%;
+ object-fit:contain;display:block}
+body.playground-demos .choice-copy{min-width:0}
+body.playground-demos .choice-copy strong{font-size:12px;line-height:1.2}
+body.playground-demos .choice-copy small{font-size:10px;line-height:1.4}
+@media(max-width:720px){
+ body.playground-demos .scene-choice{grid-template-columns:42px minmax(0,1fr);
+  min-width:205px;max-width:235px;flex-basis:205px;gap:8px}
+ body.playground-demos .scene-choice .scene-ordinal{display:none}
+ body.playground-demos .scene-choice .choice-thumb{width:42px;height:42px}
+ body.playground-demos .choice-copy strong{font-size:11px}
+}
