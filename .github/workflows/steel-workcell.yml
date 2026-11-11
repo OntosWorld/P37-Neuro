@@ -47,6 +47,35 @@ jobs:
           path: docs/interactive-lab/steel/dist
           retention-days: 14
 
+  metal-gpu:
+    name: macOS Metal WebGPU visual gate
+    runs-on: macos-15
+    timeout-minutes: 22
+    defaults:
+      run:
+        working-directory: docs/interactive-lab/steel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install Steel and visual QA dependencies
+        run: npm install --no-audit --no-fund
+      - name: Build viewer
+        run: npm run build
+      - name: Install Chromium on Apple Silicon
+        run: npx playwright install chromium
+      - name: Capture reference and prove Steel GPU physics on macOS
+        run: node scripts/reference-visual-qa.mjs
+      - name: Keep Metal GPU and screenshot evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-macos-metal-gpu-proof
+          path: docs/interactive-lab/steel/visual-evidence/
+          retention-days: 14
+          if-no-files-found: warn
+
   dataset-adapter:
     runs-on: ubuntu-latest
     timeout-minutes: 15
