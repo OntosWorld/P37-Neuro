@@ -5,15 +5,33 @@
   <material name="titanium"><color rgba="0.51 0.57 0.60 1"/></material>
   <material name="obsidian"><color rgba="0.105 0.135 0.16 1"/></material>
   <material name="signal"><color rgba="0.70 0.94 0.80 1"/></material>
+  <material name="ceramic"><color rgba="0.87 0.91 0.92 1"/></material>
+  <material name="powder"><color rgba="0.67 0.74 0.76 1"/></material>
+  <material name="rubber"><color rgba="0.13 0.16 0.17 1"/></material>
+  <material name="bearing"><color rgba="0.36 0.42 0.44 1"/></material>
+  <!-- Visual shells are deliberately richer than the conservative collision geometry. -->
   <link name="base">
     <inertial><origin xyz="0 0 0.06"/><mass value="4.0"/><inertia ixx="0.025" ixy="0" ixz="0" iyy="0.025" iyz="0" izz="0.030"/></inertial>
     <visual><origin xyz="0 0 0.06"/><geometry><cylinder radius="0.105" length="0.12"/></geometry><material name="obsidian"/></visual>
     <collision><origin xyz="0 0 0.06"/><geometry><cylinder radius="0.105" length="0.12"/></geometry></collision>
+  
+    <visual><origin xyz="0 0 0.016"/><geometry><cylinder radius="0.128" length="0.029"/></geometry><material name="bearing"/></visual>
+    <visual><origin xyz="0 0 0.092"/><geometry><cylinder radius="0.111" length="0.046"/></geometry><material name="ceramic"/></visual>
+    <visual><origin xyz="0 0 0.125"/><geometry><cylinder radius="0.090" length="0.019"/></geometry><material name="rubber"/></visual>
+    <visual><origin xyz="-0.084 -0.084 0.011"/><geometry><cylinder radius="0.010" length="0.016"/></geometry><material name="bearing"/></visual>
+    <visual><origin xyz="-0.084 0.084 0.011"/><geometry><cylinder radius="0.010" length="0.016"/></geometry><material name="bearing"/></visual>
+    <visual><origin xyz="0.084 -0.084 0.011"/><geometry><cylinder radius="0.010" length="0.016"/></geometry><material name="bearing"/></visual>
+    <visual><origin xyz="0.084 0.084 0.011"/><geometry><cylinder radius="0.010" length="0.016"/></geometry><material name="bearing"/></visual>
   </link>
   <link name="shoulder_link">
     <inertial><origin xyz="0 0 0.15"/><mass value="2.1"/><inertia ixx="0.023" ixy="0" ixz="0" iyy="0.023" iyz="0" izz="0.012"/></inertial>
     <visual><origin xyz="0 0 0.145"/><geometry><cylinder radius="0.071" length="0.29"/></geometry><material name="titanium"/></visual>
     <collision><origin xyz="0 0 0.145"/><geometry><cylinder radius="0.071" length="0.29"/></geometry></collision>
+  
+    <visual><origin xyz="0 0 0.145"/><geometry><box size="0.147 0.152 0.254"/></geometry><material name="ceramic"/></visual>
+    <visual><origin xyz="0 0 0.28" rpy="1.5707963268 0 0"/><geometry><cylinder radius="0.097" length="0.083"/></geometry><material name="rubber"/></visual>
+    <visual><origin xyz="0 0 0.29" rpy="1.5707963268 0 0"/><geometry><cylinder radius="0.064" length="0.095"/></geometry><material name="bearing"/></visual>
+    <visual><origin xyz="-0.072 0 0.17"/><geometry><box size="0.016 0.087 0.175"/></geometry><material name="powder"/></visual>
   </link>
   <joint name="shoulder" type="revolute">
     <parent link="base"/><child link="shoulder_link"/>
@@ -24,6 +42,12 @@
     <inertial><origin xyz="0.2600 0 0"/><mass value="1.5"/><inertia ixx="0.008" ixy="0" ixz="0" iyy="0.036" iyz="0" izz="0.036"/></inertial>
     <visual><origin xyz="0.2600 0 0" rpy="0 1.5707963268 0"/><geometry><cylinder radius="0.052" length="0.52"/></geometry><material name="obsidian"/></visual>
     <collision><origin xyz="0.2600 0 0" rpy="0 1.5707963268 0"/><geometry><cylinder radius="0.052" length="0.52"/></geometry></collision>
+  
+    <visual><origin xyz="0.2600 0 0"/><geometry><box size="0.4212 0.126 0.117"/></geometry><material name="ceramic"/></visual>
+    <visual><origin xyz="0.2600 0 0.059"/><geometry><box size="0.3848 0.092 0.014"/></geometry><material name="powder"/></visual>
+    <visual><origin xyz="0 0 0" rpy="1.5707963268 0 0"/><geometry><cylinder radius="0.085" length="0.113"/></geometry><material name="rubber"/></visual>
+    <visual><origin xyz="0.52 0 0" rpy="1.5707963268 0 0"/><geometry><cylinder radius="0.069" length="0.107"/></geometry><material name="rubber"/></visual>
+    <visual><origin xyz="0.2600 0 -0.058"/><geometry><box size="0.3536 0.032 0.016"/></geometry><material name="rubber"/></visual>
   </link>
   <joint name="elbow" type="revolute">
     <parent link="shoulder_link"/><child link="upper_link"/>
@@ -34,6 +58,11 @@
     <inertial><origin xyz="0.1950 0 0"/><mass value="0.9"/><inertia ixx="0.005" ixy="0" ixz="0" iyy="0.014" iyz="0" izz="0.014"/></inertial>
     <visual><origin xyz="0.1950 0 0" rpy="0 1.5707963268 0"/><geometry><cylinder radius="0.037" length="0.39"/></geometry><material name="titanium"/></visual>
     <collision><origin xyz="0.1950 0 0" rpy="0 1.5707963268 0"/><geometry><cylinder radius="0.037" length="0.39"/></geometry></collision>
+  
+    <visual><origin xyz="0.1950 0 0"/><geometry><box size="0.3432 0.094 0.084"/></geometry><material name="ceramic"/></visual>
+    <visual><origin xyz="0.1950 0 0.046"/><geometry><box size="0.2964 0.058 0.013"/></geometry><material name="powder"/></visual>
+    <visual><origin xyz="0 0 0" rpy="1.5707963268 0 0"/><geometry><cylinder radius="0.060" length="0.104"/></geometry><material name="rubber"/></visual>
+    <visual><origin xyz="0.39 0 0" rpy="1.5707963268 0 0"/><geometry><cylinder radius="0.049" length="0.082"/></geometry><material name="bearing"/></visual>
   </link>
   <joint name="wrist" type="revolute">
     <parent link="upper_link"/><child link="forearm"/>
@@ -44,6 +73,14 @@
     <inertial><origin xyz="0.025 0 0"/><mass value="0.35"/><inertia ixx="0.002" ixy="0" ixz="0" iyy="0.002" iyz="0" izz="0.002"/></inertial>
     <visual><origin xyz="0.025 0 0"/><geometry><box size="0.07 0.09 0.06"/></geometry><material name="signal"/></visual>
     <collision><origin xyz="0.025 0 0"/><geometry><box size="0.07 0.09 0.06"/></geometry></collision>
+  
+    <visual><origin xyz="0.031 0 0"/><geometry><box size="0.073 0.119 0.078"/></geometry><material name="ceramic"/></visual>
+    <visual><origin xyz="0.077 0.041 0"/><geometry><box size="0.105 0.016 0.031"/></geometry><material name="rubber"/></visual>
+    <visual><origin xyz="0.077 -0.041 0"/><geometry><box size="0.105 0.016 0.031"/></geometry><material name="rubber"/></visual>
+    <visual><origin xyz="0.131 0.041 0"/><geometry><box size="0.014 0.028 0.045"/></geometry><material name="powder"/></visual>
+    <visual><origin xyz="0.131 -0.041 0"/><geometry><box size="0.014 0.028 0.045"/></geometry><material name="powder"/></visual>
+    <collision><origin xyz="0.078 0.041 0"/><geometry><box size="0.108 0.018 0.031"/></geometry></collision>
+    <collision><origin xyz="0.078 -0.041 0"/><geometry><box size="0.108 0.018 0.031"/></geometry></collision>
   </link>
   <joint name="tool_mount" type="fixed"><parent link="forearm"/><child link="tool"/><origin xyz="0.39 0 0"/></joint>
 </robot>
