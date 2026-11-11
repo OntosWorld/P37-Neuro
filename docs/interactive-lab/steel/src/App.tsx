@@ -29,6 +29,24 @@ const OBJECTS: {id:ObjectType; name:string; detail:string}[] = [
   {id:'bin',name:'Bin',detail:'Open storage container'},
 ];
 const MAX_ITEMS=12;
+
+function MuJoCoFallback({ reason }: { reason:string }) {
+  const hasOriginalPortal=location.pathname.includes('/lab/steel/');
+  return <div className="mujoco-fallback" role="region" aria-label="MuJoCo fallback simulation">
+    {hasOriginalPortal&&<iframe
+      className="mujoco-fallback-frame"
+      src="../../simulator/?project=p37_robot_models&scene=franka_panda&panel=0"
+      title="Original Franka Panda model with live MuJoCo physics"
+      loading="eager"
+    />}
+    <div className="mujoco-fallback-info">
+      <span className="fallback-tag">PHYSICS FALLBACK</span>
+      <strong>MuJoCo robot simulation</strong>
+      <p>Steel WebGPU could not start on this GPU. The existing Franka Panda model remains available in MuJoCo. {reason}</p>
+      <a href="../../?robot=franka_panda">Open the full Panda simulation ↗</a>
+    </div>
+  </div>;
+}
 function LiveScene({
   preset, robot, items, paused, collision, pose, camera, sceneRef,
   onSample, onReady, onError, sourceFrames, sourcePlaying,
@@ -47,12 +65,7 @@ function LiveScene({
       <strong>Preparing the physical environment</strong>
       <p>Starting Steel and compiling the workcell on your GPU.</p>
     </div>}
-    unsupported={reason=><div className="viewer-notice">
-      <strong>This scene needs WebGPU</strong>
-      <p>{reason}</p>
-      <p>Use a current Chrome, Edge or Safari browser with WebGPU and hardware acceleration enabled.</p>
-      <a href="../../?robot=franka_panda">Open the existing MuJoCo Panda viewer instead ↗</a>
-    </div>}
+    unsupported={reason=><MuJoCoFallback reason={reason}/>} 
     onError={error=>onError(String(error))}
   >
     <Scene
@@ -77,6 +90,7 @@ export function App() {
   const [camera,setCamera]=useState<CameraView>('three-quarter');
   const [status,setStatus]=useState('Starting Steel WebGPU');
   const [ready,setReady]=useState(false);
+  const [steelFailed,setSteelFailed]=useState(false);
   const [stats,setStats]=useState<SimStatsSample | null>(null);
   const [showControls,setShowControls]=useState(false);
   const [sourceData,setSourceData]=useState<SourceData | null>(null);
@@ -115,6 +129,7 @@ export function App() {
     setPreset(next);
     setItems(initialItems(next));
     setReady(false);
+    setSteelFailed(false);
     setStatus('Loading '+PRESETS.find(p=>p.id===next)?.label);
   };
   const reset=()=>{
@@ -172,12 +187,13 @@ export function App() {
 
       <section ref={stage} className="experiment-stage" aria-label="Interactive industrial robot simulation">
         <div className="stage-canvas">
+          {steelFailed&&<MuJoCoFallback reason="The WebGPU device or pipeline was lost."/>}
           <LiveScene key={preset+'-'+robot} preset={preset} robot={robot}
             items={items} paused={paused} collision={collision} pose={pose}
             camera={camera} sceneRef={scene}
             onSample={setStats}
-            onReady={()=>{setReady(true);setStatus('Steel physical environment active');}}
-            onError={message=>{setReady(false);setStatus('Physics error: '+message);}}
+            onReady={()=>{setReady(true);setSteelFailed(false);setStatus('Steel physical environment active');}}
+            onError={message=>{setReady(false);setSteelFailed(true);setStatus('Steel unavailable: '+message);}}
             sourceFrames={activeSource} sourcePlaying={showSource&&sourcePlaying&&!paused}/>
           <div className="stage-top" aria-hidden="true">
             <div className="stage-caption">
@@ -186,7 +202,7 @@ export function App() {
               <span>DETERMINISTIC REFERENCE CONTROL</span>
             </div>
             <div className="live-status"><span className={ready?'status-light active':'status-light'}/>
-              {ready?'WEBGPU / LIVE':'WEBGPU / STARTING'}
+              {ready?'WEBGPU / LIVE':steelFailed?'MUJOCO / FALLBACK':'WEBGPU / STARTING'}
             </div>
           </div>
           <div className="scene-tabs" role="group" aria-label="Choose physical environment">
