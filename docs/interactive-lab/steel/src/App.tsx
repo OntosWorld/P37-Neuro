@@ -44,6 +44,7 @@ function MuJoCoFallback({ reason }: { reason:string }) {
       title="Official Franka Panda model running browser MuJoCo physics"
       loading="eager"
       allow="fullscreen"
+      onLoad={event=>{if(isPublished)event.currentTarget.style.opacity="1";}}
     />
     <div className="mujoco-fallback-info">
       <span className="fallback-tag">ALTERNATIVE PHYSICS ENGINE / MUJOCO</span>
