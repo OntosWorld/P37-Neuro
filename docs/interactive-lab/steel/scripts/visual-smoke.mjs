@@ -30,20 +30,18 @@ async function awaitServer(){
 async function awaitPhysics(page){
  await page.waitForFunction(()=>{
   const status=document.querySelector('.sim-status')?.textContent??'';
-  const fallback=document.querySelector('.viewer-notice')?.textContent??'';
   return status.includes('Steel physical environment active') ||
-    status.includes('Physics error:') ||
-    fallback.includes('This scene needs WebGPU');
+    status.includes('Steel unavailable:') ||
+    Boolean(document.querySelector('.mujoco-fallback'));
  },undefined,{timeout:120_000});
  const status=await page.locator('.sim-status').innerText();
- if(!status.includes('Steel physical environment active')){
-  throw new Error('Steel physics did not become active: '+status+
-    ' / '+await page.locator('.viewer-notice').allInnerTexts());
+ if(status.includes('Steel physical environment active')){
+  await page.waitForTimeout(1200);
+  return 'steel';
  }
- await page.waitForFunction(()=>
-   Number((document.querySelector('.experiment-ledger strong:last-child')?.textContent??'').length)>0,
-   undefined,{timeout:30_000});
- await page.waitForTimeout(1300);
+ const fallback=page.locator('.mujoco-fallback');
+ if(await fallback.count()&&await fallback.isVisible())return 'fallback';
+ throw new Error('Neither Steel physics nor the fallback rendered: '+status);
 }
 async function capture(page,name){
  const out=resolve(screenshots,name);
@@ -63,7 +61,40 @@ try{
  page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text());});
  page.on('response',r=>{if(r.status()>=400)errors.push('HTTP '+r.status()+' '+r.url());});
  await page.goto(address,{waitUntil:'domcontentloaded',timeout:30_000});
- await awaitPhysics(page);
+ const firstMode=await awaitPhysics(page);
+ if(firstMode==='fallback'){
+   const copy=await page.locator('.mujoco-fallback-info').innerText();
+   if(!copy.includes('MuJoCo robot simulation')){
+     throw new Error('GPU failure did not show the real-robot fallback');
+   }
+   results.physics.steelGpuVerified=false;
+   results.physics.reason=await page.locator('.sim-status').innerText();
+   await capture(page,'steel-01-fallback-desktop.png');
+   await page.getByRole('button',{name:/Packing station/}).click();
+   await awaitPhysics(page);
+   if(!await page.locator('.stage-caption').innerText().then(t=>t.includes('Packing station'))){
+     throw new Error('Scene selection did not update the controls');
+   }
+   await page.getByRole('button',{name:/Controls/}).click();
+   await page.locator('#robot').selectOption('extended');
+   await awaitPhysics(page);
+   await capture(page,'steel-02-fallback-with-controls.png');
+   const sample=await page.request.get(address+'samples/mimicgen-square-source.json');
+   if(!sample.ok())throw new Error('Official source data was not bundled with the viewer');
+   const data=await sample.json();
+   if(data.publication?.learned_policy_attached!==false || data.traces?.length!==2){
+     throw new Error('Missing source evidence or inaccurate policy state');
+   }
+   await page.setViewportSize({width:390,height:844});
+   await page.waitForTimeout(300);
+   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+   if(overflow>2)throw new Error('Mobile controls overflow by '+overflow+'px');
+   await capture(page,'steel-03-fallback-mobile.png');
+   const unexpected=errors.filter(e=>!/Instance dropped in popErrorScope|Device Lost|device lost|A valid external Instance reference no longer exists/.test(e));
+   if(unexpected.length)throw new Error('Unexpected browser errors: '+unexpected.slice(0,4).join(' | '));
+   results.status='fallback-verified';
+   console.log('Hosted Chrome lacks stable WebGPU: fallback/desktop/mobile validated, Steel GPU not qualified.');
+ }else{
  const initial=await capture(page,'steel-01-industrial-workcell.png');
  results.physics.initialStatus=await page.locator('.sim-status').innerText();
  results.physics.webGPU=await page.evaluate(()=>Boolean(navigator.gpu));
@@ -111,7 +142,9 @@ try{
  if(overflow>2)throw new Error('Mobile viewport overflows horizontally by '+overflow+'px');
  await capture(page,'steel-08-mobile.png');
  if(errors.length)throw new Error('Browser runtime errors: '+errors.slice(0,5).join(' | '));
- results.status='pass';
+ results.status='steel-verified';
+ results.physics.steelGpuVerified=true;
+ }
  console.log(JSON.stringify(results,null,2));
 }catch(error){
  results.status='fail';
