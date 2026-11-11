@@ -110,17 +110,19 @@ async function sceneStatus(p){
 }
 async function qa(){
   await timeout(async()=> (await fetch(host)).ok);
-  browser=await chromium.launch({
-    channel:'chromium',headless:true,
-    args:[
-      '--no-sandbox','--disable-dev-shm-usage',
+  const args=process.platform==='darwin'
+    ? ['--enable-unsafe-webgpu','--ignore-gpu-blocklist']
+    : ['--no-sandbox','--disable-dev-shm-usage',
       '--enable-unsafe-webgpu','--ignore-gpu-blocklist','--enable-unsafe-swiftshader',
       '--use-angle=swiftshader','--use-vulkan=swiftshader',
       '--enable-features=Vulkan','--use-webgpu-adapter=swiftshader',
-      '--disable-vulkan-surface',
-    ],
-  });
+      '--disable-vulkan-surface'];
+  results.platform=process.platform;
+  browser=await chromium.launch({channel:'chromium',headless:true,args});
   results.reference=await getReference();
+  // Do not let the reference's WebGPU contexts influence P37 measurements.
+  await browser.close();
+  browser=await chromium.launch({channel:'chromium',headless:true,args});
   page=await browser.newPage({viewport:{width:1512,height:982},deviceScaleFactor:1});
   page.on('pageerror',error=>results.errors.push('P37 script: '+error.message));
   page.on('response',r=>{if(r.status()>=400)results.errors.push('P37 HTTP '+r.status()+' '+r.url())});
@@ -170,6 +172,9 @@ async function qa(){
     return row && Number(row.querySelector('strong')?.textContent)>count;
   },objectCount,{timeout:30000});
   results.webgpu.status='steel-running';
+  results.webgpu.hardwareCandidate=process.platform==='darwin' &&
+    results.webgpu.adapter?.softwareFallback!==true &&
+    !/swiftshader/i.test(JSON.stringify(results.webgpu.adapter??{}));
   results.webgpu.objectCount={before:objectCount,after:Number(await counter.innerText())};
   await capture(page,'p37-with-object-desktop.png');
   await page.setViewportSize({width:390,height:844});
