@@ -216,7 +216,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
 
 /* When a GPU cannot create Steel's required compute device, show the existing
    real-manufacturer MuJoCo model instead of leaving a dead or blank canvas. */
-.mujoco-fallback{position:absolute;inset:0;z-index:11;display:flex;
+.mujoco-fallback{position:absolute;inset:0;z-index:4;display:flex;
   align-items:center;justify-content:center;background:radial-gradient(ellipse at 55% 40%,#27373b,#11191e)}
 .mujoco-fallback-frame{position:absolute;inset:0;width:100%;height:100%;border:0;background:#1d282d}
 .mujoco-fallback-info{position:absolute;left:23px;bottom:26px;max-width:455px;
