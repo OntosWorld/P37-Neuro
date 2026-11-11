@@ -24,20 +24,20 @@ trained P37-Neuro checkpoint connected** to the browser demo.
 
 ### Run locally
 
-\`\`\`bash
+```bash
 cd docs/interactive-lab/steel
 npm install
 npm run dev
 # Visit http://localhost:5173
-\`\`\`
+```
 
-For production static assets: \`npm run build\`. The resulting \`dist/\` can be
+For production static assets: `npm run build`. The resulting `dist/` can be
 deployed under any existing site's subdirectory. Do **not** replace the existing
 GitHub Pages site root or Brain Lab with this directory. It is intentionally a
 separate Vite project with relative production asset paths.
 
 A workflow named **Steel WebGPU workcell** compiles and uploads the static bundle
-as \`p37-steel-workcell-static-preview\`. A successful compilation is not proof of
+as `p37-steel-workcell-static-preview`. A successful compilation is not proof of
 browser GPU functionality; test an actual WebGPU browser as a separate acceptance gate.
 
 ## MimicGen dataset integration
@@ -49,21 +49,21 @@ NVIDIA Source Code License; **this implementation does not use or vendor that
 code**. Cite the original MimicGen authors and retain source attribution.
 
 Suggested first comparison: download the original robot-transfer versions
-\`robot/square_d0_panda.hdf5\` and \`robot/square_d0_sawyer.hdf5\` from the
+`robot/square_d0_panda.hdf5` and `robot/square_d0_sawyer.hdf5` from the
 official Hugging Face dataset, after confirming file availability, version and
 size. Do not try to download the entire 149 GB collection for a demo.
 
-From the repository root, with Python 3.12+ and \`h5py\` installed:
+From the repository root, with Python 3.12+ and `h5py` installed:
 
-\`\`\`bash
+```bash
 uv run --with h5py python scripts/mimicgen_to_p37.py \
   --source panda=/path/to/robot/square_d0_panda.hdf5 \
   --source sawyer=/path/to/robot/square_d0_sawyer.hdf5 \
   --task square_d0 --demo demo_0 --control-hz 20 \
   --output artifacts/mimicgen-square-offline.json
-\`\`\`
+```
 
-\`--control-hz\` is an **explicit required value**. Check the rate against
+`--control-hz` is an **explicit required value**. Check the rate against
 the actual source environment. The value shown is an example, not a claim
 about every dataset's frequency.
 
@@ -71,13 +71,13 @@ Upload the generated JSON in the existing
 [recorded experiment comparison viewer](../compare/index.html).
 The converted records include actual source joint positions/velocities and
 the source-native action vector. Native actions are preserved as
-\`observation.state.source_action_*\` so they cannot be mistaken for joint
+`observation.state.source_action_*` so they cannot be mistaken for joint
 actuator commands. Without explicit controller semantics and replay
-compatibility, \`Action.joint_commands\` remains empty.
+compatibility, `Action.joint_commands` remains empty.
 
 A converted demonstration is **offline dataset playback**, not a P37 policy
-rollout. The exporter marks these records \`policy_attached=false\`,
-\`outcome=unverified\`, and \`evidence_level=T1\` conservatively.
+rollout. The exporter marks these records `policy_attached=false`,
+`outcome=unverified`, and `evidence_level=T1` conservatively.
 No held-out cross-embodiment success rate is inferred from MimicGen
 demonstration availability.
 
@@ -105,7 +105,7 @@ demonstration availability.
 
 ## Verification
 
-- CI: \`npm run build\` (TypeScript and Vite) and local HDF5 fixture tests.
+- CI: `npm run build` (TypeScript and Vite) and local HDF5 fixture tests.
 - Browser QA: WebGPU startup, URDF loading, contact/picking/drag, pause/reset,
   object insertion, shadow/material rendering and mobile fallback.
 - Dataset QA: source attribution, no fabricated action conversion or success
