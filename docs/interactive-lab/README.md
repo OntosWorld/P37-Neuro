@@ -2,6 +2,12 @@
 
 This is an experimental, dependency-free web interface for explaining the P37 task-to-embodiment architecture alongside its actual evidence status.
 
+## Steel WebGPU physics workcell + MimicGen data bridge
+
+A separate [Steel WebGPU workcell](steel/README.md) adds a visual 3D robotics lab with procedural furniture, physics-based object contacts and draggable objects. It uses the published Steel React/Three.js API and two original reference URDF robot geometries. The workcell requires an independent Vite build; serving this directory as raw HTML will not build the new app.
+
+An optional [MimicGen HDF5 importer](../../src/p37_neuro/data/mimicgen_import.py) converts source demonstration trajectories into the canonical trace format. Source actions are explicitly kept as dataset-native values, and no learned P37 checkpoint is claimed by this importer or scene. The original Brain Lab is unchanged.
+
 ## Open
 
 Serve this directory with any static HTTP server and navigate to `index.html`:

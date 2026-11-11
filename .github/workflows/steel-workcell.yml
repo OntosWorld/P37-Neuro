@@ -1,0 +1,47 @@
+name: Steel WebGPU workcell
+
+on:
+  pull_request:
+    paths:
+      - "docs/interactive-lab/steel/**"
+      - "src/p37_neuro/data/mimicgen_import.py"
+      - "scripts/mimicgen_to_p37.py"
+      - "tests/test_mimicgen_import.py"
+      - ".github/workflows/steel-workcell.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: docs/interactive-lab/steel
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Install pinned Steel and viewer dependencies
+        run: npm install --no-audit --no-fund
+      - name: Typecheck and compile production viewer
+        run: npm run build
+      - uses: actions/upload-artifact@v4
+        with:
+          name: p37-steel-workcell-static-preview
+          path: docs/interactive-lab/steel/dist
+          retention-days: 14
+
+  dataset-adapter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+      - name: Validate MimicGen HDF5 ingestion using a local deterministic fixture
+        run: uv run --with h5py pytest -q tests/test_mimicgen_import.py
