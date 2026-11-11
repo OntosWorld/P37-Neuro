@@ -301,14 +301,16 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert len(source["traces"]) == 2
             response = page.goto(
                 origin + "lab/compare/?sample=mimicgen",
-                wait_until="domcontentloaded", timeout=30000,
+                wait_until="domcontentloaded",
+                timeout=30000,
             )
             assert response is not None and response.status == 200
             page.locator(".card").first.wait_for(state="visible", timeout=30000)
             assert page.locator(".card").count() == 2
-            assert "Original data: amandlek/mimicgen_datasets" in page.locator(
-                "#sourceCredit"
-            ).inner_text()
+            assert (
+                "Original data: amandlek/mimicgen_datasets"
+                in page.locator("#sourceCredit").inner_text()
+            )
             page.screenshot(path=str(screenshots / "mimicgen-real-data.png"), timeout=30000)
 
             if failures:
