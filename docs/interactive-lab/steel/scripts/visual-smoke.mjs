@@ -98,8 +98,9 @@ try{
  await capture(page,'steel-06-overhead-camera.png');
  const before=await page.locator('.experiment-ledger strong').nth(1).innerText();
  await page.getByRole('button',{name:/Drop into scene/}).click();
- await page.waitForFunction((value)=>document.querySelector('.experiment-ledger')?.textContent!==value,
-   await page.locator('.experiment-ledger').innerText(),{timeout:30_000});
+ await page.waitForFunction((value)=>
+   document.querySelectorAll('.experiment-ledger strong')[1]?.textContent?.trim()!==value,
+   before,{timeout:30_000});
  const after=await page.locator('.experiment-ledger strong').nth(1).innerText();
  if(before===after)throw new Error('Adding a physical object did not update scene count');
  await capture(page,'steel-07-object-insertion.png');
