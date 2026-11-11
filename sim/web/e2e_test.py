@@ -36,6 +36,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
     assert (site / "studio-minimal.css").is_file()
     assert (site / "steel-playground.css").is_file()
     assert (site / "steel-site-shell.css").is_file()
+    assert (site / "robot-thumbnails/unitree_g1.png").is_file()
+    assert (site / "robot-thumbnails/franka_panda.png").is_file()
+    assert (site / "robot-thumbnails/THIRD_PARTY_LICENSES.txt").is_file()
     assert (site / "studio.js").is_file()
     assert (site / "p37-evidence.json").is_file()
     assert (site / "demos/index.html").is_file()
@@ -141,6 +144,14 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             # On-demand library, category filtering, and dismiss actions.
             page.locator("#toggle-library").click()
             assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "false"
+            assert page.locator(".robot-option").count() >= 10
+            first_preview = page.locator(".robot-thumbnail").first
+            first_preview.wait_for(state="visible", timeout=15000)
+            page.wait_for_function(
+                "() => document.querySelector('.robot-thumbnail')?.complete && "
+                "document.querySelector('.robot-thumbnail')?.naturalWidth > 0",
+                timeout=15000,
+            )
             page.locator('[data-category="Quadrupeds"]').click()
             assert page.locator('[data-robot="unitree_g1"]').count() == 0
             page.locator('[data-category="All"]').click()
