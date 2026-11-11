@@ -61,10 +61,40 @@ try{
  page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text());});
  page.on('response',r=>{if(r.status()>=400)errors.push('HTTP '+r.status()+' '+r.url());});
  await page.goto(address,{waitUntil:'domcontentloaded',timeout:30_000});
+ // Match Ontos home visual system from the captured live site.
+ const design=await page.evaluate(()=>{
+   const style=(selector)=>getComputedStyle(document.querySelector(selector));
+   const computed=style('body');
+   return {
+     body:computed.backgroundColor,
+     announcement:document.querySelector('.ontos-announcement')?.getBoundingClientRect().height,
+     nav:document.querySelector('.official-nav')?.getBoundingClientRect().height,
+     heading:style('.intro h1').fontSize,
+     pill:style('.hero-action-primary').borderRadius,
+     links:[...document.querySelectorAll('.official-links>a')].map(a=>a.textContent.trim()),
+     wordmark:document.querySelector('.official-wordmark')?.textContent?.trim(),
+     hasMark:!!document.querySelector('.official-wordmark svg.ontos-mark'),
+   };
+ });
+ if(design.body!=='rgb(5, 5, 5)'||design.announcement!==32||design.nav!==68||
+    Number.parseFloat(design.heading)<90||design.pill!=='999px'||
+    design.wordmark!=='ONTOS'||!design.hasMark||
+    ['Technology','Research','Systems','Company'].some(label=>!design.links.includes(label))){
+   throw new Error('Official Ontos layout regression: '+JSON.stringify(design));
+ }
+ results.design=design;
+ // The local site-search must be a working, accessible control.
+ await page.getByRole('button',{name:'Search Ontos and P37 links'}).click();
+ await page.getByRole('searchbox',{name:'Search page links'}).fill('recorded');
+ if(!await page.getByRole('link',{name:/Recorded MimicGen evidence/}).isVisible()){
+   throw new Error('Ontos search dialog cannot find the recorded demo');
+ }
+ await page.keyboard.press('Escape');
+ await page.locator('.official-search-dialog').waitFor({state:'hidden'});
  const firstMode=await awaitPhysics(page);
  if(firstMode==='fallback'){
    const copy=await page.locator('.mujoco-fallback-info').innerText();
-   if(!copy.includes('MuJoCo robot simulation')){
+   if(!copy.includes('MUJOCO') || !copy.includes('Panda')){
      throw new Error('GPU failure did not show the real-robot fallback');
    }
    results.physics.steelGpuVerified=false;
@@ -87,7 +117,13 @@ try{
    }
    await page.setViewportSize({width:390,height:844});
    await page.waitForTimeout(300);
-   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+   const menu=page.getByRole('button',{name:/Menu/});
+ if(!await menu.isVisible())throw new Error('Official Ontos mobile menu is missing');
+ await menu.click();
+ if(!await page.getByRole('navigation',{name:'Ontos main navigation'}).getByRole('link',{name:'Technology'}).isVisible())
+   throw new Error('Official Ontos mobile navigation did not open');
+ await page.keyboard.press('Escape');
+  const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
    if(overflow>2)throw new Error('Mobile controls overflow by '+overflow+'px');
    await capture(page,'steel-03-fallback-mobile.png');
    const unexpected=errors.filter(e=>!/Instance dropped in popErrorScope|Device Lost|device lost|A valid external Instance reference no longer exists/.test(e));
