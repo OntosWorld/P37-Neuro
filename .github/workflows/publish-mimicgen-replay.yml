@@ -1,13 +1,6 @@
 name: Publish verified MimicGen replay
 
 on:
-  push:
-    branches:
-      - feat/public-mimicgen-evidence-replay
-    paths:
-      - "scripts/publish_mimicgen_replay.py"
-      - ".github/workflows/publish-mimicgen-replay.yml"
-      - "src/p37_neuro/data/mimicgen_import.py"
   pull_request:
     paths:
       - "scripts/publish_mimicgen_replay.py"
@@ -16,7 +9,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   extract-source-demonstrations:
@@ -69,13 +62,3 @@ jobs:
           name: p37-official-mimicgen-replay
           path: docs/interactive-lab/compare/samples/
           retention-days: 30
-      - name: Commit verified small JSON into the feature branch
-        if: (github.event_name == 'push' && github.ref_name == 'feat/public-mimicgen-evidence-replay') || (github.event_name == 'pull_request' && github.event.pull_request.head.ref == 'feat/public-mimicgen-evidence-replay' && github.event.pull_request.head.repo.full_name == github.repository)
-        run: |
-          git config user.name "p37-evidence-bot"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/interactive-lab/compare/samples/
-          if ! git diff --cached --quiet; then
-            git commit -m "data: publish verified source-attributed MimicGen Square replay"
-            git push origin HEAD:feat/public-mimicgen-evidence-replay
-          fi
