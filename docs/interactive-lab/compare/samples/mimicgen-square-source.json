@@ -4993,7 +4993,7 @@
       "provenance": {
         "adapter_version": "p37-mimicgen-hdf5-v1",
         "checkpoint_sha256": "",
-        "code_commit": "f159f010afb64bc7f3c1a04c7c6b6a13fbe2ad69",
+        "code_commit": "2e7cf2434f1e3f81d0e063145fe9a41ebc26530e",
         "evaluation_protocol": "docs/interactive-lab/steel/README.md",
         "evidence_level": "T1",
         "outcome": "unverified",
@@ -9831,7 +9831,7 @@
       "provenance": {
         "adapter_version": "p37-mimicgen-hdf5-v1",
         "checkpoint_sha256": "",
-        "code_commit": "f159f010afb64bc7f3c1a04c7c6b6a13fbe2ad69",
+        "code_commit": "2e7cf2434f1e3f81d0e063145fe9a41ebc26530e",
         "evaluation_protocol": "docs/interactive-lab/steel/README.md",
         "evidence_level": "T1",
         "outcome": "unverified",
