@@ -79,13 +79,19 @@ function trackLine(target,name,value,min,max){
  fill.style.width=(100*Math.max(0,Math.min(1,fraction))).toFixed(2)+"%";
  rail.append(fill);line.append(caption,rail,val);target.append(line);
 }
+function positionXZ(frame){
+ const s=frame.state;
+ if(finite(s.tip_x_m)&&finite(s.tip_z_m))return [s.tip_x_m,s.tip_z_m];
+ if(finite(s.eef_position_0)&&finite(s.eef_position_2))return [s.eef_position_0,s.eef_position_2];
+ return null;
+}
 function drawTrajectory(canvas, trace, frame){
- const samples=trace.frames.filter(f=>finite(f.state.tip_x_m)&&finite(f.state.tip_z_m));
+ const samples=trace.frames.filter(f=>positionXZ(f)!==null);
  if(samples.length<2){canvas.hidden=true;return}canvas.hidden=false;
  const ratio=Math.min(window.devicePixelRatio||1,2),w=Math.max(100,canvas.clientWidth),h=180;
  canvas.width=Math.round(w*ratio);canvas.height=Math.round(h*ratio);
  const ctx=canvas.getContext("2d");ctx.setTransform(ratio,0,0,ratio,0,0);
- const xs=samples.map(f=>f.state.tip_x_m),zs=samples.map(f=>f.state.tip_z_m);
+ const xs=samples.map(f=>positionXZ(f)[0]),zs=samples.map(f=>positionXZ(f)[1]);
  const targetX=samples[0].state.target_x_m,targetZ=samples[0].state.target_z_m;
  if(finite(targetX)&&finite(targetZ)){xs.push(targetX);zs.push(targetZ)}
  let xmin=Math.min(...xs),xmax=Math.max(...xs),zmin=Math.min(...zs),zmax=Math.max(...zs);
@@ -94,10 +100,10 @@ function drawTrajectory(canvas, trace, frame){
  const px=x=>pad+(x-xmin)*scale,py=z=>h-pad-(z-zmin)*scale;
  ctx.strokeStyle="#20333d";ctx.lineWidth=1;for(let j=0;j<=4;j++){const y=pad+j*(h-2*pad)/4;ctx.beginPath();ctx.moveTo(pad,y);ctx.lineTo(w-pad,y);ctx.stroke()}
  ctx.strokeStyle="#88cebb";ctx.lineWidth=2;ctx.beginPath();
- samples.forEach((f,i)=>{const x=px(f.state.tip_x_m),y=py(f.state.tip_z_m);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.stroke();
+ samples.forEach((f,i)=>{const pos=positionXZ(f),x=px(pos[0]),y=py(pos[1]);if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y)});ctx.stroke();
  if(finite(targetX)&&finite(targetZ)){ctx.strokeStyle="#d3bf91";ctx.lineWidth=2;const x=px(targetX),y=py(targetZ);ctx.beginPath();ctx.moveTo(x-7,y);ctx.lineTo(x+7,y);ctx.moveTo(x,y-7);ctx.lineTo(x,y+7);ctx.stroke()}
- if(finite(frame.state.tip_x_m)&&finite(frame.state.tip_z_m)){const x=px(frame.state.tip_x_m),y=py(frame.state.tip_z_m);ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle="#e4fff2";ctx.fill()}
- ctx.font="11px system-ui";ctx.fillStyle="#93aeb6";ctx.fillText("Recorded X/Z trajectory · m",14,16);
+ const now=positionXZ(frame);if(now){const x=px(now[0]),y=py(now[1]);ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fillStyle="#e4fff2";ctx.fill()}
+ ctx.font="11px system-ui";ctx.fillStyle="#93aeb6";ctx.fillText("Recorded end-effector X/Z trajectory · m",14,16);
 }
 function render(){
  clock.textContent=elapsed.toFixed(2)+" s";time.value=String(duration?Math.round(1000*elapsed/duration):0);
@@ -105,6 +111,11 @@ function render(){
   const t=traces[i],f=sampleAt(t.frames,elapsed),target=document.getElementById("channels-"+i),state=document.getElementById("state-"+i);
   target.replaceChildren();
   drawTrajectory(document.getElementById("trajectory-"+i),t,f);
+  const native=document.getElementById("native-"+i);native.replaceChildren();
+  const entries=Object.entries(f.state).filter(([key])=>key.startsWith("source_action_")).slice(0,16);
+  if(entries.length){entries.forEach(([key,value])=>{
+   const line=node("div","gridline"),a=node("span","muted",key),b=node("strong","",Number(value).toFixed(4));line.append(a,b);native.append(line)
+  })}else native.append(node("p","muted","No source-native action vector in this episode."));
   const keys=Object.keys(f.joint_position).sort().slice(0,24);
   if(!keys.length)target.append(node("p","muted","No joint-position channels in this frame."));
   for(const key of keys){
@@ -121,6 +132,7 @@ function makeCards(){
  const meta=node("div","meta",t.episode_id+" · "+t.embodiment_id+" · "+t.frames.length+" frames");
  const state=node("p","muted");state.id="state-"+i;
  const trajectoryTitle=node("h3","","Measured end-effector path"),trajectory=node("canvas","trajectory");trajectory.id="trajectory-"+i;trajectory.setAttribute("aria-label","Recorded X and Z end-effector path for "+t.episode_id);const head=node("h3","","Joint position (recorded units)"),channels=node("div","tracks");channels.id="channels-"+i;
+ const nativeTitle=node("h3","","Original dataset action channels (not joint commands)"),native=node("div","");native.id="native-"+i;
  const eh=node("h3","","Source evidence"),dl=node("dl","");
  row(dl,"Evidence level",p.evidence_level);row(dl,"Outcome",p.outcome);
  row(dl,"Policy attached",p.policy_attached?"Declared yes":"No");
@@ -128,8 +140,8 @@ function makeCards(){
  row(dl,"Training membership",p.training_membership);row(dl,"Robot description hash",p.robot_description_sha256);
  row(dl,"Adapter version",p.adapter_version);row(dl,"Simulator",p.simulator+" "+p.simulator_version);
  row(dl,"Seed",p.seed);row(dl,"Code commit",p.code_commit);row(dl,"Protocol",p.evaluation_protocol);
- row(dl,"Source",t.source);
- article.append(label,heading,meta,state,trajectoryTitle,trajectory,head,channels,eh,dl);cards.append(article);
+ row(dl,"Source",t.source);if(t.metadata?.dataset)row(dl,"Dataset",t.metadata.dataset);if(t.metadata?.action_semantics)row(dl,"Action semantics",t.metadata.action_semantics);
+ article.append(label,heading,meta,state,trajectoryTitle,trajectory,head,channels,nativeTitle,native,eh,dl);cards.append(article);
  });
 }
 function makeSummary(){
