@@ -133,7 +133,18 @@
 
       const icon = document.createElement("span");
       icon.className = "robot-emblem";
-      icon.textContent = categories[robot.kind] || "RB";
+      const fallbackCode = document.createElement("span");
+      fallbackCode.className = "robot-fallback-code";
+      fallbackCode.textContent = categories[robot.kind] || "RB";
+      icon.append(fallbackCode);
+      const thumbnail = document.createElement("img");
+      thumbnail.className = "robot-thumbnail";
+      thumbnail.src = "./robot-thumbnails/" + encodeURIComponent(robot.id) + ".png";
+      thumbnail.alt = "";
+      thumbnail.loading = "lazy";
+      thumbnail.decoding = "async";
+      thumbnail.onerror = () => thumbnail.remove();
+      icon.append(thumbnail);
 
       const content = document.createElement("span");
       const title = document.createElement("strong");

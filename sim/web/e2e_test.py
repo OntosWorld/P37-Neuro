@@ -34,6 +34,11 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
     assert len(catalog["robots"]) >= 10
     assert (site / "studio.css").is_file()
     assert (site / "studio-minimal.css").is_file()
+    assert (site / "steel-playground.css").is_file()
+    assert (site / "steel-site-shell.css").is_file()
+    assert (site / "robot-thumbnails/unitree_g1.png").is_file()
+    assert (site / "robot-thumbnails/franka_panda.png").is_file()
+    assert (site / "robot-thumbnails/THIRD_PARTY_LICENSES.txt").is_file()
     assert (site / "studio.js").is_file()
     assert (site / "p37-evidence.json").is_file()
     assert (site / "demos/index.html").is_file()
@@ -97,6 +102,12 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             response = page.goto(origin, wait_until="domcontentloaded", timeout=30000)
             assert response is not None and response.status == 200
             assert "P37 Brain Lab" in page.title()
+            assert "playground-brain" in page.locator("body").get_attribute("class")
+            assert page.locator("#toggle-library").is_visible()
+            bg = page.locator(".app-header").evaluate(
+                "(node) => getComputedStyle(node).backgroundColor"
+            )
+            assert bg == "rgb(255, 255, 255)", f"unexpected Skild-style header: {bg}"
             page.locator("#scene-loading").wait_for(state="hidden", timeout=120000)
             assert page.locator("#robot-count").inner_text().startswith("10")
 
@@ -133,6 +144,14 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             # On-demand library, category filtering, and dismiss actions.
             page.locator("#toggle-library").click()
             assert page.locator("#robot-library-panel").get_attribute("aria-hidden") == "false"
+            assert page.locator(".robot-option").count() >= 10
+            first_preview = page.locator(".robot-thumbnail").first
+            first_preview.wait_for(state="visible", timeout=15000)
+            page.wait_for_function(
+                "() => document.querySelector('.robot-thumbnail')?.complete && "
+                "document.querySelector('.robot-thumbnail')?.naturalWidth > 0",
+                timeout=15000,
+            )
             page.locator('[data-category="Quadrupeds"]').click()
             assert page.locator('[data-robot="unitree_g1"]').count() == 0
             page.locator('[data-category="All"]').click()
@@ -227,6 +246,8 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             demo = page.goto(origin + "demos/", wait_until="domcontentloaded", timeout=30000)
             assert demo is not None and demo.status == 200
             assert "Robotics Demos" in page.title()
+            assert "playground-demos" in page.locator("body").get_attribute("class")
+            assert page.locator(".scene-menu").is_visible()
             page.locator("#stage-loading").wait_for(state="hidden", timeout=120000)
             page.frame_locator("#stage-frame").locator("canvas").first.wait_for(
                 state="visible", timeout=120000
@@ -291,6 +312,27 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             page.screenshot(path=str(screenshots / "demos-mobile.png"), timeout=90000)
 
+            # Release GPU-heavy MuJoCo iframes before checking standalone HTML demos.
+            # The five manufacturer scenes + two comparison canvases can exhaust
+            # Chromium's SwiftShader budget and stall unrelated navigation.
+            page.close()
+            page = browser.new_page(viewport={"width": 1440, "height": 900})
+            page.on("pageerror", lambda error: failures.append(str(error)))
+            page.on(
+                "response",
+                lambda response: (
+                    failures.append(f"HTTP {response.status}: {response.url}")
+                    if response.status >= 400
+                    else None
+                ),
+            )
+            page.on(
+                "console",
+                lambda message: (
+                    console_errors.append(message.text) if message.type == "error" else None
+                ),
+            )
+
             # The new evidence pages are additive and must work at the same Pages prefix.
             assert page.request.get(origin + "lab/steel/").status == 200
             original = page.request.get(origin + "lab/compare/samples/mimicgen-square-source.json")
@@ -312,6 +354,27 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                 in page.locator("#sourceCredit").inner_text()
             )
             page.screenshot(path=str(screenshots / "mimicgen-real-data.png"), timeout=30000)
+
+            assert "playground-evidence" in page.locator("body").get_attribute("class")
+            assert page.locator("#mimicgen").is_visible()
+            replay_bg = page.locator("body").evaluate(
+                "(node) => getComputedStyle(node).backgroundColor"
+            )
+            assert replay_bg == "rgb(255, 255, 255)"
+            # Explore both lightweight research interfaces in fresh pages.
+            for route, expected_class, expected_control in (
+                ("lab/", "playground-architecture", "[data-task='reach']"),
+                ("lab/sim/", "playground-kinematics", "[data-robot='compact']"),
+            ):
+                response = page.goto(origin + route, wait_until="domcontentloaded", timeout=30000)
+                assert response is not None and response.status == 200
+                assert expected_class in page.locator("body").get_attribute("class")
+                assert page.locator(expected_control).first.is_visible()
+                assert page.locator("header").first.is_visible()
+                page.screenshot(
+                    path=str(screenshots / ("lab-" + route.replace("/", "-") + ".png")),
+                    timeout=30000,
+                )
 
             if failures:
                 raise AssertionError("Browser runtime errors: " + " | ".join(failures[:8]))

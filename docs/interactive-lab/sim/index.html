@@ -12,7 +12,9 @@
 @media(max-width:860px){.intro{grid-template-columns:1fr}.row{grid-template-columns:1fr}.robots{grid-template-columns:repeat(3,minmax(0,1fr))}aside{border-right:none;border-bottom:1px solid var(--line)}#field{height:430px}.stats{grid-template-columns:1fr 1fr}.stat:nth-child(2){border-right:0}.stat:nth-child(-n+2){border-bottom:1px solid var(--line)}.footnote{grid-template-columns:1fr}}
 @media(max-width:540px){.nav a:nth-child(2){display:none}.robots{grid-template-columns:1fr 1fr}.stat{padding:17px}.stat strong{font-size:19px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
-</style></head><body><div class="shell">
+</style><link rel="stylesheet" href="../../steel-playground.css">
+<link rel="stylesheet" href="../../steel-site-shell.css">
+</head><body class="playground-site playground-kinematics"><div class="shell">
 <header><a class="brand" href="../index.html">ONTOS / P37 NEURO</a><nav class="nav"><a href="../index.html">Architecture</a><a href="../compare/index.html">Recorded evidence</a><a href="https://ontosrobotics.github.io/P37-Neuro/">Brain Lab ↗</a></nav></header>
 <div class="intro"><div><div class="over">Experimental interface / Kinematics</div><h1>One objective.<br>Different robot bodies.</h1><p class="lead">Move the target. Switch the robot. See how different link lengths and joint constraints affect a common reaching objective.</p></div><div class="note"><strong>Deterministic controller demo</strong>This is a planar inverse-kinematics sandbox, driven by a numerical solver. It does not execute P37 policy weights, MuJoCo physics, learned adaptation, or a validated cross-embodiment benchmark.</div></div>
 <div class="workspace"><div class="topbar"><div><strong>Cross-embodiment / Reach</strong> &nbsp; <span class="tag">Kinematic model only</span></div><div><button id="reset" type="button">Reset target</button> <button id="compare" aria-pressed="false" type="button">Compare all bodies</button></div></div>

@@ -29,6 +29,28 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Typecheck and compile production viewer
         run: npm run build
+      - name: Install browser for actual WebGPU rendering
+        run: npx playwright install --with-deps chrome
+      - name: Capture Skild Steel playground reference
+        run: node scripts/skild-reference.mjs
+      - name: Save Skild Steel benchmark screenshots and computed styles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skild-steel-reference
+          path: docs/interactive-lab/steel/skild-reference/
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Inspect physics startup, environment switching, recorded source and mobile layout
+        run: node scripts/visual-smoke.mjs
+      - name: Keep full-resolution browser screenshots and runtime diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-steel-visual-review
+          path: docs/interactive-lab/steel/visual-evidence/
+          retention-days: 21
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: p37-steel-workcell-static-preview

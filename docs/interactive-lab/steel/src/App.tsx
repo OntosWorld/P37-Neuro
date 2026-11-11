@@ -1,211 +1,368 @@
 import { useEffect, useRef, useState } from 'react';
-import { Physics, Scene, type SceneHandle, type SimStatsSample } from '@skild-ai/steel-webgpu/react';
+import {
+  Physics, Scene, type SceneHandle, type SimStatsSample,
+} from '@skild-ai/steel-webgpu/react';
 import { Workcell, PRESETS, initialItems, nextItemId } from './Workcell';
 import type { LooseItem, ObjectType, Preset, RobotType } from './Workcell';
 import type { SourceFrame } from './SourceTrajectory';
+import { PlaygroundHeader, OntosMark } from './PlaygroundHeader';
+import { SceneGallery } from './SceneGallery';
 
-type SourceData = { publication: { source: string; learned_policy_attached: boolean }; traces: { frames: SourceFrame[] }[] };
-
-
-const CAMERA = {
-  position: [2.65, -3.2, 2.2] as [number,number,number],
-  target: [0, 0, .89] as [number,number,number],
-  fov: 40,
+type SourceData = {
+  publication: { source: string; learned_policy_attached: boolean };
+  traces: { episode_id: string; frames: SourceFrame[] }[];
 };
-function LiveScene({ preset, robot, items, paused, collision, pose,
-  sceneRef, onSample, onReady, onError, sourceFrames, sourcePlaying }: {
-  preset: Preset; robot: RobotType; items: LooseItem[]; paused: boolean; collision: boolean;
-  pose: number; sceneRef: React.RefObject<SceneHandle | null>;
-  onSample: (s: SimStatsSample | null) => void; onReady: () => void; onError: (s: string) => void;
-  sourceFrames: SourceFrame[]; sourcePlaying: boolean;
+type CameraView = 'three-quarter' | 'front' | 'overhead';
+const CAMERAS: Record<CameraView, {
+  position: [number,number,number]; target: [number,number,number]; fov: number;
+}> = {
+  'three-quarter': { position: [2.5,-3.2,2.12], target: [-.02,0,.91], fov: 41 },
+  front: { position: [0,-3.5,1.43], target: [0,0,.88], fov: 39 },
+  overhead: { position: [1.8,-2.0,3.45], target: [0,0,.73], fov: 43 },
+};
+const ROBOTS: {id:RobotType; name:string; detail:string}[] = [
+  {id:'compact', name:'Compact arm', detail:'Reference · shorter arm geometry'},
+  {id:'extended', name:'Extended arm', detail:'Reference · longer arm geometry'},
+];
+const OBJECTS: {id:ObjectType; name:string; detail:string}[] = [
+  {id:'parcel',name:'Parcel',detail:'Cardboard package'},
+  {id:'canister',name:'Canister',detail:'Machined metal cylinder'},
+  {id:'ball',name:'Sphere',detail:'Rubber contact test'},
+  {id:'bin',name:'Bin',detail:'Open storage container'},
+];
+const MAX_ITEMS=12;
+
+function MuJoCoFallback({ reason }: { reason:string }) {
+  const isPublished=location.pathname.includes('/lab/steel/');
+  const remote='https://ontosrobotics.github.io/P37-Neuro/simulator/';
+  const local='../../simulator/';
+  const params='?project=p37_robot_models&scene=franka_panda&panel=0';
+  const url=(isPublished?local:remote)+params;
+  return <div className="mujoco-fallback" role="region" aria-label="MuJoCo fallback simulation">
+    <img className="mujoco-fallback-artwork"
+      src="https://www.ontos.ws/_next/image?url=%2Fontos-general-purpose-robot-v2.png&w=1920&q=75"
+      alt="" aria-hidden="true" decoding="async"/>
+    <iframe
+      className="mujoco-fallback-frame"
+      src={url}
+      title="Official Franka Panda model running browser MuJoCo physics"
+      loading="eager"
+      allow="fullscreen"
+      onLoad={event=>{if(isPublished)event.currentTarget.style.opacity="1";}}
+    />
+    <div className="mujoco-fallback-info">
+      <span className="fallback-tag">ALTERNATIVE PHYSICS ENGINE / MUJOCO</span>
+      <strong>Real robot geometry. Interactive physics.</strong>
+      <p>Steel's WebGPU device could not start on this browser. The manufacturer-derived Franka Panda model remains accessible through our existing MuJoCo simulation. {reason}</p>
+      <a href={isPublished?'../../?robot=franka_panda':'https://ontosrobotics.github.io/P37-Neuro/?robot=franka_panda'}>Open the full Panda simulator ↗</a>
+    </div>
+  </div>;
+}
+function LiveScene({
+  preset, robot, items, paused, collision, pose, baseline, camera,
+  substeps, iterations, sleeping, momentum, sceneRef,
+  onSample, onReady, onError, sourceFrames, sourcePlaying,
+}: {
+  preset: Preset; robot: RobotType; items: LooseItem[]; paused:boolean;
+  collision:boolean; pose:number; baseline:boolean; camera:CameraView;
+  substeps:number; iterations:number; sleeping:boolean; momentum:boolean;
+  sceneRef:React.RefObject<SceneHandle | null>;
+  onSample:(data:SimStatsSample | null)=>void;
+  onReady:()=>void; onError:(message:string)=>void;
+  sourceFrames:SourceFrame[];sourcePlaying:boolean;
 }) {
   return <Physics
-    style={{ position: 'absolute', inset: 0 }}
-    fallback={<div className="viewer-notice"><div className="spinner"/>Requesting Steel WebGPU device...</div>}
-    unsupported={reason => <div className="viewer-notice">
-      <strong>WebGPU unavailable</strong><p>{reason}</p>
-      <p>Try a recent Chrome, Edge or Safari with WebGPU enabled.</p>
+    style={{position:'absolute',inset:0,width:'100%',height:'100%'}}
+    fallback={<div className="viewer-notice">
+      <div className="spinner"/>
+      <strong>Preparing the physical environment</strong>
+      <p>Starting Steel and compiling the workcell on your GPU.</p>
     </div>}
-    onError={e => onError(String(e))}
+    unsupported={reason=><MuJoCoFallback reason={reason}/>} 
+    onError={error=>onError(String(error))}
   >
-    <Scene ref={sceneRef} gravity={[0,0,-9.81]} fps={60} paused={paused} collision={collision}
-      pickable controls camera={CAMERA} onLoaded={onReady} onError={e=>onError(String(e))}>
-      <Workcell preset={preset} robot={robot} items={items} pose={pose} onStats={onSample} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
+    <Scene
+      ref={sceneRef} gravity={[0,0,-9.81]} fps={60}
+      paused={paused} collision={collision}
+      pickable controls camera={CAMERAS[camera]}
+      options={{substeps, iterations, solver:{
+        enable_sleeping:sleeping, nesterov_momentum:momentum,
+      }}}
+      onLoaded={onReady} onError={error=>onError(String(error))}
+    >
+      <Workcell preset={preset} robot={robot} items={items} pose={pose} baseline={baseline}
+        onStats={onSample} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
     </Scene>
   </Physics>;
 }
 export function App() {
-  const [preset, setPreset] = useState<Preset>('workcell');
-  const [robot, setRobot] = useState<RobotType>('compact');
-  const [items, setItems] = useState<LooseItem[]>(() => initialItems('workcell'));
-  const [selectedObject, setSelectedObject] = useState<ObjectType>('parcel');
-  const [pose, setPose] = useState(.18);
-  const [paused, setPaused] = useState(false);
-  const [collision, setCollision] = useState(false);
-  const [status, setStatus] = useState('Requesting WebGPU');
-  const [stats, setStats] = useState<SimStatsSample | null>(null);
-  const [sourceData, setSourceData] = useState<SourceData | null>(null);
-  const [showSource, setShowSource] = useState(false);
-  const [sourceEpisode, setSourceEpisode] = useState(0);
-  const [sourcePlaying, setSourcePlaying] = useState(true);
-  const scene = useRef<SceneHandle>(null);
-  useEffect(() => {
-    if (!showSource || sourceData) return;
-    const abort = new AbortController();
-    const sourceUrl = import.meta.env.BASE_URL + 'samples/mimicgen-square-source.json';
-    fetch(sourceUrl, { signal: abort.signal }).then(async response => {
-      if (!response.ok) throw new Error('Source example is not published in this build');
-      const value = await response.json() as SourceData;
-      if (value.publication?.source !== 'amandlek/mimicgen_datasets' ||
-          value.publication.learned_policy_attached !== false ||
-          value.traces.length < 2 ||
-          value.traces.some(item => item.frames.length < 2 ||
-            item.frames.some(f => ![0, 1, 2].every(i => Number.isFinite(f.state['eef_position_' + i]))))) {
-        throw new Error('Source replay metadata or coordinates invalid');
-      }
+  const [preset,setPreset]=useState<Preset>('workcell');
+  const [robot,setRobot]=useState<RobotType>('compact');
+  const [items,setItems]=useState<LooseItem[]>(()=>initialItems('workcell'));
+  const [selectedObject,setSelectedObject]=useState<ObjectType>('parcel');
+  const [pose,setPose]=useState(.18);
+  const [baseline,setBaseline]=useState(true);
+  const [paused,setPaused]=useState(false);
+  const [collision,setCollision]=useState(false);
+  const [substeps,setSubsteps]=useState(2);
+  const [iterations,setIterations]=useState(8);
+  const [sleeping,setSleeping]=useState(true);
+  const [momentum,setMomentum]=useState(false);
+  const [camera,setCamera]=useState<CameraView>('three-quarter');
+  const [status,setStatus]=useState('Starting Steel WebGPU');
+  const [ready,setReady]=useState(false);
+  const [steelFailed,setSteelFailed]=useState(false);
+  const [stats,setStats]=useState<SimStatsSample | null>(null);
+  const [showControls,setShowControls]=useState(false);
+  const [galleryOpen,setGalleryOpen]=useState(false);
+  const [sourceData,setSourceData]=useState<SourceData | null>(null);
+  const [showSource,setShowSource]=useState(false);
+  const [sourceEpisode,setSourceEpisode]=useState(0);
+  const [sourcePlaying,setSourcePlaying]=useState(true);
+  const scene=useRef<SceneHandle>(null);
+  const stage=useRef<HTMLElement>(null);
+
+  useEffect(()=>{
+    if(!showSource || sourceData)return;
+    const abort=new AbortController();
+    const sourceUrl=import.meta.env.BASE_URL+'samples/mimicgen-square-source.json';
+    fetch(sourceUrl,{signal:abort.signal}).then(async response=>{
+      if(!response.ok)throw new Error('Official recording has not been published in this build');
+      const value=await response.json() as SourceData;
+      if(value.publication?.source!=='amandlek/mimicgen_datasets' ||
+         value.publication?.learned_policy_attached!==false ||
+         !Array.isArray(value.traces) || value.traces.length<2 ||
+         value.traces.some(trace=>trace.frames.length<2 ||
+           trace.frames.some(frame=>![0,1,2].every(i=>
+             Number.isFinite(frame.state['eef_position_'+i])))))
+        throw new Error('Missing or invalid original source evidence');
       setSourceData(value);
-      setStatus('Genuine MimicGen Panda source trajectory loaded');
-    }).catch(error => {
-      if (!abort.signal.aborted) {
-        setStatus('Source data unavailable: ' + String(error));
-        setShowSource(false);
-      }
+      setStatus('Official source path loaded — external recording, no policy');
+    }).catch(error=>{
+      if(abort.signal.aborted)return;
+      setStatus('Could not load verified source data: '+String(error));
+      setShowSource(false);
     });
-    return () => abort.abort();
-  }, [showSource, sourceData]);
-  const changePreset = (next: Preset) => {
-    setPreset(next); setItems(initialItems(next)); setStatus('Loading physics environment');
+    return ()=>abort.abort();
+  },[showSource,sourceData]);
+
+  const changePreset=(next:Preset)=>{
+    if(next===preset)return;
+    setPreset(next);
+    setItems(initialItems(next));
+    setReady(false);
+    setSteelFailed(false);
+    setStatus('Loading '+PRESETS.find(p=>p.id===next)?.label);
   };
-  const reset = () => {
+  const reset=()=>{
     setItems(initialItems(preset));
     scene.current?.reset();
-    setStatus('Resetting scene');
+    setStatus('Physics scene reset');
   };
-  const addItem = () => {
-    if (items.length >= 12) { setStatus('Maximum of 12 loose objects'); return; }
-    const row = items.length % 3, col = Math.floor(items.length / 3) % 3;
-    const position: [number,number,number] = [.10 + row * .23, -.25 + col * .24, 1.3 + Math.floor(items.length / 3) * .16];
-    setItems([...items, { id: nextItemId(), type: selectedObject, position }]);
-    setStatus('Scene rebuilt with added ' + selectedObject);
+  const addItem=()=>{
+    if(items.length>=MAX_ITEMS){setStatus('Object limit reached — reset to clear the scene');return;}
+    const n=items.length,row=n%3,col=Math.floor(n/3)%3;
+    const position:[number,number,number]=[.05+row*.24,-.25+col*.23,1.28+Math.floor(n/3)*.18];
+    setItems(previous=>[...previous,{id:nextItemId(),type:selectedObject,position}]);
+    setStatus('Added physical '+selectedObject+' · resetting solver state');
   };
+  useEffect(()=>{
+    const keydown=(event:KeyboardEvent)=>{
+      if(event.target instanceof HTMLElement &&
+         /^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(event.target.tagName))return;
+      if(event.code==='Space'){event.preventDefault();setPaused(value=>!value);}
+      if(event.key.toLowerCase()==='r')reset();
+      if(event.key==='Escape')setShowControls(false);
+    };
+    window.addEventListener('keydown',keydown);
+    return ()=>window.removeEventListener('keydown',keydown);
+    // The latest reset handler is not needed until the next render; the effect
+    // re-registers when the environment changes.
+  },[preset]);
+  const activeSource=showSource ? sourceData?.traces[sourceEpisode]?.frames ?? [] : [];
   return <div className="app-shell">
-    <header className="site-header">
-      <a className="brand" href="../index.html">ONTOS <span>/ P37 NEURO</span></a>
-      <nav aria-label="Research navigation">
-        <a href="../index.html">Architecture</a>
-        <a href="../compare/index.html?sample=mimicgen">Recorded evidence</a>
-        <a href="https://ontosrobotics.github.io/P37-Neuro/">Existing Brain Lab ↗</a>
-      </nav>
-      <span className="build-tag">EXPERIMENT / 01</span>
-    </header>
-    <main>
-      <div className="title-row">
+    <PlaygroundHeader onScenes={()=>setGalleryOpen(true)}/>
+    <main id="page-content">
+      <section className="intro">
         <div>
-          <span className="overline">Interactive simulation / WebGPU</span>
-          <h1>Robots in a physical world.</h1>
-          <p className="intro">Explore a realistic workcell with articulated reference robots, furniture and movable objects. Contact physics runs directly in your browser.</p>
+          <p className="eyebrow">Live demo / P37-Neuro</p>
+          <h1>Physical experiments in your browser.</h1>
+          <p className="lede">Run live contact physics, explore robot bodies and inspect recorded demonstrations. Choose a scene, pull objects around and adjust the experiment while it runs.</p>
         </div>
-        <div className="hero-note"><strong>About this demonstration</strong>
-          <p>Live Steel physics and a deterministic joint controller. No trained P37-Neuro checkpoint is attached. MimicGen demonstrations are imported separately and never presented as this robot’s learned behavior.</p>
+        <div className="intro-aside">
+          <p>Steel WebGPU contacts · Analytic reference robot controller · No trained P37 policy attached</p>
         </div>
-      </div>
-      <section className="lab-grid" aria-label="Interactive Steel research workcell">
-        <aside className="side-panel">
-          <div className="section-heading"><span>CONFIGURATION</span><span>01 / 04</span></div>
-          <label htmlFor="preset">Environment</label>
-          <select id="preset" value={preset} onChange={e=>changePreset(e.target.value as Preset)}>
-            {PRESETS.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}
-          </select>
-          <p className="helper">{PRESETS.find(p=>p.id===preset)?.detail}</p>
-          <div className="rule"/>
-          <label htmlFor="robot">Reference embodiment</label>
-          <select id="robot" value={robot} onChange={e=>{setRobot(e.target.value as RobotType);setStatus('Switching robot morphology');}}>
-            <option value="compact">P37 reference / compact</option>
-            <option value="extended">P37 reference / extended</option>
-          </select>
-          <p className="helper">Original procedural robots with different link lengths. Neither is a Panda, Sawyer, IIWA or UR5e model.</p>
-          <label htmlFor="pose">Shoulder target <output>{pose.toFixed(2)} rad</output></label>
-          <input id="pose" type="range" min="-1.2" max="1.2" step=".01" value={pose} onChange={e=>setPose(Number(e.target.value))}/>
-          <div className="rule"/>
-          <label htmlFor="item">Add real-world object</label>
-          <select id="item" value={selectedObject} onChange={e=>setSelectedObject(e.target.value as ObjectType)}>
-            <option value="parcel">Cardboard parcel</option>
-            <option value="canister">Metal canister</option>
-            <option value="ball">Rubber ball</option>
-            <option value="bin">Storage bin</option>
-          </select>
-          <button className="primary" onClick={addItem}>+ Drop object into scene</button>
-          <p className="helper">Objects have mass and contact geometry. Adding an object rebuilds the scene, resetting existing bodies.</p>
-          <div className="rule"/>
-          <label>Source-data replay</label>
-          <button className="primary" onClick={() => setShowSource(!showSource)}>
-            {showSource ? 'Hide recorded path' : 'Show real MimicGen motion'}
-          </button>
-          {showSource && sourceData && <>
-            <label htmlFor="source-episode">Recorded episode</label>
-            <select id="source-episode" value={sourceEpisode} onChange={e=>setSourceEpisode(Number(e.target.value))}>
-              <option value={0}>Panda / Source episode 0</option>
-              <option value={1}>Panda / Source episode 1</option>
-            </select>
-            <button onClick={() => setSourcePlaying(!sourcePlaying)}>
-              {sourcePlaying ? 'Pause recorded motion' : 'Play recorded motion'}
-            </button>
-          </>}
-          <p className="helper">The green line and moving marker follow original source end-effector coordinates, independent of the reference arm. This is P37 data playback, not trained policy inference or verified contact replay.</p>
-          <div className="rule"/>
-          <a className="small-link" href="https://huggingface.co/datasets/amandlek/mimicgen_datasets" target="_blank" rel="noreferrer">MimicGen source dataset ↗</a>
-          <a className="small-link" href="../compare/index.html?sample=mimicgen">Watch official source motion in P37 ↗</a>
-        </aside>
-        <div className="viewport">
-          <div className="viewport-top">
-            <div><span className="live-dot"/> LIVE GPU PHYSICS <span className="muted">/ Steel WebGPU</span></div>
-            <span>REFERENCE ROBOT · NO TRAINED POLICY</span>
-          </div>
-          <div className="canvas-wrap">
-            <LiveScene key={preset + '-' + robot} preset={preset} robot={robot} items={items}
-              paused={paused} collision={collision} pose={pose} sceneRef={scene}
-              onSample={setStats} onReady={()=>setStatus('Steel physics active')}
-              onError={setStatus} sourceFrames={showSource ? (sourceData?.traces[sourceEpisode]?.frames ?? []) : []}
-              sourcePlaying={showSource && sourcePlaying && !paused}/>
-            <div className="camera-tip">DRAG OBJECTS TO PULL · DRAG EMPTY SPACE TO ORBIT</div>
-          </div>
-          <div className="viewport-controls">
-            <div className="action-row">
-              <button onClick={()=>setPaused(!paused)}>{paused ? '▶ Resume' : 'Ⅱ Pause'}</button>
-              <button onClick={reset}>↻ Reset</button>
-              <button aria-pressed={collision} onClick={()=>setCollision(!collision)}>
-                {collision ? 'Hide collision geometry' : 'Show collision geometry'}
-              </button>
-            </div>
-            <div className="status-line" role="status">{status}</div>
-          </div>
-        </div>
-        <aside className="evidence-panel">
-          <div className="section-heading"><span>EXPERIMENT STATUS</span><span>02 / 04</span></div>
-          <div className="info-row"><span>Physics backend</span><strong>Steel / WebGPU</strong></div>
-          <div className="info-row"><span>Simulation time</span><strong>{stats ? stats.time.toFixed(1) + ' s' : '—'}</strong></div>
-          <div className="info-row"><span>Solver contacts</span><strong>{stats?.contacts ?? '—'}</strong></div>
-          <div className="info-row"><span>Movable objects</span><strong>{items.length}</strong></div>
-          <div className="info-row"><span>Robot geometry</span><strong>{robot}</strong></div>
-          <div className="info-row"><span>Recorded dataset</span><strong>{showSource ? "MimicGen Panda source" : "None"}</strong></div>
-          <div className="rule"/>
-          <div className="section-cap">What is running</div>
-          <p className="evidence-copy">Steel simulates rigid-body contacts. The reference robot receives deterministic joint position commands. All furniture and materials were created for this demo.</p>
-          <div className="flag">Policy checkpoint: <b>None</b><br/>MimicGen model training: <b>Not executed</b><br/>Recorded source playback: <b>{showSource ? "Active" : "Off"}</b><br/>Learned cross-body transfer: <b>Unverified</b></div>
-          <div className="section-cap">P37 integration</div>
-          <p className="evidence-copy">The <a href="../compare/index.html">recorded experiment viewer</a> accepts canonical P37 episodes. The MimicGen HDF5 adapter preserves dataset-native actions without claiming they are joint commands.</p>
-        </aside>
       </section>
-      <section className="bottom-grid">
-        <div><span className="overline">01 / Physics</span><h2>Interact with the scene.</h2><p>A table, chair, monitor and loose objects have physical collision geometry. Studio lighting and procedural materials provide a realistic industrial workcell.</p></div>
-        <div><span className="overline">02 / Training data</span><h2>Work with published demonstrations.</h2><p>MimicGen supplies HDF5 manipulation data from Panda, Sawyer, IIWA and UR5e. The P37 adapter imports recorded observations and controller-native actions for inspection.</p></div>
-        <div><span className="overline">03 / Qualification</span><h2>Measure before claiming.</h2><p>Actual P37 checkpoints and held-out task evaluation are required for learned transfer claims. An interactive physics workcell is a separate engineering milestone.</p></div>
+      <section ref={stage} className="experiment-stage" aria-label="Interactive industrial robot simulation">
+        <div className="stage-canvas">
+
+
+          {steelFailed&&<MuJoCoFallback reason="The WebGPU device or pipeline was lost."/>}
+          <LiveScene key={[preset,robot,substeps,iterations,sleeping,momentum].join('-')} preset={preset} robot={robot}
+            items={items} paused={paused} collision={collision} pose={pose} baseline={baseline}
+            substeps={substeps} iterations={iterations} sleeping={sleeping} momentum={momentum}
+            camera={camera} sceneRef={scene}
+            onSample={setStats}
+            onReady={()=>{setReady(true);setSteelFailed(false);setStatus('Steel physical environment active');}}
+            onError={message=>{setReady(false);setSteelFailed(true);setStatus('Steel unavailable: '+message);}}
+            sourceFrames={activeSource} sourcePlaying={showSource&&sourcePlaying&&!paused}/>
+          <div className="stage-top" aria-hidden="true">
+            <div className="stage-caption">
+              <span className="stage-kicker">LIVE EXPERIMENT</span>
+              <strong>{PRESETS.find(p=>p.id===preset)?.label}</strong>
+              <span>DETERMINISTIC REFERENCE CONTROL</span>
+            </div>
+            <div className="live-status"><span className={ready?'status-light active':'status-light'}/>
+              {ready?'WEBGPU / LIVE':steelFailed?'MUJOCO / FALLBACK':'WEBGPU / STARTING'}
+            </div>
+          </div>
+          <div className="pg-scene-current">
+            <span>Scene / {PRESETS.find(p=>p.id===preset)?.label}</span>
+            <button type="button" onClick={()=>setGalleryOpen(true)} aria-haspopup="dialog">
+              Choose scene <span aria-hidden="true">▦</span>
+            </button>
+          </div>
+          <div className="stage-bottom">
+            <div className="scene-hint">DRAG AN OBJECT TO PULL IT <span>·</span> DRAG EMPTY SPACE TO ORBIT</div>
+            <div className="camera-switch" role="group" aria-label="Camera angle">
+              <button className={camera==='three-quarter'?'active':''} onClick={()=>setCamera('three-quarter')} aria-pressed={camera==='three-quarter'}>3/4</button>
+              <button className={camera==='front'?'active':''} onClick={()=>setCamera('front')} aria-pressed={camera==='front'}>Front</button>
+              <button className={camera==='overhead'?'active':''} onClick={()=>setCamera('overhead')} aria-pressed={camera==='overhead'}>Top</button>
+            </div>
+          </div>
+          {showSource&&<div className="source-overlay">
+            <span className="source-dot"/> EXTERNAL SOURCE TRAJECTORY / MIMICGEN
+            <small>This path does not drive the reference robot.</small>
+          </div>}
+        </div>
+        <div className="command-bar" id="interaction-controls">
+          <button className="pg-scenes-trigger" onClick={()=>setGalleryOpen(true)} type="button">Scenes ▦</button>
+          <div className="command-leading">
+            <span className="command-label">OBJECT INTERACTION</span>
+            <select aria-label="Object type" value={selectedObject}
+              onChange={e=>setSelectedObject(e.target.value as ObjectType)}>
+              {OBJECTS.map(o=><option key={o.id} value={o.id}>{o.name}</option>)}
+            </select>
+            <button className="primary-action" onClick={addItem}>+ Drop into scene</button>
+          </div>
+          <div className="command-actions">
+            <button type="button" className={baseline?'baseline-on':''}
+              aria-pressed={baseline} onClick={()=>{setBaseline(!baseline);setStatus(baseline?'Manual joint control':'Analytic reach baseline active');}}>
+              {baseline?'◉ Reach baseline':'▶ Run reach baseline'}
+            </button>
+            <button type="button" onClick={()=>setPaused(!paused)}>{paused?'▶ Resume':'Ⅱ Pause'}</button>
+            <button type="button" onClick={reset}>↻ Reset</button>
+            <button type="button" aria-expanded={showControls} aria-controls="lab-settings"
+              onClick={()=>setShowControls(!showControls)}>{showControls?'Close controls':'Controls'} <span>☷</span></button>
+            <button type="button" className="fullscreen" onClick={()=>{
+              if(document.fullscreenElement)void document.exitFullscreen();
+              else if(stage.current?.requestFullscreen)void stage.current.requestFullscreen();
+            }}>⛶ <span>Expand</span></button>
+          </div>
+          <span className="sim-status" role="status">{status}</span>
+        </div>
+        {showControls&&<aside className="controls-drawer" id="lab-settings" aria-label="Experiment controls">
+          <div className="drawer-head"><div><span className="eyebrow">ENGINEERING CONTROLS</span><h2>Workcell configuration</h2></div><button onClick={()=>setShowControls(false)} aria-label="Close experiment controls">×</button></div>
+          <div className="drawer-fields">
+            <label htmlFor="robot">Robot morphology</label>
+            <select id="robot" value={robot} onChange={e=>{setRobot(e.target.value as RobotType);setReady(false);setStatus('Switching reference body');}}>
+              {ROBOTS.map(r=><option value={r.id} key={r.id}>{r.name} / {r.detail}</option>)}
+            </select>
+            <p className="field-explain">Original procedural arms with different link dimensions. Neither is a manufacturer model.</p>
+            <p className="field-explain">The reach cycle uses analytic inverse kinematics and joint position targets. It is deterministic and does not demonstrate learned P37 behavior or successful grasping.</p>
+            <label htmlFor="pose">Manual shoulder target <output>{pose.toFixed(2)} rad</output></label>
+            <input id="pose" type="range" min="-1.2" max="1.2" step=".01"
+              value={pose} disabled={baseline} onChange={e=>setPose(Number(e.target.value))}/>
+            <div className="pg-solver-heading">Solver settings</div>
+            <div className="pg-solver-grid">
+              <label htmlFor="pg-substeps">Substeps</label>
+              <select id="pg-substeps" value={substeps} onChange={event=>setSubsteps(Number(event.target.value))}>
+                {[1,2,3,4,5,6,7,8].map(n=><option key={n} value={n}>{n}</option>)}
+              </select>
+              <label htmlFor="pg-iterations">Iterations</label>
+              <select id="pg-iterations" value={iterations} onChange={event=>setIterations(Number(event.target.value))}>
+                {[4,6,8,10,12,16,20,24,32].map(n=><option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+            <label className="pg-switch"><input type="checkbox" checked={sleeping}
+              onChange={event=>setSleeping(event.target.checked)}/> Sleeping</label>
+            <label className="pg-switch"><input type="checkbox" checked={momentum}
+              onChange={event=>setMomentum(event.target.checked)}/> Momentum</label>
+            <button className="outline-action" aria-pressed={collision}
+              onClick={()=>setCollision(!collision)}>{collision?'Hide collision geometry':'Inspect collision geometry'}</button>
+          </div>
+          <div className="drawer-fields">
+            <p className="eyebrow">OFFLINE DATA / ATTRIBUTED</p>
+            <button className="outline-action" onClick={()=>setShowSource(!showSource)}>
+              {showSource?'Hide original recorded trajectory':'Show genuine MimicGen motion'}
+            </button>
+            {showSource&&sourceData&&<>
+              <label htmlFor="episode">Recorded episode</label>
+              <select id="episode" value={sourceEpisode}
+                onChange={e=>setSourceEpisode(Number(e.target.value))}>
+                {sourceData.traces.map((trace,i)=><option value={i} key={trace.episode_id}>
+                  Panda source recording {i+1}
+                </option>)}
+              </select>
+              <button className="outline-action" onClick={()=>setSourcePlaying(!sourcePlaying)}>
+                {sourcePlaying?'Pause original recording':'Play original recording'}
+              </button>
+            </>}
+            <p className="field-explain">The path comes from external MimicGen data. It visualizes source observations and does not actuate this reference arm.</p>
+            <a className="inline-link" href="../compare/?sample=mimicgen">Inspect original joint states and actions ↗</a>
+          </div>
+        </aside>}
+      </section>
+      {galleryOpen&&<SceneGallery current={preset} onClose={()=>setGalleryOpen(false)}
+        onSelect={(next)=>{changePreset(next);setGalleryOpen(false);}}/>}
+
+      <section className="experiment-ledger" aria-label="Physics and model provenance">
+        <div><span className="ledger-number">01 / SOLVER</span><strong>Steel WebGPU</strong><p>Real-time rigid-body contact and articulated dynamics.</p></div>
+        <div><span className="ledger-number">02 / SCENE</span><strong>{items.length} movable objects</strong><p>Industrial workcell, authored materials and physical furniture.</p></div>
+        <div><span className="ledger-number">03 / CONTROL</span><strong>Deterministic baseline</strong><p>Reference robot joint targets. No P37 policy checkpoint.</p></div>
+        <div><span className="ledger-number">04 / MEASUREMENT</span><strong>{stats?stats.contacts:'—'} solver contacts</strong><p>Simulation time {stats?stats.time.toFixed(1)+' s':'—'} · not a task success metric.</p></div>
+      </section>
+      <section className="research-strip">
+        <div><span className="eyebrow">SOURCE DATA / TRANSPARENT EVIDENCE</span>
+          <h2>Inspect a real robot recording.</h2>
+          <p>Two original MimicGen Panda demonstrations are available through P37’s episode normalization and trace playback. They show genuine recorded observations. They do not establish learned P37 cross-embodiment transfer.</p>
+          <div className="research-actions">
+            <a href="../compare/?sample=mimicgen" className="research-primary">Play recorded episodes ↗</a>
+            <a href="../../?robot=franka_panda">Explore official Panda model ↗</a>
+          </div>
+        </div>
+        <div className="research-stat">
+          <span>VERIFIED SOURCE / MIMICGEN</span>
+          <strong>250</strong>
+          <span>recorded frames across two source episodes</span>
+          <p>These recordings are offline data. The 3D workcell uses procedural reference geometry and independent interactive physics.</p>
+        </div>
       </section>
     </main>
-    <footer><span>© 2026 ONTOS / P37 NEURO</span><span>
-      <a href="https://github.com/OntosRobotics/P37-Neuro">Source ↗</a> ·
-      <a href="https://github.com/skild-ai/steel-webgpu">Steel ↗</a> ·
-      <a href="https://mimicgen.github.io/">MimicGen ↗</a>
-    </span></footer>
+    <footer className="footer">
+      <a className="footer-logo" href="https://www.ontos.ws/"><OntosMark size={23}/>ONTOS</a>
+      <div className="footer-columns">
+        <div><strong>Work</strong>
+          <a href="https://www.ontos.ws/products">Systems</a>
+          <a href="https://www.ontos.ws/research">Research</a>
+          <a href="../../">Brain Lab</a>
+        </div>
+        <div><strong>Lab</strong>
+          <a href="../../demos/">Simulations</a>
+          <a href="../compare/?sample=mimicgen">Recorded data</a>
+          <a href="https://github.com/OntosRobotics/P37-Neuro">Source</a>
+        </div>
+        <div><strong>Company</strong>
+          <a href="https://www.ontos.ws/about">About</a>
+          <a href="https://www.ontos.ws/contact">Contact</a>
+          <a href="https://www.ontos.ws/physical-ai">Technology</a>
+        </div>
+      </div>
+      <div className="footer-bottom">
+        <span>© 2026 Ontos</span>
+        <span>Research interface / P37-Neuro</span>
+        <a href="https://www.ontos.ws/">Official website ↗</a>
+      </div>
+    </footer>
   </div>;
 }
