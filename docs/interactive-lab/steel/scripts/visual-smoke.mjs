@@ -63,7 +63,7 @@ try{
    hasAccessibleSceneGallery:!!document.querySelector('.pg-menu-button')};
  });
  evidence.layout=layout;
- if(layout.bg!=='rgb(22, 25, 28)'||layout.height!==56 ||
+ if(layout.bg!=='rgb(255, 255, 255)'||layout.height!==68 ||
   layout.stageWidth<1200||!layout.hasAccessibleSceneGallery)
   throw Error('Steel reference layout mismatch: '+JSON.stringify(layout));
  const firstMode=await mode();
