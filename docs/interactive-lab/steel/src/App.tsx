@@ -174,18 +174,19 @@ export function App() {
   return <div className="app-shell">
     <PlaygroundHeader onScenes={()=>setGalleryOpen(true)}/>
     <main id="page-content">
-      <section ref={stage} className="experiment-stage" aria-label="Interactive industrial robot simulation">
-        <div className="stage-canvas">
       <section className="intro">
         <div>
-          <p className="eyebrow">P37 / LIVE EXPERIMENT</p>
-          <h1>Steel Workcell</h1>
-          <p className="lede">Physical objects, robot joints and recorded source trajectories. Drag objects to pull them, then change the environment.</p>
+          <p className="eyebrow">Live demo / P37-Neuro</p>
+          <h1>Physical experiments in your browser.</h1>
+          <p className="lede">Run live contact physics, explore robot bodies and inspect recorded demonstrations. Choose a scene, pull objects around and adjust the experiment while it runs.</p>
         </div>
         <div className="intro-aside">
           <p>Steel WebGPU contacts · Analytic reference robot controller · No trained P37 policy attached</p>
         </div>
       </section>
+      <section ref={stage} className="experiment-stage" aria-label="Interactive industrial robot simulation">
+        <div className="stage-canvas">
+
 
           {steelFailed&&<MuJoCoFallback reason="The WebGPU device or pipeline was lost."/>}
           <LiveScene key={preset+'-'+robot} preset={preset} robot={robot}
