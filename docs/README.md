@@ -8,6 +8,8 @@ Documentation is organized by responsibility. Each document should have one clea
 
 - [Cross-Embodiment Interactive Lab](interactive-lab/README.md) — a clearly labeled architecture explorer with task/embodiment controls, links to the current browser physics viewer, and reproducible-evidence requirements. [Open local web page](interactive-lab/index.html).
 
+- [Steel WebGPU Physics Workcell](interactive-lab/steel/README.md) — standalone physics viewer with furnished tabletop scenes, movable objects, reference URDF arms and optional MimicGen offline data bridge; requires an independent build and has no trained P37 checkpoint attached.
+
 ## Start here
 
 New users should begin with the repository [Quickstart](../QUICKSTART.md).
