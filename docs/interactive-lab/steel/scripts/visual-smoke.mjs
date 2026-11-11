@@ -76,6 +76,12 @@ try{
  await page.getByRole('button',{name:/Controls/}).click();
  await page.locator('#robot').selectOption('extended');
  await mode();
+ await page.locator('#pg-substeps').selectOption('4');
+ await page.locator('#pg-iterations').selectOption('12');
+ if(await page.locator('#pg-substeps').inputValue()!=='4' ||
+    await page.locator('#pg-iterations').inputValue()!=='12')
+   throw Error('Steel solver tuning controls failed');
+ await mode();
  await capture('steel-03-extended-controls.png');
  const response=await page.request.get(address+'samples/mimicgen-square-source.json');
  if(!response.ok())throw Error('MimicGen source recording is missing');
