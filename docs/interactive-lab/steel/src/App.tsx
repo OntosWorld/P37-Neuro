@@ -5,7 +5,8 @@ import {
 import { Workcell, PRESETS, initialItems, nextItemId } from './Workcell';
 import type { LooseItem, ObjectType, Preset, RobotType } from './Workcell';
 import type { SourceFrame } from './SourceTrajectory';
-import { OfficialHeader, OntosMark } from './OfficialHeader';
+import { PlaygroundHeader, OntosMark } from './PlaygroundHeader';
+import { SceneGallery } from './SceneGallery';
 
 type SourceData = {
   publication: { source: string; learned_policy_attached: boolean };
@@ -104,6 +105,7 @@ export function App() {
   const [steelFailed,setSteelFailed]=useState(false);
   const [stats,setStats]=useState<SimStatsSample | null>(null);
   const [showControls,setShowControls]=useState(false);
+  const [galleryOpen,setGalleryOpen]=useState(false);
   const [sourceData,setSourceData]=useState<SourceData | null>(null);
   const [showSource,setShowSource]=useState(false);
   const [sourceEpisode,setSourceEpisode]=useState(0);
@@ -170,32 +172,18 @@ export function App() {
   },[preset]);
   const activeSource=showSource ? sourceData?.traces[sourceEpisode]?.frames ?? [] : [];
   return <div className="app-shell">
-    <OfficialHeader/>
-    <div className="lab-nav" aria-label="P37-Neuro navigation">
-      <span>ONTOS <b>/</b> P37-NEURO <b>/</b> PHYSICS</span>
-      <nav>
-        <a href="../../">Brain Lab</a>
-        <a href="../../demos/">Simulations</a>
-        <a href="../compare/?sample=mimicgen">Recorded evidence</a>
-        <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noreferrer">Source ↗</a>
-      </nav>
-    </div>
+    <PlaygroundHeader onScenes={()=>setGalleryOpen(true)}/>
     <main id="page-content">
       <section ref={stage} className="experiment-stage" aria-label="Interactive industrial robot simulation">
         <div className="stage-canvas">
       <section className="intro">
         <div>
-          <p className="eyebrow">P37-Neuro / Experimental workcell</p>
-          <h1>Intelligence in the physical world.</h1>
-          <p className="lede">Explore real-time robot dynamics. Move objects, change the environment and inspect two reference robot configurations in an interactive simulation.</p>
-          <div className="hero-actions">
-            <a className="hero-action-primary" href="#interaction-controls">Explore workcell <span aria-hidden="true">↗</span></a>
-            <a className="hero-action-secondary" href="../compare/?sample=mimicgen">View recorded data <span aria-hidden="true">↗</span></a>
-          </div>
+          <p className="eyebrow">P37 / LIVE EXPERIMENT</p>
+          <h1>Steel Workcell</h1>
+          <p className="lede">Physical objects, robot joints and recorded source trajectories. Drag objects to pull them, then change the environment.</p>
         </div>
         <div className="intro-aside">
-          <span className="status-circle"/>
-          <p>Interactive Steel physics with a deterministic reference controller. <strong>There is no trained P37 checkpoint attached.</strong></p>
+          <p>Steel WebGPU contacts · Analytic reference robot controller · No trained P37 policy attached</p>
         </div>
       </section>
 
@@ -217,12 +205,11 @@ export function App() {
               {ready?'WEBGPU / LIVE':steelFailed?'MUJOCO / FALLBACK':'WEBGPU / STARTING'}
             </div>
           </div>
-          <div className="scene-tabs" role="group" aria-label="Choose physical environment">
-            {PRESETS.map((entry,i)=><button
-              key={entry.id} type="button" className={preset===entry.id?'scene-tab active':'scene-tab'}
-              onClick={()=>changePreset(entry.id)} aria-pressed={preset===entry.id}>
-              <span>{String(i+1).padStart(2,'0')}</span>{entry.label}
-            </button>)}
+          <div className="pg-scene-current">
+            <span>Scene / {PRESETS.find(p=>p.id===preset)?.label}</span>
+            <button type="button" onClick={()=>setGalleryOpen(true)} aria-haspopup="dialog">
+              Choose scene <span aria-hidden="true">▦</span>
+            </button>
           </div>
           <div className="stage-bottom">
             <div className="scene-hint">DRAG AN OBJECT TO PULL IT <span>·</span> DRAG EMPTY SPACE TO ORBIT</div>
@@ -238,6 +225,7 @@ export function App() {
           </div>}
         </div>
         <div className="command-bar" id="interaction-controls">
+          <button className="pg-scenes-trigger" onClick={()=>setGalleryOpen(true)} type="button">Scenes ▦</button>
           <div className="command-leading">
             <span className="command-label">OBJECT INTERACTION</span>
             <select aria-label="Object type" value={selectedObject}
@@ -299,6 +287,8 @@ export function App() {
           </div>
         </aside>}
       </section>
+      {galleryOpen&&<SceneGallery current={preset} onClose={()=>setGalleryOpen(false)}
+        onSelect={(next)=>{changePreset(next);setGalleryOpen(false);}}/>}
 
       <section className="experiment-ledger" aria-label="Physics and model provenance">
         <div><span className="ledger-number">01 / SOLVER</span><strong>Steel WebGPU</strong><p>Real-time rigid-body contact and articulated dynamics.</p></div>
