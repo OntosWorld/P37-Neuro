@@ -5,7 +5,7 @@
   ],
   "license": "CC BY 4.0",
   "policy_attached": false,
-  "produced_by": "ba36fea2f2de3935bd75e980f9b680fda5770e8c",
+  "produced_by": "8ccc8c696f451ec9374a639d6d1b81a5856337fd",
   "source": "https://huggingface.co/datasets/amandlek/mimicgen_datasets/resolve/main/source/square.hdf5",
   "source_sha256": "c917e99362fd9bd11978d6e2642c1ea88272702fbf55b50367ed471febf550e2",
   "status": "source data replay, no learned model"
