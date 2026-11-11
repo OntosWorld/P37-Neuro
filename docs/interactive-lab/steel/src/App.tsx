@@ -59,11 +59,13 @@ function MuJoCoFallback({ reason }: { reason:string }) {
   </div>;
 }
 function LiveScene({
-  preset, robot, items, paused, collision, pose, baseline, camera, sceneRef,
+  preset, robot, items, paused, collision, pose, baseline, camera,
+  substeps, iterations, sleeping, momentum, sceneRef,
   onSample, onReady, onError, sourceFrames, sourcePlaying,
 }: {
   preset: Preset; robot: RobotType; items: LooseItem[]; paused:boolean;
   collision:boolean; pose:number; baseline:boolean; camera:CameraView;
+  substeps:number; iterations:number; sleeping:boolean; momentum:boolean;
   sceneRef:React.RefObject<SceneHandle | null>;
   onSample:(data:SimStatsSample | null)=>void;
   onReady:()=>void; onError:(message:string)=>void;
@@ -83,6 +85,9 @@ function LiveScene({
       ref={sceneRef} gravity={[0,0,-9.81]} fps={60}
       paused={paused} collision={collision}
       pickable controls camera={CAMERAS[camera]}
+      options={{substeps, iterations, solver:{
+        enable_sleeping:sleeping, nesterov_momentum:momentum,
+      }}}
       onLoaded={onReady} onError={error=>onError(String(error))}
     >
       <Workcell preset={preset} robot={robot} items={items} pose={pose} baseline={baseline}
@@ -99,6 +104,10 @@ export function App() {
   const [baseline,setBaseline]=useState(true);
   const [paused,setPaused]=useState(false);
   const [collision,setCollision]=useState(false);
+  const [substeps,setSubsteps]=useState(2);
+  const [iterations,setIterations]=useState(8);
+  const [sleeping,setSleeping]=useState(true);
+  const [momentum,setMomentum]=useState(false);
   const [camera,setCamera]=useState<CameraView>('three-quarter');
   const [status,setStatus]=useState('Starting Steel WebGPU');
   const [ready,setReady]=useState(false);
@@ -189,8 +198,9 @@ export function App() {
 
 
           {steelFailed&&<MuJoCoFallback reason="The WebGPU device or pipeline was lost."/>}
-          <LiveScene key={preset+'-'+robot} preset={preset} robot={robot}
+          <LiveScene key={[preset,robot,substeps,iterations,sleeping,momentum].join('-')} preset={preset} robot={robot}
             items={items} paused={paused} collision={collision} pose={pose} baseline={baseline}
+            substeps={substeps} iterations={iterations} sleeping={sleeping} momentum={momentum}
             camera={camera} sceneRef={scene}
             onSample={setStats}
             onReady={()=>{setReady(true);setSteelFailed(false);setStatus('Steel physical environment active');}}
@@ -263,6 +273,21 @@ export function App() {
             <label htmlFor="pose">Manual shoulder target <output>{pose.toFixed(2)} rad</output></label>
             <input id="pose" type="range" min="-1.2" max="1.2" step=".01"
               value={pose} disabled={baseline} onChange={e=>setPose(Number(e.target.value))}/>
+            <div className="pg-solver-heading">Solver settings</div>
+            <div className="pg-solver-grid">
+              <label htmlFor="pg-substeps">Substeps</label>
+              <select id="pg-substeps" value={substeps} onChange={event=>setSubsteps(Number(event.target.value))}>
+                {[1,2,3,4,5,6,7,8].map(n=><option key={n} value={n}>{n}</option>)}
+              </select>
+              <label htmlFor="pg-iterations">Iterations</label>
+              <select id="pg-iterations" value={iterations} onChange={event=>setIterations(Number(event.target.value))}>
+                {[4,6,8,10,12,16,20,24,32].map(n=><option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
+            <label className="pg-switch"><input type="checkbox" checked={sleeping}
+              onChange={event=>setSleeping(event.target.checked)}/> Sleeping</label>
+            <label className="pg-switch"><input type="checkbox" checked={momentum}
+              onChange={event=>setMomentum(event.target.checked)}/> Momentum</label>
             <button className="outline-action" aria-pressed={collision}
               onClick={()=>setCollision(!collision)}>{collision?'Hide collision geometry':'Inspect collision geometry'}</button>
           </div>
