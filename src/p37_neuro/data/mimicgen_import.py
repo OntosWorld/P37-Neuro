@@ -52,7 +52,7 @@ def list_demos(path: str | Path) -> list[str]:
     with _h5py().File(path, "r") as file:
         if "data" not in file:
             raise ValueError("invalid robomimic HDF5: missing data group")
-        return sorted(str(name) for name in file["data"].keys() if str(name).startswith("demo_"))
+        return sorted(str(name) for name in file["data"] if str(name).startswith("demo_"))
 
 
 def _matrix(group: Any, key: str, rows: int | None = None) -> Any:
