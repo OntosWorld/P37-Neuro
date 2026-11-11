@@ -37,13 +37,15 @@ def add_interactive_lab(output: Path) -> None:
     shutil.copytree(steel_dist, lab / "steel")
     # Both public demonstrations and the original robot library stay available.
     for rel in (
-        "index.html", "sim/index.html", "compare/index.html",
-        "compare/samples/mimicgen-square-source.json", "steel/index.html",
+        "index.html",
+        "sim/index.html",
+        "compare/index.html",
+        "compare/samples/mimicgen-square-source.json",
+        "steel/index.html",
         "steel/samples/mimicgen-square-source.json",
     ):
         if not (lab / rel).is_file():
             raise ValueError(f"incomplete assembled lab: {rel}")
-
 
 
 def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
