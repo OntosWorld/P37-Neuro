@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap');
 /* White editorial shell from live Skild Steel page; dark in-browser workcell
    follows the Apache-licensed steel-webgpu playground UI. */
 :root{--site-bg:#fff;--site-text:#1b2b28;--site-muted:#5f7166;--site-border:#dae1dc;
