@@ -10,6 +10,42 @@ from pathlib import Path
 from catalog import ROBOTS
 
 ROOT = Path(__file__).resolve().parent
+REPOSITORY = ROOT.parents[1]
+LAB = REPOSITORY / "docs" / "interactive-lab"
+
+
+def add_interactive_lab(output: Path) -> None:
+    """Publish additive research pages, never replacing the Brain Lab root."""
+    if not LAB.is_dir():
+        raise FileNotFoundError("missing cross-embodiment lab source directory")
+    steel_dist = LAB / "steel" / "dist"
+    if not (steel_dist / "index.html").is_file():
+        raise FileNotFoundError("Build the Steel WebGPU app before assembling the public site")
+    lab = output / "lab"
+    lab.mkdir(parents=True, exist_ok=True)
+    for rel in ("index.html", "sim/index.html", "compare/index.html"):
+        source = LAB / rel
+        if not source.is_file():
+            raise FileNotFoundError(f"missing lab page: {rel}")
+        destination = lab / rel
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, destination)
+    source_samples = LAB / "compare" / "samples"
+    if not (source_samples / "mimicgen-square-source.json").is_file():
+        raise FileNotFoundError("missing authenticated MimicGen replay artifact")
+    shutil.copytree(source_samples, lab / "compare" / "samples")
+    shutil.copytree(steel_dist, lab / "steel")
+    # Both public demonstrations and the original robot library stay available.
+    for rel in (
+        "index.html",
+        "sim/index.html",
+        "compare/index.html",
+        "compare/samples/mimicgen-square-source.json",
+        "steel/index.html",
+        "steel/samples/mimicgen-square-source.json",
+    ):
+        if not (lab / rel).is_file():
+            raise ValueError(f"incomplete assembled lab: {rel}")
 
 
 def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
@@ -73,6 +109,7 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
             raise ValueError("Demo experiment data is incomplete or overclaims capability")
         shutil.copy2(demo_evidence, demos / "evidence.json")
     shutil.copytree(viewer, output / "simulator")
+    add_interactive_lab(output)
     return output
 
 

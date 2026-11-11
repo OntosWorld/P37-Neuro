@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - "sim/web/**"
+      - "docs/interactive-lab/**"
       - ".github/workflows/browser-brain-lab.yml"
   push:
     branches: [main]
@@ -53,6 +54,15 @@ jobs:
           node --check sim/web/demos/demos.js
       - name: Build MuJoCo WebAssembly + ten robot scenes
         run: python sim/web/build_mjswan.py --menagerie _menagerie --base-path /simulator/
+      - name: Setup Node for Steel WebGPU workcell
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Build additive Steel WebGPU research workcell
+        working-directory: docs/interactive-lab/steel
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
       - name: Assemble and validate static website
         run: |
           python sim/web/assemble_site.py --output _site --demo-evidence _demo_evidence.json
@@ -70,6 +80,11 @@ jobs:
           assert Path("_site/studio.js").is_file()
           assert Path("_site/demos/index.html").is_file()
           assert Path("_site/demos/evidence.json").is_file()
+          assert Path("_site/lab/index.html").is_file()
+          assert Path("_site/lab/sim/index.html").is_file()
+          assert Path("_site/lab/compare/samples/mimicgen-square-source.json").is_file()
+          assert Path("_site/lab/steel/index.html").is_file()
+          assert Path("_site/lab/steel/samples/mimicgen-square-source.json").is_file()
           print("Built real robot scenes:", sorted(scenes))
           PY
       - name: Record provenance
