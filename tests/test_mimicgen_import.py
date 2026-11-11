@@ -21,28 +21,31 @@ def demo_file(tmp_path: Path) -> Path:
         group = file.create_group("data/demo_0")
         group.create_dataset(
             "actions",
-            data=np.array([[.1, -.2, .5], [.3, .4, .2], [-.1, .2, .8]]),
+            data=np.array([[0.1, -0.2, 0.5], [0.3, 0.4, 0.2], [-0.1, 0.2, 0.8]]),
         )
         obs = group.create_group("obs")
         obs.create_dataset(
             "robot0_joint_pos",
-            data=np.array([[.0, .2], [.1, .4], [.3, .6]]),
+            data=np.array([[0.0, 0.2], [0.1, 0.4], [0.3, 0.6]]),
         )
         obs.create_dataset(
             "robot0_joint_vel",
-            data=np.array([[.0, .0], [.1, .2], [.2, .3]]),
+            data=np.array([[0.0, 0.0], [0.1, 0.2], [0.2, 0.3]]),
         )
         obs.create_dataset(
             "robot0_eef_pos",
-            data=np.array([[.35, 0.1, .8], [.36, .12, .81], [.39, .14, .82]]),
+            data=np.array([[0.35, 0.1, 0.8], [0.36, 0.12, 0.81], [0.39, 0.14, 0.82]]),
         )
     return path
 
 
 def _selection(path: Path, robot: str = "panda") -> MimicGenSelection:
     return MimicGenSelection(
-        path=path, demo_id="demo_0", embodiment_id=robot,
-        task_id="square_d0", control_hz=20.0,
+        path=path,
+        demo_id="demo_0",
+        embodiment_id=robot,
+        task_id="square_d0",
+        control_hz=20.0,
     )
 
 
@@ -83,8 +86,7 @@ def test_requires_explicit_source_control_frequency(demo_file: Path) -> None:
 
 def test_exports_two_distinct_offline_datasets(demo_file: Path, tmp_path: Path) -> None:
     episodes = [
-        read_mimicgen_episode(_selection(demo_file, robot))
-        for robot in ("panda", "sawyer")
+        read_mimicgen_episode(_selection(demo_file, robot)) for robot in ("panda", "sawyer")
     ]
     provenance = TraceProvenance(
         checkpoint_sha256="",
