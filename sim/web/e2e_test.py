@@ -291,6 +291,27 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             page.screenshot(path=str(screenshots / "demos-mobile.png"), timeout=90000)
 
+            # Release GPU-heavy MuJoCo iframes before checking standalone HTML demos.
+            # The five manufacturer scenes + two comparison canvases can exhaust
+            # Chromium's SwiftShader budget and stall unrelated navigation.
+            page.close()
+            page = browser.new_page(viewport={"width": 1440, "height": 900})
+            page.on("pageerror", lambda error: failures.append(str(error)))
+            page.on(
+                "response",
+                lambda response: (
+                    failures.append(f"HTTP {response.status}: {response.url}")
+                    if response.status >= 400
+                    else None
+                ),
+            )
+            page.on(
+                "console",
+                lambda message: (
+                    console_errors.append(message.text) if message.type == "error" else None
+                ),
+            )
+
             # The new evidence pages are additive and must work at the same Pages prefix.
             assert page.request.get(origin + "lab/steel/").status == 200
             original = page.request.get(origin + "lab/compare/samples/mimicgen-square-source.json")
