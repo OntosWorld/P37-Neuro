@@ -54,7 +54,7 @@ def list_demos(path: str | Path) -> list[str]:
 
 def _matrix(group: Any, key: str, rows: int | None = None) -> Any:
     """Validate a numeric two-dimensional HDF5 array without changing semantics."""
-    import numpy as np
+    import numpy as np  # type: ignore[import-not-found]
 
     if key not in group:
         raise ValueError("MimicGen HDF5 missing required array: " + key)
