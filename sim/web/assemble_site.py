@@ -78,6 +78,7 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         "index.html",
         "studio.css",
         "studio-minimal.css",
+        "steel-playground.css",
         "studio.js",
         "p37-evidence.json",
     ):
