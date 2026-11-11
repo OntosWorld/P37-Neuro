@@ -30,10 +30,7 @@ class MimicGenSelection:
     control_hz: float
 
     def __post_init__(self) -> None:
-        if any(
-            not value.strip()
-            for value in (self.demo_id, self.embodiment_id, self.task_id)
-        ):
+        if any(not value.strip() for value in (self.demo_id, self.embodiment_id, self.task_id)):
             raise ValueError("demo_id, embodiment_id and task_id are required")
         if not isfinite(self.control_hz) or self.control_hz <= 0:
             raise ValueError("control_hz must be positive and finite")
@@ -96,18 +93,13 @@ def read_mimicgen_episode(selection: MimicGenSelection, *, max_steps: int = 2000
             if "robot0_joint_vel" in obs
             else None
         )
-        eef = (
-            _matrix(obs, "robot0_eef_pos", actions.shape[0])
-            if "robot0_eef_pos" in obs
-            else None
-        )
+        eef = _matrix(obs, "robot0_eef_pos", actions.shape[0]) if "robot0_eef_pos" in obs else None
         steps: list[EpisodeStep] = []
         count = min(max_steps, actions.shape[0])
         for i in range(count):
             t = i / selection.control_hz
             joint_positions = {
-                "joint_" + str(j): float(joints[i, j])
-                for j in range(joints.shape[1])
+                "joint_" + str(j): float(joints[i, j]) for j in range(joints.shape[1])
             }
             joint_velocities = (
                 {"joint_" + str(j): float(velocities[i, j]) for j in range(velocities.shape[1])}
@@ -115,14 +107,12 @@ def read_mimicgen_episode(selection: MimicGenSelection, *, max_steps: int = 2000
                 else {}
             )
             state = {
-                "source_action_" + str(j): float(actions[i, j])
-                for j in range(actions.shape[1])
+                "source_action_" + str(j): float(actions[i, j]) for j in range(actions.shape[1])
             }
             if eef is not None:
-                state.update({
-                    "eef_position_" + str(j): float(eef[i, j])
-                    for j in range(eef.shape[1])
-                })
+                state.update(
+                    {"eef_position_" + str(j): float(eef[i, j]) for j in range(eef.shape[1])}
+                )
             steps.append(
                 EpisodeStep(
                     observation=Observation(
