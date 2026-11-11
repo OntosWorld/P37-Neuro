@@ -231,3 +231,7 @@ button:disabled{opacity:.45;cursor:not-allowed}
   .mujoco-fallback-info{left:10px;right:10px;bottom:10px;padding:14px}
   .mujoco-fallback-info strong{font-size:16px}
 }
+
+.command-actions .baseline-on{background:#2c4540;border-color:#6d9485;color:#e3f2e8}
+.command-actions .baseline-on:hover{background:#39544a}
+.drawer-fields input[type=range]:disabled{opacity:.35;cursor:not-allowed}
