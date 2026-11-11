@@ -202,4 +202,5 @@ upload.addEventListener("change",async()=>{
  try{const data=JSON.parse(await file.text());load(data)}
  catch(err){stop();traces=[];workspace.hidden=true;empty.hidden=false;$("#message").classList.remove("good");$("#message").textContent="Import rejected: "+(err instanceof Error?err.message:"invalid JSON")}
 });
+if(new URLSearchParams(location.search).get("sample")==="mimicgen")$("#mimicgen").click();
 </script></body></html>
