@@ -236,6 +236,10 @@ export function App() {
             <button className="primary-action" onClick={addItem}>+ Drop into scene</button>
           </div>
           <div className="command-actions">
+            <button type="button" className={baseline?'baseline-on':''}
+              aria-pressed={baseline} onClick={()=>{setBaseline(!baseline);setStatus(baseline?'Manual joint control':'Analytic reach baseline active');}}>
+              {baseline?'◉ Reach baseline':'▶ Run reach baseline'}
+            </button>
             <button type="button" onClick={()=>setPaused(!paused)}>{paused?'▶ Resume':'Ⅱ Pause'}</button>
             <button type="button" onClick={reset}>↻ Reset</button>
             <button type="button" aria-expanded={showControls} aria-controls="lab-settings"
