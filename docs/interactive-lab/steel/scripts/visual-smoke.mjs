@@ -125,8 +125,10 @@ try{
  await page.keyboard.press('Escape');
   const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
    if(overflow>2)throw new Error('Mobile controls overflow by '+overflow+'px');
-   await capture(page,'steel-03-fallback-mobile.png');
-   const unexpected=errors.filter(e=>!/Instance dropped in popErrorScope|Device Lost|device lost|A valid external Instance reference no longer exists/.test(e));
+   await capture(page,'steel-03-fallback-mobile-controls.png');
+   await page.getByRole('button',{name:/Close experiment controls/}).click();
+   await capture(page,'steel-04-fallback-mobile-hero.png');
+   const unexpected=errors.filter(e=>!/Instance dropped in popErrorScope|Device Lost|device lost|A valid external Instance reference no longer exists|Permissions policy violation: xr-spatial-tracking/.test(e));
    if(unexpected.length)throw new Error('Unexpected browser errors: '+unexpected.slice(0,4).join(' | '));
    results.status='fallback-verified';
    console.log('Hosted Chrome lacks stable WebGPU: fallback/desktop/mobile validated, Steel GPU not qualified.');
