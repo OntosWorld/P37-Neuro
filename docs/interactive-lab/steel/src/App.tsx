@@ -48,11 +48,11 @@ function MuJoCoFallback({ reason }: { reason:string }) {
   </div>;
 }
 function LiveScene({
-  preset, robot, items, paused, collision, pose, camera, sceneRef,
+  preset, robot, items, paused, collision, pose, baseline, camera, sceneRef,
   onSample, onReady, onError, sourceFrames, sourcePlaying,
 }: {
   preset: Preset; robot: RobotType; items: LooseItem[]; paused:boolean;
-  collision:boolean; pose:number; camera:CameraView;
+  collision:boolean; pose:number; baseline:boolean; camera:CameraView;
   sceneRef:React.RefObject<SceneHandle | null>;
   onSample:(data:SimStatsSample | null)=>void;
   onReady:()=>void; onError:(message:string)=>void;
@@ -74,7 +74,7 @@ function LiveScene({
       pickable controls camera={CAMERAS[camera]}
       onLoaded={onReady} onError={error=>onError(String(error))}
     >
-      <Workcell preset={preset} robot={robot} items={items} pose={pose}
+      <Workcell preset={preset} robot={robot} items={items} pose={pose} baseline={baseline}
         onStats={onSample} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
     </Scene>
   </Physics>;
@@ -85,6 +85,7 @@ export function App() {
   const [items,setItems]=useState<LooseItem[]>(()=>initialItems('workcell'));
   const [selectedObject,setSelectedObject]=useState<ObjectType>('parcel');
   const [pose,setPose]=useState(.18);
+  const [baseline,setBaseline]=useState(true);
   const [paused,setPaused]=useState(false);
   const [collision,setCollision]=useState(false);
   const [camera,setCamera]=useState<CameraView>('three-quarter');
@@ -181,7 +182,7 @@ export function App() {
         </div>
         <div className="intro-aside">
           <span className="status-circle"/>
-          <p><strong>Physics is live.</strong> Object contacts run in Steel WebGPU. The robot uses a deterministic joint controller; no trained P37 policy is attached.</p>
+          <p><strong>Physics is live.</strong> Object contacts run in Steel WebGPU. Robot motion follows an analytic baseline controller; no trained P37 policy is attached.</p>
         </div>
       </section>
 
@@ -189,7 +190,7 @@ export function App() {
         <div className="stage-canvas">
           {steelFailed&&<MuJoCoFallback reason="The WebGPU device or pipeline was lost."/>}
           <LiveScene key={preset+'-'+robot} preset={preset} robot={robot}
-            items={items} paused={paused} collision={collision} pose={pose}
+            items={items} paused={paused} collision={collision} pose={pose} baseline={baseline}
             camera={camera} sceneRef={scene}
             onSample={setStats}
             onReady={()=>{setReady(true);setSteelFailed(false);setStatus('Steel physical environment active');}}
@@ -254,9 +255,10 @@ export function App() {
               {ROBOTS.map(r=><option value={r.id} key={r.id}>{r.name} / {r.detail}</option>)}
             </select>
             <p className="field-explain">Original procedural arms with different link dimensions. Neither is a manufacturer model.</p>
-            <label htmlFor="pose">Joint target <output>{pose.toFixed(2)} rad</output></label>
+            <p className="field-explain">The reach cycle uses analytic inverse kinematics and joint position targets. It is deterministic and does not demonstrate learned P37 behavior or successful grasping.</p>
+            <label htmlFor="pose">Manual shoulder target <output>{pose.toFixed(2)} rad</output></label>
             <input id="pose" type="range" min="-1.2" max="1.2" step=".01"
-              value={pose} onChange={e=>setPose(Number(e.target.value))}/>
+              value={pose} disabled={baseline} onChange={e=>setPose(Number(e.target.value))}/>
             <button className="outline-action" aria-pressed={collision}
               onClick={()=>setCollision(!collision)}>{collision?'Hide collision geometry':'Inspect collision geometry'}</button>
           </div>
