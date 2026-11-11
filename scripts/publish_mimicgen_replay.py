@@ -19,12 +19,7 @@ from p37_neuro.data.trace_export import TraceProvenance, export_comparison, writ
 
 DATASET = "amandlek/mimicgen_datasets"
 SOURCE_PATH = "source/square.hdf5"
-SOURCE_URL = (
-    "https://huggingface.co/datasets/"
-    + DATASET
-    + "/resolve/main/"
-    + SOURCE_PATH
-)
+SOURCE_URL = "https://huggingface.co/datasets/" + DATASET + "/resolve/main/" + SOURCE_PATH
 SOURCE_SHA256 = "c917e99362fd9bd11978d6e2642c1ea88272702fbf55b50367ed471febf550e2"
 
 
