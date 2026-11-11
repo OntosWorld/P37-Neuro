@@ -60,7 +60,7 @@ export function App() {
       <a className="brand" href="../index.html">ONTOS <span>/ P37 NEURO</span></a>
       <nav aria-label="Research navigation">
         <a href="../index.html">Architecture</a>
-        <a href="../compare/index.html">Recorded evidence</a>
+        <a href="../compare/index.html?sample=mimicgen">Recorded evidence</a>
         <a href="https://ontosrobotics.github.io/P37-Neuro/">Existing Brain Lab ↗</a>
       </nav>
       <span className="build-tag">EXPERIMENT / 01</span>
@@ -105,7 +105,7 @@ export function App() {
           <p className="helper">Objects have mass and contact geometry. Adding an object rebuilds the scene, resetting existing bodies.</p>
           <div className="rule"/>
           <a className="small-link" href="https://huggingface.co/datasets/amandlek/mimicgen_datasets" target="_blank" rel="noreferrer">MimicGen source dataset ↗</a>
-          <a className="small-link" href="../compare/index.html">Compare P37 data episodes ↗</a>
+          <a className="small-link" href="../compare/index.html?sample=mimicgen">Watch official source motion in P37 ↗</a>
         </aside>
         <div className="viewport">
           <div className="viewport-top">
