@@ -5,6 +5,7 @@ import {
 import { Workcell, PRESETS, initialItems, nextItemId } from './Workcell';
 import type { LooseItem, ObjectType, Preset, RobotType } from './Workcell';
 import type { SourceFrame } from './SourceTrajectory';
+import { OfficialHeader, OntosMark } from './OfficialHeader';
 
 type SourceData = {
   publication: { source: string; learned_policy_attached: boolean };
@@ -165,29 +166,26 @@ export function App() {
   },[preset]);
   const activeSource=showSource ? sourceData?.traces[sourceEpisode]?.frames ?? [] : [];
   return <div className="app-shell">
-    <header className="site-header">
-      <a href="../../" className="brand" aria-label="Ontos P37 Brain Lab home">
-        <span className="brand-icon">O</span>
-        <span>ONTOS <span className="brand-secondary">/ P37 NEURO</span></span>
-      </a>
-      <nav aria-label="Research navigation">
+    <OfficialHeader/>
+    <div className="lab-nav" aria-label="P37-Neuro navigation">
+      <span>ONTOS <b>/</b> P37-NEURO <b>/</b> PHYSICS</span>
+      <nav>
         <a href="../../">Brain Lab</a>
         <a href="../../demos/">Simulations</a>
-        <a href="../compare/?sample=mimicgen">Recorded data</a>
+        <a href="../compare/?sample=mimicgen">Recorded evidence</a>
         <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noreferrer">Source ↗</a>
       </nav>
-      <span className="header-id">RESEARCH / 02</span>
-    </header>
-    <main>
+    </div>
+    <main id="page-content">
       <section className="intro">
         <div>
-          <p className="eyebrow">P37-Neuro / Interactive physics</p>
-          <h1>Machines in the world.</h1>
-          <p className="lede">A real-time robotics workcell. Move physical objects, change the environment and inspect the behavior of two reference robot configurations.</p>
+          <p className="eyebrow">P37-Neuro / Experimental workcell</p>
+          <h1>Intelligence in the physical world.</h1>
+          <p className="lede">Explore real-time robot dynamics. Move objects, change the environment and inspect two reference robot configurations in an interactive simulation.</p>
         </div>
         <div className="intro-aside">
           <span className="status-circle"/>
-          <p><strong>Physics is live.</strong> Object contacts run in Steel WebGPU. Robot motion follows an analytic baseline controller; no trained P37 policy is attached.</p>
+          <p>Interactive Steel physics with a deterministic reference controller. <strong>There is no trained P37 checkpoint attached.</strong></p>
         </div>
       </section>
 
@@ -318,9 +316,29 @@ export function App() {
       </section>
     </main>
     <footer className="footer">
-      <span>ONTOS / P37 NEURO <i>© 2026</i></span>
-      <div><a href="../../">Brain Lab</a><a href="https://github.com/skild-ai/steel-webgpu">Steel ↗</a>
-      <a href="https://mimicgen.github.io/">MimicGen ↗</a><a href="https://github.com/OntosRobotics/P37-Neuro">Source ↗</a></div>
+      <a className="footer-logo" href="https://www.ontos.ws/"><OntosMark size={23}/>ONTOS</a>
+      <div className="footer-columns">
+        <div><strong>Work</strong>
+          <a href="https://www.ontos.ws/products">Systems</a>
+          <a href="https://www.ontos.ws/research">Research</a>
+          <a href="../../">Brain Lab</a>
+        </div>
+        <div><strong>Lab</strong>
+          <a href="../../demos/">Simulations</a>
+          <a href="../compare/?sample=mimicgen">Recorded data</a>
+          <a href="https://github.com/OntosRobotics/P37-Neuro">Source</a>
+        </div>
+        <div><strong>Company</strong>
+          <a href="https://www.ontos.ws/about">About</a>
+          <a href="https://www.ontos.ws/contact">Contact</a>
+          <a href="https://www.ontos.ws/physical-ai">Technology</a>
+        </div>
+      </div>
+      <div className="footer-bottom">
+        <span>© 2026 Ontos</span>
+        <span>Research interface / P37-Neuro</span>
+        <a href="https://www.ontos.ws/">Official website ↗</a>
+      </div>
     </footer>
   </div>;
 }
