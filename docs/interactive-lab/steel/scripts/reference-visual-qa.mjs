@@ -102,7 +102,7 @@ async function sceneStatus(p){
     const overlay=document.querySelector('.viewer-notice')?.textContent??'';
     return msg.includes('Steel physics active')||msg.includes('WebGPU')&&/unavailable|error|lost|failed/i.test(msg)
       ||overlay.includes('WebGPU unavailable');
-  },undefined,{timeout:110000});
+  },undefined,{timeout:process.env.P37_REQUIRE_GPU==='0' ? 16000 : 110000});
   const msg=await p.locator('.status-line').innerText();
   const overlay=await p.locator('.viewer-notice').allInnerTexts();
   if(msg.includes('Steel physics active'))return {status:'running',msg};
@@ -143,11 +143,24 @@ async function qa(){
   if(results.p37.layout.stageShare<.36)throw new Error('Simulator viewport occupies less than 36% of desktop width');
   if(results.p37.layout.scenes.length!==3)throw new Error('Scene quick-switcher missing');
   results.webgpu.adapter=await webgpuAdapter(page);
-  results.webgpu.runtime=await sceneStatus(page);
+  const required=process.env.P37_REQUIRE_GPU!=='0';
+  try{results.webgpu.runtime=await sceneStatus(page);}
+  catch(error){results.webgpu.runtime={status:'unavailable',msg:String(error)}}
   if(results.webgpu.runtime.status!=='running'){
-    await capture(page,'p37-desktop-gpu-unavailable.png');
     results.webgpu.status='device-not-qualified';
-    throw new Error('WebGPU physics never started: '+JSON.stringify(results.webgpu));
+    await page.evaluate(()=>window.scrollTo(0,0));
+    await capture(page,'p37-desktop-gpu-unavailable.png');
+    if(required)throw new Error('WebGPU physics never started: '+JSON.stringify(results.webgpu));
+    // Linux headless SwiftShader can lose the swapchain even when its adapter
+    // initializes. Hardware/actual physics is gated by the separate Metal job.
+    results.webgpu.status='software-device-unavailable';
+    await page.setViewportSize({width:390,height:844});
+    await page.evaluate(()=>window.scrollTo(0,0));
+    await capture(page,'p37-mobile-gpu-unavailable.png');
+    const overflow=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth);
+    if(overflow>2)throw new Error('Responsive P37 UI overflows by '+overflow+'px');
+    results.p37.mobile={viewport:390,width:390+overflow};
+    return;
   }
   const firstFrame=await page.locator('.canvas-wrap').screenshot({timeout:60000});
   record('p37-steel-canvas.png',firstFrame);
