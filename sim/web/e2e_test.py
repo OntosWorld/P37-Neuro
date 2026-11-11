@@ -355,9 +355,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                 ("lab/", "playground-architecture", "[data-task='reach']"),
                 ("lab/sim/", "playground-kinematics", "[data-robot='compact']"),
             ):
-                response = page.goto(
-                    origin + route, wait_until="domcontentloaded", timeout=30000
-                )
+                response = page.goto(origin + route, wait_until="domcontentloaded", timeout=30000)
                 assert response is not None and response.status == 200
                 assert expected_class in page.locator("body").get_attribute("class")
                 assert page.locator(expected_control).first.is_visible()
