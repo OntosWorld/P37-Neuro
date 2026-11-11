@@ -31,7 +31,9 @@ jobs:
         run: npm run build
       - name: Install Chromium for real GPU canvas QA
         run: npx playwright install --with-deps chromium
-      - name: Compare desktop/mobile against Steel reference and test WebGPU physics
+      - name: Compare desktop/mobile against Steel reference (software GPU)
+        env:
+          P37_REQUIRE_GPU: "0"
         run: node scripts/reference-visual-qa.mjs
       - name: Archive desktop/mobile screenshots, adapter telemetry and reference
         if: always()
@@ -66,6 +68,8 @@ jobs:
       - name: Install Chromium on Apple Silicon
         run: npx playwright install chromium
       - name: Capture reference and prove Steel GPU physics on macOS
+        env:
+          P37_REQUIRE_GPU: "1"
         run: node scripts/reference-visual-qa.mjs
       - name: Keep Metal GPU and screenshot evidence
         if: always()
