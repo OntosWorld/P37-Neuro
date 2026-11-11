@@ -102,8 +102,8 @@ export function App() {
       <div className="title-row">
         <div>
           <span className="overline">Interactive simulation / WebGPU</span>
-          <h1>Robots in a physical world.</h1>
-          <p className="intro">Explore a realistic workcell with articulated reference robots, furniture and movable objects. Contact physics runs directly in your browser.</p>
+          <h1>Steel physics.<br/>P37 experiments.</h1>
+          <p className="intro">Pick a scene, move objects and change robot geometry. Every interaction runs inside a live WebGPU physics workcell.</p>
         </div>
         <div className="hero-note"><strong>About this demonstration</strong>
           <p>Live Steel physics and a deterministic joint controller. No trained P37-Neuro checkpoint is attached. MimicGen demonstrations are imported separately and never presented as this robot’s learned behavior.</p>
@@ -157,6 +157,12 @@ export function App() {
           <a className="small-link" href="../compare/index.html?sample=mimicgen">Watch official source motion in P37 ↗</a>
         </aside>
         <div className="viewport">
+          <div className="playground-scenes" role="group" aria-label="Choose physics environment">
+            <span className="playground-scenes-label">Scenes</span>
+            {PRESETS.map(p=><button type="button" key={p.id}
+              aria-pressed={preset===p.id} className={preset===p.id?'active':''}
+              onClick={()=>changePreset(p.id)}>{p.label}</button>)}
+          </div>
           <div className="viewport-top">
             <div><span className="live-dot"/> LIVE GPU PHYSICS <span className="muted">/ Steel WebGPU</span></div>
             <span>REFERENCE ROBOT · NO TRAINED POLICY</span>
@@ -168,6 +174,12 @@ export function App() {
               onError={setStatus} sourceFrames={showSource ? (sourceData?.traces[sourceEpisode]?.frames ?? []) : []}
               sourcePlaying={showSource && sourcePlaying && !paused}/>
             <div className="camera-tip">DRAG OBJECTS TO PULL · DRAG EMPTY SPACE TO ORBIT</div>
+          </div>
+          <div className="playground-embodiment" role="group" aria-label="Choose reference robot">
+            <span>Reference robot</span>
+            <button type="button" aria-pressed={robot==='compact'} onClick={()=>setRobot('compact')}>Compact arm</button>
+            <button type="button" aria-pressed={robot==='extended'} onClick={()=>setRobot('extended')}>Extended arm</button>
+            <span className="playground-disclaimer">Procedural geometry · no learned P37 policy</span>
           </div>
           <div className="viewport-controls">
             <div className="action-row">
