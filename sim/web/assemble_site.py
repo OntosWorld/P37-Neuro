@@ -14,6 +14,45 @@ REPOSITORY = ROOT.parents[1]
 LAB = REPOSITORY / "docs" / "interactive-lab"
 
 
+# Real previews ship with Menagerie's complete upstream redistribution notices.
+# The same pinned model checkout powers the actual physics scenes.
+ROBOT_PREVIEW_ASSETS = {
+    "unitree_g1": "unitree_g1-g1.png",
+    "unitree_h1": "unitree_h1-h1.png",
+    "booster_t1": "booster_t1-t1.png",
+    "unitree_go2": "unitree_go2-go2.png",
+    "boston_dynamics_spot": "boston_dynamics_spot-spot_arm.png",
+    "anymal_c": "anybotics_anymal_c-anymal_c.png",
+    "franka_panda": "franka_emika_panda-panda.png",
+    "universal_robots_ur5e": "universal_robots_ur5e-ur5e.png",
+    "hello_robot_stretch": "hello_robot_stretch-stretch.png",
+    "crazyflie_2": "bitcraze_crazyflie_2-cf2.png",
+}
+
+
+def add_robot_previews(output: Path) -> None:
+    """Package source-attributed robot imagery for the chooser, never fake runs."""
+    menagerie = REPOSITORY / "_menagerie"
+    assets = menagerie / "assets"
+    if not assets.is_dir():
+        # Source-only developer tests don't fetch Menagerie.
+        return
+    expected = {robot.id for robot in ROBOTS}
+    if set(ROBOT_PREVIEW_ASSETS) != expected:
+        raise ValueError("robot thumbnail map does not match the robot catalog")
+    previews = output / "robot-thumbnails"
+    previews.mkdir(parents=True, exist_ok=True)
+    for robot_id, filename in ROBOT_PREVIEW_ASSETS.items():
+        source = assets / filename
+        if not source.is_file():
+            raise FileNotFoundError(f"Menagerie preview not found: {filename}")
+        shutil.copy2(source, previews / f"{robot_id}.png")
+    license_path = menagerie / "LICENSE"
+    if not license_path.is_file():
+        raise FileNotFoundError("Menagerie redistribution license file missing")
+    shutil.copy2(license_path, previews / "THIRD_PARTY_LICENSES.txt")
+
+
 def add_interactive_lab(output: Path) -> None:
     """Publish additive research pages, never replacing the Brain Lab root."""
     if not LAB.is_dir():
@@ -111,6 +150,7 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
             raise ValueError("Demo experiment data is incomplete or overclaims capability")
         shutil.copy2(demo_evidence, demos / "evidence.json")
     shutil.copytree(viewer, output / "simulator")
+    add_robot_previews(output)
     add_interactive_lab(output)
     return output
 
