@@ -29,6 +29,18 @@ jobs:
         run: npm install --no-audit --no-fund
       - name: Typecheck and compile production viewer
         run: npm run build
+      - name: Install Chromium for real GPU canvas QA
+        run: npx playwright install --with-deps chromium
+      - name: Compare desktop/mobile against Steel reference and test WebGPU physics
+        run: node scripts/reference-visual-qa.mjs
+      - name: Archive desktop/mobile screenshots, adapter telemetry and reference
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-skild-visual-and-webgpu-review
+          path: docs/interactive-lab/steel/visual-evidence/
+          retention-days: 14
+          if-no-files-found: warn
       - uses: actions/upload-artifact@v4
         with:
           name: p37-steel-workcell-static-preview
