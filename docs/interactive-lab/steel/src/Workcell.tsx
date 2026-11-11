@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
-  BoxCollider, CylinderCollider, Ground, RigidBody, Scene,
+  BoxCollider, CylinderCollider, Ground, RigidBody,
   SphereCollider, URDF, useBeforeStep, useSimStats,
   type RigidBodyHandle, type RobotHandle, type SceneHandle, type SimStatsSample,
 } from '@skild-ai/steel-webgpu/react';
@@ -111,7 +111,7 @@ function FurnitureVisuals({ preset }: { preset: Preset }) {
       <meshPhysicalMaterial color="#334047" roughness={.84}/>
     </mesh>
     {[-.18,.18].flatMap(x => [-.18,.18].map(y =>
-      <mesh key={'chair'+x+y} castShadow position={[-1.18+x,.68+y,.23]}>
+      <mesh key={'chair'+x+y} castShadow position={[-1.18+x,.68+y,.23]} rotation={[Math.PI/2,0,0]}>
         <cylinderGeometry args={[.025,.025,.43,12]}/>
         <meshStandardMaterial color="#6b7478" roughness={.39} metalness={.78}/>
       </mesh>,
@@ -148,7 +148,7 @@ function FollowPbr({ type, body, initial }: {
       <mesh position={[.117,0,0]}><boxGeometry args={[.003,.195,.04]}/>
         <meshStandardMaterial color="#d9c39f" roughness={.68}/></mesh>
     </>}
-    {type === 'canister' && <mesh castShadow receiveShadow>
+    {type === 'canister' && <mesh castShadow receiveShadow rotation={[Math.PI/2,0,0]}>
       <cylinderGeometry args={[.057,.053,.155,32]}/>
       <meshPhysicalMaterial color="#c1cccf" metalness={.67} roughness={.19}/>
     </mesh>}
@@ -168,9 +168,9 @@ function LooseObject({ item }: { item: LooseItem }) {
   return <>
     <RigidBody ref={ref} name={'item-'+item.id} position={item.position} mass={item.type === 'parcel' ? .25 : .18}>
       {item.type === 'ball' && <SphereCollider radius={.062} restitution={.45} color={[.67,.78,.73]}/>}
-      {item.type === 'canister' && <CylinderCollider radius={.053} halfHeight={.076} color={[.66,.73,.77]} friction={.63}/>}
-      {item.type === 'parcel' && <BoxCollider hx={.113} hy={.094} hz={.078} color={[.57,.42,.29]} friction={.72}/>}
-      {item.type === 'bin' && <BoxCollider hx={.121} hy={.098} hz={.062} color={[.36,.45,.5]} friction={.8}/>}
+      {item.type === 'canister' && <CylinderCollider radius={.053} halfHeight={.076} color={[.66,.73,.77]}/>}
+      {item.type === 'parcel' && <BoxCollider hx={.113} hy={.094} hz={.078} color={[.57,.42,.29]}/>}
+      {item.type === 'bin' && <BoxCollider hx={.121} hy={.098} hz={.062} color={[.36,.45,.5]}/>}
     </RigidBody>
     <FollowPbr type={item.type} body={ref} initial={item.position}/>
   </>;
