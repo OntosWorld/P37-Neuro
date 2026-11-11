@@ -177,46 +177,46 @@ function Monitor() {
 
 function Room() {
   return <group>
-    <mesh receiveShadow position={[0,0,-.055]}>
+    <mesh receiveShadow position={[0,0,-.035]}>
       <boxGeometry args={[10,10,.11]}/>
-      <meshStandardMaterial color="#535756" roughness={.96} metalness={.025}/>
+      <meshStandardMaterial color="#b7beb9" roughness={.96} metalness={.025}/>
     </mesh>
     {/* Concrete panels and physical looking expansion joints. Backdrop only. */}
-    <mesh receiveShadow position={[0,2.1,1.55]}>
+    <mesh receiveShadow position={[0,3.2,1.55]}>
       <boxGeometry args={[9,.06,3.1]}/>
-      <meshStandardMaterial color="#535d5f" roughness={.91}/>
+      <meshStandardMaterial color="#929e9a" roughness={.91}/>
     </mesh>
     {[-3,-1.5,0,1.5,3].map(x=>
-      <mesh key={'wall-'+x} position={[x,2.058,1.55]}>
+      <mesh key={'wall-'+x} position={[x,3.158,1.55]}>
         <boxGeometry args={[.006,.008,3.10]}/>
         <meshBasicMaterial color="#344047"/>
       </mesh>
     )}
-    <RoundedSolid size={[4.75,.16,.14]} position={[0,2.0,.18]}
+    <RoundedSolid size={[4.75,.16,.14]} position={[0,3.1,.18]}
       color="#394346" metalness={.65} roughness={.44}/>
     {[.4,1.8].map(z=>
-      <mesh key={'wall-strip'+z} position={[0,2.051,z]}>
+      <mesh key={'wall-strip'+z} position={[0,3.151,z]}>
         <boxGeometry args={[9,.008,.005]}/>
         <meshBasicMaterial color="#77807d"/>
       </mesh>
     )}
-    <mesh position={[0,2.05,2.9]}>
+    <mesh position={[0,3.15,2.9]}>
       <boxGeometry args={[1.8,.055,.038]}/>
       <meshStandardMaterial color="#272f32" metalness={.54} roughness={.49}/>
     </mesh>
-    <mesh position={[-1.6,2.013,1.53]}>
+    <mesh position={[-1.6,3.113,1.53]}>
       <planeGeometry args={[.26,.25]}/>
       <meshBasicMaterial color="#d5bc8c" side={2}/>
     </mesh>
     {/* A constrained floor zone makes object dimensions readable. */}
     {[-1.3,1.3].map(x=>
-      <mesh key={'floor-x'+x} position={[x,0,.003]}>
+      <mesh key={'floor-x'+x} position={[x,0,.026]}>
         <boxGeometry args={[.018,2.65,.004]}/>
         <meshBasicMaterial color="#a19a74"/>
       </mesh>
     )}
     {[-1.15,1.15].map(y=>
-      <mesh key={'floor-y'+y} position={[0,y,.003]}>
+      <mesh key={'floor-y'+y} position={[0,y,.026]}>
         <boxGeometry args={[2.62,.018,.004]}/>
         <meshBasicMaterial color="#a19a74"/>
       </mesh>
