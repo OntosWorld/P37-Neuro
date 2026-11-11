@@ -341,6 +341,38 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                 in page.locator("#sourceCredit").inner_text()
             )
             page.screenshot(path=str(screenshots / "mimicgen-real-data.png"), timeout=30000)
+            # Review all independent P37 research surfaces at the same
+            # desktop/mobile breakpoints as the Steel visual reference.
+            page.set_viewport_size({"width": 390, "height": 844})
+            page.screenshot(
+                path=str(screenshots / "mimicgen-mobile.png"), timeout=30000
+            )
+            assert page.evaluate(
+                "document.documentElement.scrollWidth <= innerWidth + 2"
+            )
+            for route, label in (
+                ("lab/", "architecture"),
+                ("lab/sim/", "kinematics"),
+            ):
+                page.set_viewport_size({"width": 1512, "height": 982})
+                check = page.goto(
+                    origin + route, wait_until="domcontentloaded", timeout=30000
+                )
+                assert check is not None and check.status == 200
+                page.locator("h1").first.wait_for(state="visible", timeout=15000)
+                assert page.evaluate(
+                    "getComputedStyle(document.body).backgroundColor"
+                ) == "rgb(255, 255, 255)"
+                page.screenshot(
+                    path=str(screenshots / f"{label}-desktop.png"), timeout=30000
+                )
+                page.set_viewport_size({"width": 390, "height": 844})
+                assert page.evaluate(
+                    "document.documentElement.scrollWidth <= innerWidth + 2"
+                )
+                page.screenshot(
+                    path=str(screenshots / f"{label}-mobile.png"), timeout=30000
+                )
 
             if failures:
                 raise AssertionError("Browser runtime errors: " + " | ".join(failures[:8]))
