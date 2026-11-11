@@ -31,6 +31,16 @@ jobs:
         run: npm run build
       - name: Install browser for actual WebGPU rendering
         run: npx playwright install --with-deps chrome
+      - name: Capture Skild Steel playground reference
+        run: node scripts/skild-reference.mjs
+      - name: Save Skild Steel benchmark screenshots and computed styles
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: skild-steel-reference
+          path: docs/interactive-lab/steel/skild-reference/
+          retention-days: 7
+          if-no-files-found: warn
       - name: Capture official Ontos website design reference
         run: node scripts/official-site-reference.mjs
       - name: Keep exact website layout screenshots and style tokens
