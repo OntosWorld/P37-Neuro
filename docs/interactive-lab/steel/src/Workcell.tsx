@@ -89,7 +89,11 @@ function LooseObject({ item }: { item: LooseItem }) {
       {item.type === 'ball' && <SphereCollider radius={.062} restitution={.45} color={[.67,.78,.73]}/>}
       {item.type === 'canister' && <CylinderCollider radius={.053} halfHeight={.076} color={[.66,.73,.77]}/>}
       {item.type === 'parcel' && <BoxCollider hx={.113} hy={.094} hz={.078} color={[.57,.42,.29]}/>}
-      {item.type === 'bin' && <BoxCollider hx={.121} hy={.098} hz={.062} color={[.36,.45,.5]}/>}
+      {item.type === 'bin' && <>
+        <BoxCollider hx={.118} hy={.094} hz={.008} position={[0,0,-.052]} color={[.36,.45,.5]}/>
+        {[-.111,.111].map(x => <BoxCollider key={'bx'+x} hx={.006} hy={.095} hz={.064} position={[x,0,.005]} color={[.36,.45,.5]}/>)}
+        {[-.088,.088].map(y => <BoxCollider key={'by'+y} hx={.119} hy={.007} hz={.064} position={[0,y,.005]} color={[.36,.45,.5]}/>)}
+      </>}
     </RigidBody>
     <FollowPbr type={item.type} body={ref} initial={item.position}/>
   </>;
