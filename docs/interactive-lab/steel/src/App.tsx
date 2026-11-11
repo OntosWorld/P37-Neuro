@@ -7,10 +7,15 @@ import type { SourceFrame } from './SourceTrajectory';
 type SourceData = { publication: { source: string; learned_policy_attached: boolean }; traces: { frames: SourceFrame[] }[] };
 
 
-const CAMERA = {
-  position: [2.65, -3.2, 2.2] as [number,number,number],
-  target: [0, 0, .89] as [number,number,number],
+const CAMERA_DESKTOP = {
+  position: [2.05, -2.65, 1.82] as [number,number,number],
+  target: [0, 0, .88] as [number,number,number],
   fov: 40,
+};
+const CAMERA_MOBILE = {
+  position: [2.75, -3.35, 2.20] as [number,number,number],
+  target: [0, 0, .88] as [number,number,number],
+  fov: 46,
 };
 function LiveScene({ preset, robot, items, paused, collision, pose,
   sceneRef, onSample, onReady, onError, sourceFrames, sourcePlaying }: {
@@ -19,6 +24,13 @@ function LiveScene({ preset, robot, items, paused, collision, pose,
   onSample: (s: SimStatsSample | null) => void; onReady: () => void; onError: (s: string) => void;
   sourceFrames: SourceFrame[]; sourcePlaying: boolean;
 }) {
+  const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 690px)').matches);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 690px)');
+    const onChange = () => setMobile(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
   return <Physics
     style={{ position: 'absolute', inset: 0 }}
     fallback={<div className="viewer-notice"><div className="spinner"/>Requesting Steel WebGPU device...</div>}
@@ -29,7 +41,7 @@ function LiveScene({ preset, robot, items, paused, collision, pose,
     onError={e => onError(String(e))}
   >
     <Scene ref={sceneRef} gravity={[0,0,-9.81]} fps={60} paused={paused} collision={collision}
-      pickable controls camera={CAMERA} onLoaded={onReady} onError={e=>onError(String(e))}>
+      pickable controls camera={mobile ? CAMERA_MOBILE : CAMERA_DESKTOP} onLoaded={onReady} onError={e=>onError(String(e))}>
       <Workcell preset={preset} robot={robot} items={items} pose={pose} onStats={onSample} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
     </Scene>
   </Physics>;
