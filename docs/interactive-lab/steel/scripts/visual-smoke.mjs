@@ -16,6 +16,7 @@ const server=spawn('npm',['run','preview','--','--host','127.0.0.1','--port','41
   {stdio:'inherit',env:process.env});
 const delay=(ms)=>new Promise(resolve=>setTimeout(resolve,ms));
 let browser;
+let page;
 const errors=[];
 const results={status:'running',browser:'Chrome / WebGPU',errors,screenshots:[],physics:{}};
 
@@ -55,10 +56,9 @@ try{
  await awaitServer();
  browser=await chromium.launch({
   channel:'chrome',headless:true,
-  args:['--enable-unsafe-webgpu','--use-angle=swiftshader','--enable-features=Vulkan',
-    '--disable-dev-shm-usage','--no-sandbox'],
+  args:['--enable-unsafe-webgpu','--disable-dev-shm-usage','--no-sandbox'],
  });
- const page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1});
+ page=await browser.newPage({viewport:{width:1600,height:1000},deviceScaleFactor:1});
  page.on('pageerror',e=>errors.push('pageerror: '+e.message));
  page.on('console',m=>{if(m.type()==='error')errors.push('console: '+m.text());});
  page.on('response',r=>{if(r.status()>=400)errors.push('HTTP '+r.status()+' '+r.url());});
@@ -116,6 +116,13 @@ try{
 }catch(error){
  results.status='fail';
  results.failure=String(error);
+ if(page){
+   try{await page.screenshot({
+     path:resolve(screenshots,'steel-00-browser-failure.png'),
+     timeout:10_000,
+   });results.screenshots.push('steel-00-browser-failure.png');}
+   catch(captureError){results.captureError=String(captureError);}
+ }
  console.error(JSON.stringify(results,null,2));
  process.exitCode=1;
 }finally{
