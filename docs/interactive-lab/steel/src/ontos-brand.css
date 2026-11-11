@@ -374,3 +374,13 @@ a:hover{color:#fff}
  .mujoco-fallback-info p{display:none}
  .mujoco-fallback-info a{font-size:10px;margin-top:6px}
 }
+
+/* The original Ontos robot image guarantees a composed first frame on
+   unsupported GPUs; the live same-origin MuJoCo iframe takes over if loaded. */
+.mujoco-fallback-artwork{position:absolute;z-index:0;inset:0;width:100%;height:100%;
+  object-fit:cover;object-position:center 35%;filter:grayscale(.18) brightness(.61) contrast(1.11)}
+.mujoco-fallback-frame{z-index:2}
+.stage-canvas:has(.mujoco-fallback) .intro-aside{display:none}
+@media(max-width:500px){
+ .mujoco-fallback-artwork{object-position:43% center}
+}
