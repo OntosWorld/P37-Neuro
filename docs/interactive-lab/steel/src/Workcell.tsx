@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
-  BoxCollider, CylinderCollider, Ground, RigidBody,
+  BoxCollider, CylinderCollider, FixedJoint, Ground, RigidBody,
   SphereCollider, URDF, MJCF, useBeforeStep, useSimStats, useWorld,
   type RigidBodyHandle, type RobotHandle, type SceneHandle, type SimStatsSample,
 } from '@skild-ai/steel-webgpu/react';
@@ -47,14 +47,16 @@ function FurnitureColliders({ preset }: { preset: Preset }) {
   const top: Vec3 = preset === 'inspection' ? [.36,.39,.41] : [.53,.38,.26];
   return <>
     <Ground />
-    <RigidBody name="fixed-workbench" position={[0,0,.76]} kinematic>
+    <RigidBody name="fixed-workbench" position={[0,0,.76]}>
+      <FixedJoint parent={null} parentFrame={[0,0,.76,0,0,0,1]}/>
       <BoxCollider hx={.91} hy={.48} hz={.054} mu={.90} restitution={.01} gap={.012} color={top} />
       {[-.78,.78].flatMap(x => [-.34,.34].map(y =>
         <BoxCollider key={String(x)+String(y)} hx={.036} hy={.036} hz={.36}
           position={[x,y,-.37]} color={[.24,.27,.29]}/>,
       ))}
     </RigidBody>
-    <RigidBody name="fixed-chair" position={[-1.18,.68,.46]} kinematic>
+    <RigidBody name="fixed-chair" position={[-1.18,.68,.46]}>
+      <FixedJoint parent={null} parentFrame={[-1.18,.68,.46,0,0,0,1]}/>
       <BoxCollider hx={.24} hy={.24} hz={.048} color={[.19,.23,.24]}/>
       <BoxCollider hx={.044} hy={.24} hz={.28} position={[-.21,0,.29]} color={[.18,.21,.23]}/>
       {[-.18,.18].flatMap(x => [-.18,.18].map(y =>
@@ -62,7 +64,8 @@ function FurnitureColliders({ preset }: { preset: Preset }) {
           position={[x,y,-.23]} color={[.15,.18,.20]}/>,
       ))}
     </RigidBody>
-    <RigidBody name="fixed-monitor" position={[.66,.294,1.157]} kinematic>
+    <RigidBody name="fixed-monitor" position={[.66,.294,1.157]}>
+      <FixedJoint parent={null} parentFrame={[.66,.294,1.157,0,0,0,1]}/>
       <BoxCollider hx={.24} hy={.035} hz={.16} color={[.20,.23,.25]}/>
       <BoxCollider hx={.019} hy={.019} hz={.095} position={[0,-.024,-.241]} color={[.34,.40,.44]}/>
       <BoxCollider hx={.14} hy={.09} hz={.01} position={[0,-.024,-.342]} color={[.25,.28,.31]}/>
