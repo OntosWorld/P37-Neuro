@@ -138,7 +138,7 @@ def build(
             experiment.add_policy(**verified_policy(
                 policy_onnx, policy_contract, robot.id, model
             ))
-            built_scenes.append(experiment.id)
+            built_scenes.append(robot.id + "_p37_experimental")
 
     old_cwd = Path.cwd()
     try:
