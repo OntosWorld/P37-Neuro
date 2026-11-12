@@ -199,15 +199,17 @@ def create_motion(model: mujoco.MjModel, robot_id: str, mode: str, out: Path) ->
     if robot_id == "crazyflie_2":
         actions, names, rest = _drone_clip(model, mode)
         action_kind = "motor_effort"
+    elif any(
+        int(model.actuator_trntype[i]) != int(mujoco.mjtTrn.mjTRN_JOINT)
+        for i in range(model.nu)
+    ):
+        # Mixed tendon/site/joint bodies need native actuator-level control.
+        # Avoid an incomplete joint index, which silently moves the wrong motor.
+        actions, names, rest = _other_motor_clip(model, mode)
+        action_kind = "motor_effort"
     else:
-        try:
-            actions, names, rest = _joint_clip(model, mode)
-            action_kind = "joint_position"
-        except ValueError as exc:
-            if str(exc) != "no supported driven joints":
-                raise
-            actions, names, rest = _other_motor_clip(model, mode)
-            action_kind = "motor_effort"
+        actions, names, rest = _joint_clip(model, mode)
+        action_kind = "joint_position"
     out.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         out / f"{robot_id}-{mode}.npz",
