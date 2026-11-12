@@ -42,9 +42,24 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     scenes = {s["id"]: s for p in manifest["projects"] for s in p["scenes"]}
     assert {r["id"] for r in robots} <= scenes.keys()
     assert scenes["unitree_g1"].get("policies"), "Missing browser ONNX controller"
-    for other_id, scene in scenes.items():
-        if other_id != "unitree_g1":
-            assert not scene.get("policies"), "Unqualified policy on " + other_id
+    motions = json.loads((site / "simulator/motion_data/index.json").read_text(encoding="utf-8"))
+    assert set(motions["motions"]) == {r["id"] for r in robots}
+    for robot in robots:
+        available = {p["id"] for p in scenes[robot["id"]]["policies"]}
+        assert {"motor_articulation", "movement_cycle", "hold_position"} <= available
+        clips = motions["motions"][robot["id"]]
+        assert {clip["id"] for clip in clips} == {"articulation", "motion_cycle", "hold"}
+        for clip in clips:
+            assert clip["is_learned_p37_policy"] is False
+            assert clip["is_qualified_locomotion"] is False
+            assert (site / "simulator/motion_data" / clip["dataset_file"]).is_file()
+    assert any(
+        "p37" in p["id"] for p in scenes["unitree_g1"]["policies"]
+    ), "Experimental G1 P37 policy missing"
+    assert all(
+        not any("p37" in p["id"] for p in scene["policies"])
+        for key, scene in scenes.items() if key != "unitree_g1"
+    ), "Learned policy falsely attached to another body"
     for old_route in ("lab", "demos", "test"):
         assert not (site / old_route).exists()
     assert not (site / "studio.js").exists(), "Old procedural showroom is still published"
@@ -85,12 +100,32 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert page.locator(".robot-catalog button").count() == 10
             assert "reference arm" not in page.locator("main").inner_text().lower()
             assert "compact arm" not in page.locator("main").inner_text().lower()
-            assert "P37 recurrent PPO" in page.locator(".p37-real-panel").inner_text()
+            assert "Dataset motor replay" in page.locator(".p37-real-panel").inner_text()
             assert "walking" in page.locator(".policy-evidence").inner_text().lower()
             assert page.locator(".menagerie-viewer").count() == 1
             assert "scene=unitree_g1" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
+            assert "policy=movement_cycle" in page.locator("iframe.menagerie-viewer").get_attribute(
+                "src"
+            )
+            assert page.get_by_role("button", name="Hold motion").is_visible()
+            page.get_by_role("button", name="Articulation").click()
+            assert "policy=motor_articulation" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
+            page.get_by_role("button", name="Hold motion").click()
+            assert "policy=hold_position" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
+            page.get_by_role("button", name="Play motion").click()
+            assert "policy=motor_articulation" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
+            page.get_by_role("button", name="P37 experimental model").click()
+            assert "policy=p37_g1_experimental_recurrent_ppo" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
             assert page.url == origin
             page.frame_locator("iframe.menagerie-viewer").locator("canvas").first.wait_for(
                 state="visible", timeout=120000
@@ -121,7 +156,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             ).filter(has_text="None").wait_for(timeout=15000)
             page.get_by_role("combobox", name="Select a robot").select_option("unitree_g1")
             assert page.url == origin
-            assert "P37 recurrent PPO" in page.locator(".p37-real-panel").inner_text()
+            assert "Dataset motor replay" in page.locator(".p37-real-panel").inner_text()
             page.set_viewport_size({"width": 390, "height": 844})
             page.wait_for_timeout(400)
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 3")
@@ -134,6 +169,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
         "single_root": True,
         "native_robot_models": 10,
         "experimental_g1_policy": True,
+        "all_robot_motion_datasets": True,
         "desktop_mobile": True,
         "panda_model_loaded": True,
         "unqualified_models_not_mislabeled": True,
