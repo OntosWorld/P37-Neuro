@@ -182,17 +182,17 @@ function Room() {
          The physics Ground collider remains at 0 in the Steel scene. */}
     <mesh receiveShadow position={[0,0,.018]}>
       <planeGeometry args={[100,100]}/>
-      <meshStandardMaterial color="#b9bcb9" roughness={.94} metalness={0}/>
+      <meshStandardMaterial color="#e3e6e4" roughness={.92} metalness={0}/>
     </mesh>
     {/* Concrete panels and physical looking expansion joints. Backdrop only. */}
     <mesh receiveShadow position={[0,3.2,1.55]}>
       <boxGeometry args={[9,.06,3.1]}/>
-      <meshStandardMaterial color="#929e9a" roughness={.91}/>
+      <meshStandardMaterial color="#d6dcd9" roughness={.86}/>
     </mesh>
     {[-3,-1.5,0,1.5,3].map(x=>
       <mesh key={'wall-'+x} position={[x,3.158,1.55]}>
         <boxGeometry args={[.006,.008,3.10]}/>
-        <meshBasicMaterial color="#344047"/>
+        <meshBasicMaterial color="#b7c0bc"/>
       </mesh>
     )}
     <RoundedSolid size={[4.75,.16,.14]} position={[0,3.1,.18]}
@@ -200,7 +200,7 @@ function Room() {
     {[.4,1.8].map(z=>
       <mesh key={'wall-strip'+z} position={[0,3.151,z]}>
         <boxGeometry args={[9,.008,.005]}/>
-        <meshBasicMaterial color="#77807d"/>
+        <meshBasicMaterial color="#c2c9c6"/>
       </mesh>
     )}
     <mesh position={[0,3.15,2.9]}>
@@ -215,7 +215,7 @@ function Room() {
     {[-1.3,1.3].map(x=>
       <mesh key={'floor-x'+x} position={[x,0,.023]}>
         <boxGeometry args={[.018,2.65,.004]}/>
-        <meshBasicMaterial color="#a19a74"/>
+        <meshBasicMaterial color="#c5c5b7"/>
       </mesh>
     )}
     {[-1.15,1.15].map(y=>
@@ -227,17 +227,54 @@ function Room() {
   </group>;
 }
 
+/**
+ * Physically plausible studio-light rig. Diffuse neutral fill, a larger soft
+ * key and a controlled rim give the articulated links readable silhouettes
+ * without saturated lab colors or hard blown-out metal reflections.
+ */
 function Lighting() {
   return <>
-    <ambientLight intensity={.18} color="#e2e9e6"/>
-    <hemisphereLight args={['#e3e8e6','#7f8984',.48]}/>
-    <directionalLight position={[2.6,-3.4,5.3]} color="#fff8ed" intensity={.9}
+    <ambientLight intensity={.27} color="#eff2f1"/>
+    <hemisphereLight args={['#f6f8f7','#b6bcb8',.59]}/>
+    <directionalLight position={[-1.9,-2.8,5.5]} color="#fffaf4" intensity={1.15}
       castShadow={false}/>
-    <spotLight position={[-2.3,-1.4,3.8]} color="#e1edf1" intensity={52}
-      angle={.65} penumbra={.94} decay={2} castShadow={false}/>
-    <spotLight position={[1.6,1.3,3.4]} color="#fff3df" intensity={38}
-      angle={.66} penumbra={1} decay={2}/>
+    <spotLight position={[-2.1,-1.8,4.6]} color="#f5f7fa" intensity={48}
+      angle={.85} penumbra={1} decay={2} castShadow={false}/>
+    <spotLight position={[2.8,1.6,4.9]} color="#eef3f7" intensity={32}
+      angle={.72} penumbra={1} decay={2}/>
   </>;
+}
+
+/** Lighting panels and wall fixtures are visual set dressing, never selectable
+ * physics bodies. All interacting items remain real Steel rigid bodies. */
+function StudioFixtures() {
+  return <group>
+    {[-1.65,1.65].map(x => <group key={'softbox-'+x}>
+      <mesh position={[x,0,3.48]} receiveShadow>
+        <boxGeometry args={[1.35,.75,.065]}/>
+        <meshPhysicalMaterial color="#5d6768" roughness={.48} metalness={.54}/>
+      </mesh>
+      <mesh position={[x,0,3.433]}>
+        <planeGeometry args={[1.19,.59]}/>
+        <meshBasicMaterial color="#f9fbfc" toneMapped={false}/>
+      </mesh>
+      <RoundedSolid size={[.032,.032,.55]} position={[x,0,3.73]}
+        color="#778181" metalness={.73} roughness={.34}/>
+    </group>)}
+    <RoundedSolid size={[3.5,.10,.10]} position={[0,0,3.9]}
+      color="#768182" metalness={.62} roughness={.48}/>
+    <RoundedSolid size={[1.58,.10,.075]} position={[.32,3.04,1.74]}
+      color="#b1bbb8" metalness={.37} roughness={.55}/>
+    {[-.35,-.05,.25,.55,.85].map((x,i) =>
+      <RoundedSolid key={'wall-bracket-'+i} size={[.085,.11,.09]}
+        position={[x,3.0,1.68]} color={i%2?'#6d7978':'#86918d'}
+        metalness={.64} roughness={.39}/>
+    )}
+    <mesh position={[-1.62,3.10,2.12]}>
+      <planeGeometry args={[.76,.34]}/>
+      <meshBasicMaterial color="#ecf0ee" side={2}/>
+    </mesh>
+  </group>;
 }
 
 export function IndustrialSet({ preset }: {preset:Preset}) {
@@ -246,6 +283,7 @@ export function IndustrialSet({ preset }: {preset:Preset}) {
     <Workbench preset={preset}/>
     <Chair/>
     <Monitor/>
+    <StudioFixtures/>
     <Lighting/>
   </>;
 }
