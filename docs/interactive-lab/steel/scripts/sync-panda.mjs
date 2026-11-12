@@ -65,6 +65,18 @@ await Promise.all(Array.from({length:6},async()=>{
     if(finished%12===0)console.log('Panda assets checked: '+finished+'/'+manifest.files.length);
   }
 }));
+// MuJoCo's Panda gripper uses a tendon actuator. Steel v0.1.0 imports joint
+// motors but not tendon actuators, so publish a clearly marked compatibility
+// derivative with independent joint servos. The exact source remains as
+// panda.xml and still passes its upstream blob hash.
+const originalMJCF=await readFile(resolve(destination,'panda.xml'),'utf8');
+if(!originalMJCF.includes('</actuator>'))throw new Error('Panda actuator block missing');
+const compatMJCF=originalMJCF.replace('</actuator>',
+  '  <!-- Modified by Ontos for Steel WebGPU: physical finger joint drives. -->\\n'+
+  '  <position joint="finger_joint1" kp="400" kv="35"/>\\n'+
+  '  <position joint="finger_joint2" kp="400" kv="35"/>\\n'+
+  '</actuator>').replace(/\\n/g,'\\n');
+await writeFile(resolve(destination,'panda-steel.xml'),compatMJCF);
 await writeFile(resolve(destination,'SOURCE.json'),JSON.stringify({
   source:manifest.origin,
   source_commit:manifest.source_commit,
