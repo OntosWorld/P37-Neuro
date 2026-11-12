@@ -17,10 +17,10 @@ const CAMERA_MOBILE = {
   target: [0, 0, .88] as [number,number,number],
   fov: 46,
 };
-function LiveScene({ preset, robot, items, paused, collision, pose, gripper,
+function LiveScene({ preset, robot, items, paused, collision, pose, gripper, baseline,
   sceneRef, onSample, onMotion, onGripSample, onReady, onError, sourceFrames, sourcePlaying }: {
   preset: Preset; robot: RobotType; items: LooseItem[]; paused: boolean; collision: boolean;
-  pose: number; gripper: number; sceneRef: React.RefObject<SceneHandle | null>;
+  pose: number; gripper: number; baseline: boolean; sceneRef: React.RefObject<SceneHandle | null>;
   onMotion: (sample: ItemMotionSample) => void;
   onGripSample: (sample: GripStateSample) => void;
   onSample: (s: SimStatsSample | null) => void; onReady: () => void; onError: (s: string) => void;
@@ -44,7 +44,7 @@ function LiveScene({ preset, robot, items, paused, collision, pose, gripper,
   >
     <Scene ref={sceneRef} gravity={[0,0,-9.81]} fps={60} paused={paused} collision={collision}
       pickable controls camera={mobile ? CAMERA_MOBILE : CAMERA_DESKTOP} onLoaded={onReady} onError={e=>onError(String(e))}>
-      <Workcell preset={preset} robot={robot} items={items} pose={pose} gripper={gripper} onStats={onSample} onMotion={onMotion} onGripSample={onGripSample} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
+      <Workcell preset={preset} robot={robot} items={items} pose={pose} gripper={gripper} baseline={baseline} onStats={onSample} onMotion={onMotion} onGripSample={onGripSample} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
     </Scene>
   </Physics>;
 }
@@ -55,6 +55,7 @@ export function App() {
   const [selectedObject, setSelectedObject] = useState<ObjectType>('parcel');
   const [pose, setPose] = useState(.18);
   const [gripper, setGripper] = useState(.035);
+  const [reachCycle, setReachCycle] = useState(false);
   const [gripState, setGripState] = useState<GripStateSample | null>(null);
   const [trackedId, setTrackedId] = useState<number | null>(null);
   const [itemMotion, setItemMotion] = useState<Record<number, ItemMotionSample>>({});
@@ -133,16 +134,22 @@ export function App() {
     setStatus('New ' + selectedObject + ' added to the physics scene');
   };
   const dropTest = () => {
-    if (items.length >= 12) { setStatus('Maximum of 12 loose objects'); return; }
     const item: LooseItem = {
       id: nextItemId(),
       type: 'parcel',
-      position: [.52, -.33, 1.48],
+      position: [.46, -.19, 1.43],
     };
-    setItems(previous => [...previous, item]);
+    // Isolate the contact experiment. The former test put another parcel
+    // into an already active packing cell with overlapping loose objects;
+    // those collisions could launch the parcel off the workbench.
+    setPreset('inspection');
+    setItems([item]);
+    setItemMotion({});
     setTrackedId(item.id);
+    setGripState(null);
+    setReachCycle(false);
     setPaused(false);
-    setStatus('Drop test active — watching a physical parcel settle');
+    setStatus('Isolated tabletop drop: one parcel, gravity and contact');
   };
   return <div className="app-shell">
     <header className="site-header">
@@ -187,7 +194,7 @@ export function App() {
           </div>
           <div className="canvas-wrap">
             <LiveScene key={preset + '-' + robot} preset={preset} robot={robot} items={items}
-              paused={paused} collision={collision} pose={pose} gripper={gripper} sceneRef={scene}
+              paused={paused} collision={collision} pose={pose} gripper={gripper} baseline={reachCycle} sceneRef={scene}
               onMotion={onMotion} onGripSample={setGripState}
               onSample={setStats} onReady={()=>setStatus('Steel physics active')}
               onError={setStatus} sourceFrames={showSource ? (sourceData?.traces[sourceEpisode]?.frames ?? []) : []}
@@ -203,6 +210,9 @@ export function App() {
           </div>
           <div className="viewport-controls">
             <div className="action-row">
+              <button onClick={()=>setReachCycle(active=>!active)} aria-pressed={reachCycle}>
+                {reachCycle ? 'Stop reach cycle' : 'Run reach cycle'}
+              </button>
               <button onClick={()=>setPaused(!paused)}>{paused ? '▶ Resume' : 'Ⅱ Pause'}</button>
               <button onClick={reset}>↻ Reset</button>
               <button aria-pressed={collision} onClick={()=>setCollision(!collision)}>
@@ -254,7 +264,7 @@ export function App() {
           <select id="tracked-body" value={tracked?.id ?? ''} onChange={e=>setTrackedId(Number(e.target.value))}>
             {items.map(item=><option key={item.id} value={item.id}>{item.type} #{item.id}</option>)}
           </select>
-          <p className="helper">Objects have mass and contact geometry. Adding an object rebuilds the scene, resetting existing bodies.</p>
+          <p className="helper">Objects have mass and contact geometry. Run the isolated drop test to measure table contact without other loose objects interfering.</p>
           <div className="rule"/>
           <label>Source-data replay</label>
           <button className="primary" onClick={() => setShowSource(!showSource)}>
