@@ -299,35 +299,18 @@ async function qa(){
   await wait(180);
   await capture(page,'p37-skild-style-mobile.png');
 
-  // Qualify the separately sourced real Panda geometry on the hardware GPU.
-  // The ~34MB source is cached in our built site; no third-party browser load.
-  if (process.platform === 'darwin') {
-    await page.setViewportSize({width:1512,height:982});
-    let manufacturerMeshes = 0;
-    const onAsset = response => {
-      if (response.ok() && response.url().includes('/vendor/panda/assets/')) manufacturerMeshes++;
-    };
-    page.on('response',onAsset);
-    await page.getByRole('button',{name:/Franka Panda \(full mesh\)/}).click();
-    await page.waitForFunction(()=>{
-      const title=document.querySelector('.status-line')?.textContent??'';
-      return title.includes('Steel physics active');
-    },undefined,{timeout:180000});
-    await page.waitForTimeout(2500);
-    const manufacturer=await page.locator('.info-row').filter({hasText:'Robot geometry'})
-      .locator('strong').innerText();
-    const timeBefore=await page.locator('.info-row').filter({hasText:'Simulation time'})
-      .locator('strong').innerText();
-    await page.waitForTimeout(1400);
-    const timeAfter=await page.locator('.info-row').filter({hasText:'Simulation time'})
-      .locator('strong').innerText();
-    if(!manufacturer.includes('Franka Panda')||timeBefore===timeAfter||manufacturerMeshes<35)
-      throw new Error('Full-mesh Panda did not run: '+JSON.stringify({manufacturer,timeBefore,timeAfter,manufacturerMeshes}));
-    results.webgpu.manufacturer={model:manufacturer,meshFiles:manufacturerMeshes,
-      modelLicense:'Apache-2.0',sourceCommit:'370c43965323c0944b433b202aac5058b5f907a9'};
-    await capture(page,'p37-full-mesh-franka-panda.png');
-    page.off('response',onAsset);
-  }
+  // The old Steel Panda importer failed hardware qualification and is not
+  // exposed to visitors. Panda now runs as a native MuJoCo model on the
+  // canonical homepage; root E2E qualifies its scene and asset selection.
+  const obsoletePandaButton = await page.getByRole('button',
+    {name:/Franka Panda/}).count();
+  if (obsoletePandaButton !== 0)
+    throw new Error('Unqualified Steel Panda loader remains exposed');
+  results.webgpu.manufacturer = {
+    loader: 'native-MuJoCo-on-root',
+    steelMJCFQualified: false,
+    policy: 'none',
+  };
 }
 try{
   await qa();
