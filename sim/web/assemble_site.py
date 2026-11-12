@@ -35,6 +35,12 @@ def add_interactive_lab(output: Path) -> None:
         raise FileNotFoundError("missing authenticated MimicGen replay artifact")
     shutil.copytree(source_samples, lab / "compare" / "samples")
     shutil.copytree(steel_dist, lab / "steel")
+    public_test = LAB / "public-test" / "index.html"
+    if not public_test.is_file():
+        raise FileNotFoundError("missing public test entrypoint")
+    test_dir = output / "test"
+    test_dir.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(public_test, test_dir / "index.html")
     # Both public demonstrations and the original robot library stay available.
     for rel in (
         "index.html",
@@ -42,6 +48,7 @@ def add_interactive_lab(output: Path) -> None:
         "compare/index.html",
         "compare/samples/mimicgen-square-source.json",
         "steel/index.html",
+        "../test/index.html",
         "steel/samples/mimicgen-square-source.json",
     ):
         if not (lab / rel).is_file():
