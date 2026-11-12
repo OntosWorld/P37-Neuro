@@ -163,20 +163,36 @@ function ReferenceRobotControl({ refRobot, target, body, baseline, gripper, onGr
         // below needs this observation to apply *physical joint forces*.
         const state = await world.sim.state();
         if (!active) return;
+        // RobotHandle.dofs stores Newton qd indices. The GPU's jointQ array
+        // uses a *different* coordinate layout: every free body contributes
+        // 7 q values but only 6 qd values. Never index jointQ with a qd index.
+        const joints = (world.sim.scene.json as unknown as {
+          joints: { q_start: number[]; qd_start: number[] };
+        }).joints;
+        const qIndexForDof = (dof: number): number | undefined => {
+          for (let joint = 0; joint + 1 < joints.qd_start.length; joint++) {
+            const low = joints.qd_start[joint], high = joints.qd_start[joint + 1];
+            if (dof >= low && dof < high) {
+              return joints.q_start[joint] + dof - low;
+            }
+          }
+          return undefined;
+        };
+        const report: { name: string; dof: number; qIndex: number | undefined;
+          q: number | undefined; qd: number | undefined }[] = [];
+        for (const [name, dof] of robot.dofs) {
+          const qIndex = qIndexForDof(dof);
+          const q = qIndex === undefined ? undefined : state.jointQ[qIndex];
+          const qd = state.jointQd[dof];
+          report.push({ name, dof, qIndex, q, qd });
+          if (q !== undefined && Number.isFinite(q) && Number.isFinite(qd))
+            readings.current.set(name, { q, qd });
+        }
         if (window.location.search.includes('debugPhysics=1')) {
           (window as Window & { __p37PhysicsDebug?: unknown }).__p37PhysicsDebug = {
-            time: world.sim.time,
-            robot: body,
-            joints: [...robot.dofs.entries()].map(([name,index]) => ({
-              name, index,
-              q: state.jointQ[index], qd: state.jointQd[index],
-            })),
+            time: world.sim.time, robot: body, joints: report,
             actions: [...readings.current.entries()],
           };
-        }
-        for (const [name, index] of robot.dofs) {
-          if (Number.isFinite(state.jointQ[index]) && Number.isFinite(state.jointQd[index]))
-            readings.current.set(name, { q: state.jointQ[index], qd: state.jointQd[index] });
         }
         if (world.sim.time - lastReport >= .5) {
           const left = readings.current.get(body === 'panda' ? 'finger_joint1' : 'left_finger_slide');
