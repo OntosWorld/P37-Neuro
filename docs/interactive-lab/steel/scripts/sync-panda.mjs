@@ -79,6 +79,35 @@ const compatMJCF=originalMJCF.replace('</actuator>',
 if(compatMJCF.includes('\\\\n') || !compatMJCF.includes('<position joint="finger_joint1"'))
   throw new Error('Invalid Steel Panda compatibility XML: encoded newlines or missing finger drives');
 await writeFile(resolve(destination,'panda-steel.xml'),compatMJCF);
+
+// Browser-budget derivative of the same manufacturer-derived Panda morphology:
+// keep the source link hierarchy, joint axes, masses, inertias, actuator drives,
+// and a representative mesh on each articulated part. Replace expensive
+// triangle-mesh collision hulls with *explicitly approximate* small box proxies;
+// keep the authentic tiny finger-pad collision boxes from the source.
+//
+// The upstream exact model and high-detail Steel derivative remain untouched.
+// This approximation is labeled as such in the UI and must pass Metal physics
+// qualification before being described as a working manufacturer-derived robot.
+const representativeMeshes = new Set([
+  'link0_0','link1','link2','link3_0','link4_0','link5_0',
+  'link6_0','link6_7','link7_0','hand_0','finger_0','finger_1',
+]);
+let visualCount=0, collisionCount=0;
+let compactMJCF=compatMJCF.replace(/<geom\\b[^>]*\\bclass="visual"[^>]*\\/>/g, tag=>{
+  const name=tag.match(/\\bmesh="([^"]+)"/)?.[1];
+  if(!name || representativeMeshes.has(name)) { visualCount++; return tag; }
+  return '';
+}).replace(/<geom\\b[^>]*\\bmesh="[^"]+"[^>]*\\bclass="collision"[^>]*\\/>/g, ()=>{
+  collisionCount++;
+  return '<geom type="box" size="0.026 0.026 0.026" class="collision"/>';
+});
+if(visualCount<11 || visualCount>20 || collisionCount<9)
+  throw new Error('Unexpected Panda source layout: '+JSON.stringify({visualCount,collisionCount}));
+if(compactMJCF.includes('\\\\n') || !compactMJCF.includes('finger_joint2'))
+  throw new Error('Malformed Panda browser compatibility derivative');
+await writeFile(resolve(destination,'panda-browser.xml'),compactMJCF);
+
 await writeFile(resolve(destination,'SOURCE.json'),JSON.stringify({
   source:manifest.origin,
   source_commit:manifest.source_commit,
