@@ -14,6 +14,7 @@ from pathlib import Path
 
 import mjswan
 import mujoco
+from mjswan.mjlab.env import build_single_entity_trace_env
 from catalog import ROBOTS, RobotScene, check_catalog
 from p37_onnx_browser import VALID_BODIES, verified_policy
 
@@ -134,10 +135,15 @@ def build(
                     origin_type=mjswan.ViewerConfig.OriginType.WORLD,
                 )
             )
+            # A trace environment is needed even when the custom observation
+            # classes are native TS bindings, so mjswan can inspect its MDP.
+            experiment.set_trace_env(
+                build_single_entity_trace_env(
+                    lambda model_path=str(path): mujoco.MjSpec.from_file(model_path)
+                )
+            )
             model = mujoco.MjModel.from_xml_path(str(path))
-            experiment.add_policy(**verified_policy(
-                policy_onnx, policy_contract, robot.id, model
-            ))
+            experiment.add_policy(**verified_policy(policy_onnx, policy_contract, robot.id, model))
             built_scenes.append(robot.id + "_p37_experimental")
 
     old_cwd = Path.cwd()
