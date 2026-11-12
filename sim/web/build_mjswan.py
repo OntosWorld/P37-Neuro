@@ -221,8 +221,10 @@ def build(
                 not all(actual_names)
                 or len(set(actual_names)) != len(actual_names)
                 or matched != actual_names
-                or any(int(dyn) != int(mujoco.mjtDyn.mjDYN_NONE)
-                       for dyn in model.actuator_dyntype)
+                or any(
+                    int(dyn) != int(mujoco.mjtDyn.mjDYN_NONE)
+                    for dyn in model.actuator_dyntype
+                )
             ):
                 raise ValueError(
                     "Direct motion replay must name every nondynamic motor "
