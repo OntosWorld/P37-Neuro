@@ -38,9 +38,7 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         raise FileNotFoundError("Build manufacturer-derived MuJoCo scenes first")
     shutil.copytree(simulator, output / "simulator")
     catalog = {"robots": [robot.to_public() for robot in ROBOTS]}
-    (output / "catalog.json").write_text(
-        json.dumps(catalog, indent=2) + "\\n", encoding="utf-8"
-    )
+    (output / "catalog.json").write_text(json.dumps(catalog, indent=2) + "\n", encoding="utf-8")
     manifest = json.loads((output / "simulator" / "manifest.json").read_text(encoding="utf-8"))
     ids = {scene["id"] for project in manifest["projects"] for scene in project["scenes"]}
     required = {robot.id for robot in ROBOTS}
