@@ -1,16 +1,17 @@
-name: P37 Brain Lab — GitHub Pages
-
+name: P37 Neuro — Single Site
 on:
   pull_request:
     paths:
-      - "sim/web/**"
-      - "docs/interactive-lab/**"
+      - "sim/web/assemble_site.py"
+      - "sim/web/root_e2e_test.py"
+      - "docs/interactive-lab/steel/**"
       - ".github/workflows/p37-github-pages.yml"
   push:
     branches: [main]
     paths:
-      - "docs/interactive-lab/**"
-      - "sim/web/**"
+      - "sim/web/assemble_site.py"
+      - "sim/web/root_e2e_test.py"
+      - "docs/interactive-lab/steel/**"
       - ".github/workflows/p37-github-pages.yml"
   workflow_dispatch:
 
@@ -18,124 +19,57 @@ permissions:
   contents: read
 
 concurrency:
-  group: "p37-brain-lab-github-pages"
+  group: p37-neuro-github-pages
   cancel-in-progress: false
 
 jobs:
   build:
-    name: Build and test GitHub Pages site
+    name: Build and validate one live root page
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install MuJoCo web builder and test dependencies
-        run: python -m pip install "mjswan" "pytest>=8.3" "playwright>=1.55,<2"
-      - name: Fetch actual robot models
-        run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
-      - name: Build reproducible experiment evidence
-        run: |
-          python sim/web/disturbance_test.py --menagerie _menagerie --out _physics/force-results.json
-          python sim/web/build_demo_evidence.py \
-            --menagerie _menagerie --forces _physics/force-results.json \
-            --output _demo_evidence.json
-      - name: Setup Node for Steel WebGPU workcell
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-      - name: Build additive Steel WebGPU research workcell
+      - name: Build Steel WebGPU workcell
         working-directory: docs/interactive-lab/steel
         run: |
           npm install --no-audit --no-fund
           npm run build
-      - name: Build for GitHub Pages project URL
+      - name: Publish only the canonical root experience
+        run: python sim/web/assemble_site.py --output _pages
+      - name: Validate root page and isolated browser assets
         run: |
-          node --check sim/web/demos/demos.js
-          python sim/web/build_mjswan.py \
-            --menagerie _menagerie \
-            --base-path /P37-Neuro/simulator/
-          python sim/web/assemble_site.py --output _pages --demo-evidence _demo_evidence.json
-          python - <<'PY'
-          import importlib.metadata
-          import json
-          import subprocess
-          from pathlib import Path
-
-          site = Path("_pages")
-          manifest = json.loads((site / "simulator/manifest.json").read_text())
-          scenes = {
-              scene["id"]
-              for project in manifest["projects"]
-              for scene in project["scenes"]
-          }
-          assert {"unitree_g1", "unitree_go2", "franka_panda", "unitree_h1", "booster_t1", "boston_dynamics_spot", "crazyflie_2"} <= scenes
-          assert len(scenes) >= 10
-          assert (site / "index.html").is_file()
-          assert (site / "simulator/index.html").is_file()
-          assert (site / "catalog.json").is_file()
-          assert (site / "studio.css").is_file()
-          assert (site / "studio.js").is_file()
-          assert (site / "demos/index.html").is_file()
-          assert (site / "demos/evidence.json").is_file()
-          assert (site / "lab/index.html").is_file()
-          assert (site / "lab/sim/index.html").is_file()
-          assert (site / "lab/compare/index.html").is_file()
-          assert (site / "lab/compare/samples/mimicgen-square-source.json").is_file()
-          assert (site / "lab/steel/index.html").is_file()
-          assert (site / "test/index.html").is_file()
-          assert (site / "lab/steel/samples/mimicgen-square-source.json").is_file()
-          metadata = {
-              "host": "github-pages",
-              "repository": "OntosRobotics/P37-Neuro",
-              "robot_models": sorted(scenes),
-              "menagerie_commit": subprocess.check_output(
-                  ["git", "-C", "_menagerie", "rev-parse", "HEAD"],
-                  text=True,
-              ).strip(),
-              "mjswan": importlib.metadata.version("mjswan"),
-              "mujoco": importlib.metadata.version("mujoco"),
-              "policy": "none",
-              "p37_locomotion_qualified": False,
-          }
-          (site / "build-info.json").write_text(
-              json.dumps(metadata, indent=2) + "\n",
-              encoding="utf-8",
-          )
-          print("Prepared GitHub Pages robots:", sorted(scenes))
-          PY
-      - name: Install headless Chromium
-        run: python -m playwright install --with-deps chromium
-      - name: Browser check using exact /P37-Neuro/ public URL prefix
-        run: |
-          python sim/web/e2e_test.py \
-            --site _pages \
-            --url-prefix /P37-Neuro/ \
-            --screenshots _pages_test_results
-      - name: Keep browser screenshots and results
+          python -m pip install "playwright>=1.55,<2"
+          python -m playwright install --with-deps chromium
+          python sim/web/root_e2e_test.py --site _pages --url-prefix /P37-Neuro/ --screenshots _pages_test_results
+      - name: Keep root browser evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: p37-github-pages-browser-evidence
+          name: p37-single-root-browser-evidence
           path: _pages_test_results/
           if-no-files-found: warn
           retention-days: 14
-      - name: Upload public website preview
+      - name: Upload site preview
         uses: actions/upload-artifact@v4
         with:
-          name: p37-github-pages-site
+          name: p37-single-root-site
           path: _pages/
           if-no-files-found: error
           retention-days: 14
-      - name: Package website for GitHub Pages
+      - name: Package for Pages
         if: github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: _pages/
 
   deploy:
-    name: Publish at GitHub Pages
+    name: Publish canonical P37-Neuro URL
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     needs: build
     runs-on: ubuntu-latest
@@ -147,14 +81,12 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - name: Confirm GitHub Pages is enabled
-        uses: actions/configure-pages@v5
-      - name: Publish static simulation site
+      - uses: actions/configure-pages@v5
+      - uses: actions/deploy-pages@v4
         id: deployment
-        uses: actions/deploy-pages@v4
-      - name: Confirm expected deployment
+      - name: Confirm deployment location
         env:
           PAGE_URL: ${{ steps.deployment.outputs.page_url }}
         run: |
-          echo "P37 Brain Lab published: $PAGE_URL"
           test -n "$PAGE_URL"
+          echo "P37-Neuro published at $PAGE_URL"
