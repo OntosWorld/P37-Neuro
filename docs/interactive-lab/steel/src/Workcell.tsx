@@ -85,7 +85,13 @@ function FollowPbr({ item, body, onMotion }: {
   const sampleElapsed = useRef(0);
   useFrame((state, delta) => {
     const pose = body.current && body.current.index >= 0 ? body.current.pose : null;
-    if (group.current && pose) {
+    // The pose handle starts at the origin until the rebuilt GPU scene has
+    // written its first body readback. That [0,0,0] is not physical motion.
+    if (group.current && pose &&
+        Number.isFinite(pose.position.x) &&
+        Number.isFinite(pose.position.y) &&
+        Number.isFinite(pose.position.z) &&
+        !(pose.position.x === 0 && pose.position.y === 0 && pose.position.z === 0)) {
       group.current.position.copy(pose.position);
       group.current.quaternion.copy(pose.quaternion);
       sampleElapsed.current += delta;
