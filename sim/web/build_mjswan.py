@@ -181,6 +181,61 @@ def build(
         )
         built_scenes.append(robot.id)
 
+    # mjswan's native direct-actuator runtime can write validated site/tendon
+    # motors, but its Python muscle checker normally permits only mjDYN_MUSCLE.
+    # Our model-derived non-learned clips use the exact source motor names and
+    # direct ctrl ranges. Enforce strict bounds/matching before accepting them;
+    # leave the normal validator in place for actual muscle policies.
+    from mjswan.build import pipeline as pipeline_module
+    from mjswan.envs.mdp.actions.actions import validate_muscle_actuators
+
+    def validate_direct_source_motors(scene_config):
+        direct = [
+            (name, cfg)
+            for policy in scene_config.policies
+            for name, cfg in (getattr(policy, "actions", None) or {}).items()
+            if isinstance(cfg, MuscleActivationActionCfg)
+        ]
+        if not direct:
+            return
+        model = scene_config.model
+        if model is None and scene_config.spec is not None:
+            model = scene_config.spec.compile()
+        if model is None:
+            raise RuntimeError("Physical source model required for motor replay")
+        actual_names = [
+            mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i)
+            for i in range(model.nu)
+        ]
+        for term_name, cfg in direct:
+            if term_name != "motor" or cfg.mode != "direct":
+                validate_muscle_actuators(model, cfg, term_name=term_name)
+                continue
+            patterns = list(cfg.actuator_names)
+            matched = [
+                name
+                for name in actual_names
+                if any(re.fullmatch(pattern, name or "") for pattern in patterns)
+            ]
+            if (
+                not all(actual_names)
+                or len(set(actual_names)) != len(actual_names)
+                or matched != actual_names
+                or any(int(dyn) != int(mujoco.mjtDyn.mjDYN_NONE)
+                       for dyn in model.actuator_dyntype)
+            ):
+                raise ValueError(
+                    "Direct motion replay must name every nondynamic motor "
+                    "in the original model actuator order"
+                )
+            for index in range(model.nu):
+                if model.actuator_ctrllimited[index]:
+                    lo, hi = model.actuator_ctrlrange[index]
+                    if not (float("-inf") < lo < hi < float("inf")):
+                        raise ValueError("Invalid native motor control limits")
+
+    pipeline_module._validate_muscle_action_terms = validate_direct_source_motors
+
     # Compatibility with a newer mjlab Scene GUI API: the optional GUI
     # recorder in mjswan currently builds a metadata-only fake model lacking
     # ncam. That recorder is not part of the physics or policy runtime. Keep
