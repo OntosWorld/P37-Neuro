@@ -4,6 +4,7 @@ Clips are synthesized from official MuJoCo Menagerie joint limits and keyframes.
 They are *not* human demonstrations, licensed external trajectories, or learned
 P37 policies. Playback drives the real physics model's actuators at 50 Hz.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -57,10 +58,14 @@ def _amplitude(model: mujoco.MjModel, joints: list[int], rest: np.ndarray) -> np
     values = []
     for joint, centre in zip(joints, rest, strict=True):
         name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, joint).lower()
-        scale = 0.21 if any(
-            token in name
-            for token in ("hip", "thigh", "shoulder", "upper", "elbow", "knee", "arm")
-        ) else 0.13
+        scale = (
+            0.21
+            if any(
+                token in name
+                for token in ("hip", "thigh", "shoulder", "upper", "elbow", "knee", "arm")
+            )
+            else 0.13
+        )
         if "finger" in name or "gripper" in name:
             scale = 0.012
         if int(model.jnt_type[joint]) == int(mujoco.mjtJoint.mjJNT_SLIDE):
@@ -133,7 +138,8 @@ def _onnx_table(actions: np.ndarray) -> onnx.ModelProto:
         helper.make_node("Gather", ["p37_actions", "p37_frame"], ["action"], axis=0),
     ]
     graph = helper.make_graph(
-        node, "P37_model_motion_dataset_replay",
+        node,
+        "P37_model_motion_dataset_replay",
         [helper.make_tensor_value_info("time_step", TensorProto.FLOAT, [1, 1])],
         [helper.make_tensor_value_info("action", TensorProto.FLOAT, [1, width])],
         [
