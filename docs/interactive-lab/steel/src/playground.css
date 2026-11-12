@@ -375,3 +375,31 @@ body,.app-shell{color:#242827!important}
 .stage-robot-actions[disabled]{opacity:.46}
 .model-mode-label{font-size:11px;color:#535d56}
 @media(max-width:690px){.catalog-choices{grid-template-columns:repeat(2,minmax(0,1fr))}.catalog-choices button{min-height:58px}}
+
+/* Root-page P37 policy evidence is deliberately distinct from the live viewer.
+   It reports *recorded native trials*, without attaching an unqualified model. */
+.policy-evidence{max-width:1280px;margin:54px auto 0;padding:36px 0 45px;border-top:1px solid #e3e6e3}
+.policy-evidence-heading{max-width:780px}
+.policy-evidence-heading h2{font-size:clamp(25px,2.8vw,38px);line-height:1.17;letter-spacing:-.04em;font-weight:520;margin:13px 0 12px;color:#222b26}
+.policy-evidence-heading p{font-size:14px;line-height:1.7;color:#67736d;margin:0 0 25px}
+.policy-facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid #e2e5e2;border-bottom:1px solid #e2e5e2}
+.policy-facts>div{min-width:0;padding:19px 16px 19px 0}
+.policy-facts span{font-size:11px;color:#818b84;display:block;margin-bottom:8px}
+.policy-facts strong{font-size:13px;font-weight:550;color:#26342b;overflow-wrap:anywhere}
+.policy-evidence-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:20px}
+.policy-evidence-card{border:1px solid #e1e5e1;border-radius:8px;padding:22px;background:#fcfdfc}
+.policy-body-name{font-size:18px;font-weight:550;letter-spacing:-.025em;color:#26322b}
+.policy-evidence-card p{font-size:12px;color:#7b877f;margin:6px 0 16px}
+.policy-trial-list{border-top:1px solid #e5e9e5}
+.policy-trial-list>div{display:flex;justify-content:space-between;gap:8px;padding:12px 0;border-bottom:1px solid #e5e9e5;font-size:12px}
+.policy-trial-list span{color:#758079}
+.policy-trial-list strong{color:#2a342d;font-weight:530}
+.policy-disclaimer{font-size:12px;line-height:1.72;color:#67736c;margin:20px 0 12px}
+.policy-disclaimer strong{color:#27362d}
+.policy-source-link{font-size:12px;color:#274b3b;text-decoration:underline;text-underline-offset:4px}
+@media(max-width:690px){
+  .policy-evidence{margin-top:39px;padding-top:24px}
+  .policy-facts{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .policy-evidence-grid{grid-template-columns:1fr}
+  .policy-evidence-card{padding:17px}
+}

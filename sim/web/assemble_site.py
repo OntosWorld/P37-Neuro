@@ -37,6 +37,27 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     if not (simulator / "manifest.json").is_file():
         raise FileNotFoundError("Build manufacturer-derived MuJoCo scenes first")
     shutil.copytree(simulator, output / "simulator")
+    # Published measurements are recorded native policy experiments.
+    # They are read-only evidence files, never browser policy artifacts.
+    for name in ("p37-evidence.json", "p37-cross-body-evidence.json"):
+        source = ROOT / "sim" / "web" / name
+        payload = json.loads(source.read_text(encoding="utf-8"))
+        if name == "p37-cross-body-evidence.json":
+            if (
+                payload.get("qualified_for_cross_body_task_transfer") is not False
+                or payload.get("browser_policy_attached") is not False
+                or payload.get("same_checkpoint_used_for_all_bodies") is not True
+                or payload.get("parameters_retrained_for_go2") is not False
+                or set(payload.get("bodies", {})) != {"unitree_g1", "unitree_go2"}
+            ):
+                raise RuntimeError("P37 cross-body evidence boundary mismatch")
+        else:
+            if (
+                payload.get("qualification") != "unqualified"
+                or payload.get("qualified_for_walking") is not False
+            ):
+                raise RuntimeError("P37 G1 policy evidence boundary mismatch")
+        shutil.copyfile(source, output / name)
     catalog = {"robots": [robot.to_public() for robot in ROBOTS]}
     (output / "catalog.json").write_text(json.dumps(catalog, indent=2) + "\n", encoding="utf-8")
     manifest = json.loads((output / "simulator" / "manifest.json").read_text(encoding="utf-8"))

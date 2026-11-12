@@ -6,6 +6,31 @@ import type { SourceFrame } from './SourceTrajectory';
 
 type RealRobot = { id: string; name: string; kind: string; short: string; task: string; model: string };
 type RobotCatalog = { robots: RealRobot[] };
+type PolicyEvidence = {
+  kind: string;
+  checkpoint_sha256: string;
+  trained_on: string;
+  same_checkpoint_used_for_all_bodies: boolean;
+  parameters_retrained_for_go2: boolean;
+  browser_policy_attached: boolean;
+  qualified_for_cross_body_task_transfer: boolean;
+  qualified_for_walking: boolean;
+  bodies: Record<string, {
+    actuators: number;
+    inference_and_physics_executed: boolean;
+    trials: {seed:number; commands_sent:number; sim_seconds:number; fell:boolean}[];
+  }>;
+  provenance: {workflow:string};
+  limitation: string;
+};
+type G1PolicyEvidence = {
+  qualification: string;
+  training_updates: number;
+  qualified_for_walking: boolean;
+  evaluation: {seeds:{seed:number; sim_seconds:number; fallen:boolean}[];notes:string};
+  onnx: {max_action_abs_error:number;parity_steps:number};
+  provenance: {training_workflow:string;onnx_workflow:string;checkpoint_sha256:string};
+};
 const MODEL_IDS = new Set([
   'unitree_g1', 'unitree_h1', 'booster_t1', 'unitree_go2',
   'boston_dynamics_spot', 'anymal_c', 'franka_panda',
@@ -60,6 +85,9 @@ export function App() {
   const [robot, setRobot] = useState<RobotType>('compact');
   const [activeModel, setActiveModel] = useState('compact');
   const [robotCatalog, setRobotCatalog] = useState<RealRobot[]>([]);
+  const [policyEvidence, setPolicyEvidence] = useState<PolicyEvidence | null>(null);
+  const [g1Evidence, setG1Evidence] = useState<G1PolicyEvidence | null>(null);
+  const [evidenceError, setEvidenceError] = useState('');
   const [catalogError, setCatalogError] = useState('');
   const isMuJoCo = MODEL_IDS.has(activeModel);
   const activeRealRobot = robotCatalog.find(item => item.id === activeModel);
@@ -113,6 +141,36 @@ export function App() {
       livePosition[1] - tracked.position[1],
       livePosition[2] - tracked.position[2],
     ) : undefined;
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.all([
+      fetch(import.meta.env.BASE_URL + 'p37-cross-body-evidence.json',
+        {signal:controller.signal}).then(async r=>{
+          if (!r.ok) throw new Error('Cross-body evidence unavailable');
+          return await r.json() as PolicyEvidence;
+        }),
+      fetch(import.meta.env.BASE_URL + 'p37-evidence.json',
+        {signal:controller.signal}).then(async r=>{
+          if (!r.ok) throw new Error('G1 policy evidence unavailable');
+          return await r.json() as G1PolicyEvidence;
+        }),
+    ]).then(([cross, g1])=>{
+      if (cross.kind !== 'p37_variable_morphology_inference_smoke' ||
+          cross.browser_policy_attached !== false ||
+          cross.qualified_for_cross_body_task_transfer !== false ||
+          cross.qualified_for_walking !== false ||
+          cross.same_checkpoint_used_for_all_bodies !== true ||
+          cross.parameters_retrained_for_go2 !== false ||
+          g1.qualified_for_walking !== false ||
+          g1.qualification !== 'unqualified')
+        throw new Error('Published policy evidence has invalid qualification metadata');
+      setPolicyEvidence(cross);
+      setG1Evidence(g1);
+    }).catch(error=>{
+      if (!controller.signal.aborted) setEvidenceError(String(error));
+    });
+    return ()=>controller.abort();
+  }, []);
   useEffect(() => {
     const controller = new AbortController();
     fetch(import.meta.env.BASE_URL + 'catalog.json', { signal: controller.signal })
@@ -390,7 +448,45 @@ export function App() {
         </aside>
         </div>
       </section>
-      <section className="bottom-grid" id="research">
+      <section className="policy-evidence" id="research" aria-label="Verified P37 experimental policy evidence">
+        <div className="policy-evidence-heading">
+          <span className="overline">P37 / MEASURED POLICY EXPERIMENTS</span>
+          <h2>What the learned model has actually done.</h2>
+          <p>These results were produced by a recurrent P37 checkpoint in native MuJoCo.
+            The live browser workcell above runs separately. We publish both the observed behavior
+            and the qualification limits.</p>
+        </div>
+        {policyEvidence && g1Evidence ? <>
+          <div className="policy-facts">
+            <div><span>Checkpoint</span><strong className="checkpoint-hash">{policyEvidence.checkpoint_sha256.slice(0,16)}…</strong></div>
+            <div><span>Cross-body inference</span><strong>G1 + Go2 · same checkpoint</strong></div>
+            <div><span>Training body</span><strong>Unitree G1</strong></div>
+            <div><span>Qualification</span><strong>Research smoke test only</strong></div>
+          </div>
+          <div className="policy-evidence-grid">
+            {(['unitree_g1','unitree_go2'] as const).map(id=>{
+              const body=policyEvidence.bodies[id];
+              return <div className="policy-evidence-card" key={id}>
+                <div className="policy-body-name">{id==='unitree_g1'?'Unitree G1':'Unitree Go2'}</div>
+                <p>{body.actuators} actuators · {body.trials.length} recorded native trials</p>
+                <div className="policy-trial-list">{body.trials.map(trial=>
+                  <div key={trial.seed}><span>Seed {trial.seed}</span>
+                    <strong>{trial.commands_sent} actions / {trial.sim_seconds.toFixed(1)}s</strong></div>)}</div>
+              </div>;
+            })}
+          </div>
+          <p className="policy-disclaimer"><strong>Evidence boundary:</strong> {policyEvidence.limitation}
+            {' '}The independent G1 walking smoke evaluation fell in
+            {' '}{g1Evidence.evaluation.seeds.filter(t=>t.fallen).length} of
+            {' '}{g1Evidence.evaluation.seeds.length} trials.
+            No live browser learned-policy inference or qualified cross-body transfer is shown.</p>
+          <a className="policy-source-link" href={policyEvidence.provenance.workflow}
+             target="_blank" rel="noreferrer">View native MuJoCo experiment and provenance ↗</a>
+        </> : <p className="policy-disclaimer">
+          {evidenceError || 'Loading recorded P37 policy evidence…'}
+        </p>}
+      </section>
+      <section className="bottom-grid">
         <div><span className="overline">01 / Physics</span><h2>Interact with the scene.</h2><p>Ten manufacturer-derived MuJoCo bodies and two motor-driven reference arms. Test contact, inspect actual robot geometry and use the workcell's physical gripper controls.</p></div>
         <div><span className="overline">02 / Training data</span><h2>Work with published demonstrations.</h2><p>MimicGen supplies HDF5 manipulation data from Panda, Sawyer, IIWA and UR5e. The P37 adapter imports recorded observations and controller-native actions for inspection.</p></div>
         <div><span className="overline">03 / Qualification</span><h2>Measure before claiming.</h2><p>Actual P37 checkpoints and held-out task evaluation are required for learned transfer claims. An interactive physics workcell is a separate engineering milestone.</p></div>
