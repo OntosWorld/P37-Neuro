@@ -19,18 +19,22 @@ STEEL = ROOT / "docs" / "interactive-lab" / "steel"
 
 
 def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
-    """Assemble a self-contained WebGPU experience at the site root."""
+    """Assemble a self-contained native MuJoCo experience at the site root."""
     dist = STEEL / "dist"
     if not (dist / "index.html").is_file():
         raise FileNotFoundError("Build docs/interactive-lab/steel before publishing")
-    if not (dist / "robots" / "compact.urdf").is_file():
-        raise FileNotFoundError("Physical reference robot missing from Steel assets")
     output = output.resolve()
     if output in (ROOT, STEEL, dist) or ROOT not in output.parents:
         raise ValueError("Output must be a separate build folder inside repository")
     if output.exists():
         shutil.rmtree(output)
     shutil.copytree(dist, output)
+    # Keep only native, manufacturer-derived robot geometry in the published
+    # website. The former Steel reference URDFs / unused assets are excluded.
+    for legacy in ("robots", "vendor"):
+        unused = output / legacy
+        if unused.is_dir():
+            shutil.rmtree(unused)
     # MuJoCo viewer is an internal runtime asset of this one-page application.
     # Users stay on /P37-Neuro/ while changing the 10 manufacturer models.
     simulator = ROOT / "sim" / "web" / "dist"
@@ -80,7 +84,7 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     metadata = {
         "schema_version": 1,
         "site_entry": "/P37-Neuro/",
-        "experience": "single-root-steel-webgpu",
+        "experience": "native-real-robot-P37-browser-policy",
         "physics_engine": "MuJoCo WebAssembly",
         "controllers": "experimental-P37-recurrent-ONNX-G1; passive-physics-other-bodies",
         "manufacturer_robots": sorted(robot.id for robot in ROBOTS),
