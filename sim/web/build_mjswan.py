@@ -15,6 +15,7 @@ from pathlib import Path
 import mjswan
 import mujoco
 from catalog import ROBOTS, RobotScene, check_catalog
+from p37_onnx_browser import VALID_BODIES, verified_policy
 
 ROOT = Path(__file__).resolve().parent
 
@@ -69,8 +70,15 @@ def _light_scene(spec: mujoco.MjSpec, robot: RobotScene) -> None:
         )
 
 
-def build(menagerie: Path, base_path: str = "/simulator/") -> Path:
+def build(
+    menagerie: Path,
+    base_path: str = "/simulator/",
+    policy_onnx: Path | None = None,
+    policy_contract: Path | None = None,
+) -> Path:
     check_catalog()
+    if (policy_onnx is None) != (policy_contract is None):
+        raise ValueError("P37 ONNX bytes and signed policy contract must be supplied together")
     menagerie = menagerie.resolve()
     if not menagerie.is_dir():
         raise FileNotFoundError(f"MuJoCo Menagerie checkout missing: {menagerie}")
@@ -108,6 +116,29 @@ def build(menagerie: Path, base_path: str = "/simulator/") -> Path:
             )
         )
         built_scenes.append(robot.id)
+        if robot.id in VALID_BODIES and policy_onnx is not None and policy_contract is not None:
+            # Separate scenes are intentional: an operator can select the real
+            # manufacturer model with no controller or the same model with P37.
+            # This prevents a hidden policy from hijacking "passive physics".
+            experiment = project.add_scene(
+                spec=mujoco.MjSpec.from_file(str(path)),
+                name=robot.name + " P37 experimental",
+                control_dt=0.02,
+            )
+            experiment.set_viewer(
+                mjswan.ViewerConfig(
+                    lookat=robot.camera,
+                    distance=robot.distance,
+                    elevation=robot.elevation,
+                    azimuth=robot.azimuth,
+                    origin_type=mjswan.ViewerConfig.OriginType.WORLD,
+                )
+            )
+            model = mujoco.MjModel.from_xml_path(str(path))
+            experiment.add_policy(**verified_policy(
+                policy_onnx, policy_contract, robot.id, model
+            ))
+            built_scenes.append(experiment.id)
 
     old_cwd = Path.cwd()
     try:
@@ -135,8 +166,10 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--menagerie", type=Path, required=True)
     parser.add_argument("--base-path", default="/simulator/")
+    parser.add_argument("--policy-onnx", type=Path)
+    parser.add_argument("--policy-contract", type=Path)
     args = parser.parse_args()
-    print(build(args.menagerie, args.base_path))
+    print(build(args.menagerie, args.base_path, args.policy_onnx, args.policy_contract))
 
 
 if __name__ == "__main__":
