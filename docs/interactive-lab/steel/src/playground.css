@@ -210,3 +210,147 @@ button[disabled]{opacity:.55;cursor:not-allowed}
   border:1px solid #bccabd;border-radius:999px;font-size:12px;font-weight:500}
 .jaw-actions button:hover,.side-panel .contact-demo:hover{background:#ecf2ed;border-color:#809c86}
 .side-panel .contact-demo{display:block;width:100%;text-align:center;margin-top:10px}
+
+/* Editorial quality pass, 2026-11. Matches the reference hierarchy rather than
+   duplicating Skild branding: quiet site navigation, generous hero spacing,
+   an uninterrupted physics stage, compact lab controls and restrained surfaces. */
+:root {
+  --p37-bg:#fff;--p37-ink:#242827;--p37-muted:#737a78;
+  --p37-rule:#e4e7e5;--p37-action:#242827;
+}
+body,.app-shell{color:#242827!important}
+.site-header{
+  max-width:1280px!important;min-height:74px!important;
+  padding:18px 0!important;gap:24px!important;
+  border-bottom:1px solid #ebedeb!important;
+}
+.site-header .brand{font-size:15px!important;letter-spacing:.015em!important;color:#202624!important}
+.site-header .brand span{color:#878d8a!important}
+.site-header nav{
+  margin-left:auto!important;gap:8px!important;background:transparent!important;
+  border-radius:0!important;padding:0!important
+}
+.site-header nav a{
+  color:#606966!important;padding:9px 10px!important;border-radius:5px!important;
+  font-size:12px!important;transition:color .15s ease!important
+}
+.site-header nav a:hover{background:transparent!important;color:#18231f!important}
+.build-tag{
+  margin-left:0!important;border-color:#e3e6e4!important;
+  border-radius:5px!important;padding:8px 12px!important;
+  color:#626a67!important
+}
+.title-row{
+  max-width:1280px!important;padding:49px 0 34px!important;
+}
+.title-row h1{
+  font-family:Arial,Helvetica,sans-serif!important;
+  font-size:clamp(38px,3.25vw,48px)!important;font-weight:550!important;
+  line-height:1.12!important;letter-spacing:-.045em!important;
+  color:#202524!important;margin:12px 0 12px!important
+}
+.title-row .intro{font-size:15px!important;color:#727976!important;line-height:1.65!important}
+.lab-grid{
+  max-width:1280px!important;grid-template-columns:minmax(0,1fr) 320px!important;
+  gap:18px!important
+}
+.lab-grid>.viewport{
+  background:#d7d9d9!important;border-radius:11px!important
+}
+.lab-grid>.playground-panel{
+  background:#fff!important;border:1px solid #e7e9e7!important;
+  border-radius:9px!important;max-height:758px!important
+}
+.playground-scenes{
+  gap:8px!important;padding:15px 17px!important;
+  background:#fff!important;border-bottom:1px solid #e9ece9!important
+}
+.playground-scenes-label,.playground-embodiment>span:first-child{
+  color:#666e6b!important;font-size:11px!important;font-weight:550!important
+}
+.playground-scenes button,.playground-embodiment button{
+  min-height:34px!important;border-radius:6px!important;
+  padding:8px 13px!important;font-size:12px!important;
+  font-weight:550!important;border-color:#d9deda!important;color:#3c4541!important
+}
+.playground-scenes button[aria-pressed=true],
+.playground-embodiment button[aria-pressed=true]{
+  color:#fff!important;background:#262d29!important;border-color:#262d29!important
+}
+.viewport-top{
+  background:#f5f6f5!important;border-bottom:1px solid #e4e8e4!important;
+  padding:10px 16px!important
+}
+.live-dot{background:#d77737!important}
+.canvas-wrap{
+  background:#d4d7d7!important;height:clamp(460px,48vw,630px)!important;
+  min-height:460px!important
+}
+.camera-tip{
+  background:rgba(255,255,255,.92)!important;
+  border:1px solid rgba(222,227,223,.9)!important;
+  color:#48544d!important;border-radius:5px!important
+}
+.playground-embodiment{
+  background:#fff!important;padding:10px 16px!important;
+  border-top:1px solid #e5e8e5!important
+}
+.playground-disclaimer{font-size:10px!important;color:#777e7a!important}
+.viewport-controls{
+  background:#fff!important;gap:8px!important;
+  padding:13px 16px!important;border-top:1px solid #e7e9e7!important
+}
+.action-row{gap:7px!important}
+.action-row button{
+  border-radius:6px!important;padding:9px 13px!important;
+  border-color:#d9ddda!important;font-size:12px!important;
+  min-height:36px!important;color:#35423a!important
+}
+.action-row button:first-child{
+  background:#242827!important;border-color:#242827!important
+}
+.action-row button:first-child:hover{background:#363d39!important}
+.action-row button[aria-pressed=true]{background:#e7ebe8!important}
+.status-line{color:#657169!important;font-size:11px!important}
+.side-panel,.evidence-panel{padding:20px!important}
+.side-panel label{color:#2f3732!important}
+.side-panel select{
+  border-radius:6px!important;padding:10px 12px!important;
+  color:#29312d!important
+}
+.side-panel button.primary{
+  border-radius:6px!important;background:#242827!important;
+  border-color:#242827!important;color:#fff!important
+}
+.side-panel button.primary:hover{background:#3b423e!important}
+.jaw-actions button,.side-panel .contact-demo{
+  border-radius:6px!important;border-color:#d7deda!important;color:#303a34!important
+}
+.info-row{border-bottom:1px solid #eef0ee!important;padding:10px 0!important}
+.flag{background:#f8f9f8!important;border-radius:6px!important}
+.stage-expand{border-radius:5px!important}
+@media(max-width:900px){
+  .lab-grid{grid-template-columns:minmax(0,1fr) 285px!important;gap:12px!important}
+  .site-header{padding:15px 0!important}
+  .canvas-wrap{height:525px!important}
+}
+@media(max-width:690px){
+  .site-header{min-height:66px!important;height:auto!important;padding:12px 0!important;gap:9px!important}
+  .site-header .brand{font-size:14px!important;flex:0 0 auto}
+  .site-header nav{max-width:none!important;min-width:0!important;gap:0!important}
+  .site-header nav a{font-size:11px!important;padding:8px 5px!important}
+  .title-row{padding:27px 0 23px!important}
+  .title-row h1{font-size:clamp(33px,8vw,42px)!important}
+  .lab-grid{grid-template-columns:1fr!important;gap:14px!important}
+  .lab-grid>.playground-panel{max-height:none!important}
+  .canvas-wrap{height:clamp(430px,105vw,540px)!important;min-height:430px!important}
+  .playground-scenes{padding:10px 11px!important;gap:6px!important}
+  .playground-scenes button{font-size:11px!important;padding:8px 10px!important}
+  .viewport-controls{padding:11px 12px!important}
+  .action-row{gap:6px!important}
+  .action-row button{padding:9px 10px!important}
+  .side-panel,.evidence-panel{padding:20px!important}
+}
+@media(max-width:390px){
+  .site-header nav a:nth-child(2){display:none!important}
+}
