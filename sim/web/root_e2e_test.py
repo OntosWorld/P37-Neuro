@@ -109,16 +109,16 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
                 state="visible", timeout=120000
             )
             page.screenshot(path=str(screenshots / "panda-real-model.png"), timeout=90000)
-            page.locator(".p37-real-panel .info-row").filter(
-                has_text="Policy"
-            ).locator("strong").filter(has_text="None").wait_for(timeout=15000)
+            page.locator(".p37-real-panel .info-row").filter(has_text="Policy").locator(
+                "strong"
+            ).filter(has_text="None").wait_for(timeout=15000)
             page.get_by_role("combobox", name="Select a robot").select_option("unitree_go2")
             assert "scene=unitree_go2" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
-            page.locator(".p37-real-panel .info-row").filter(
-                has_text="Policy"
-            ).locator("strong").filter(has_text="None").wait_for(timeout=15000)
+            page.locator(".p37-real-panel .info-row").filter(has_text="Policy").locator(
+                "strong"
+            ).filter(has_text="None").wait_for(timeout=15000)
             page.get_by_role("combobox", name="Select a robot").select_option("unitree_g1")
             assert page.url == origin
             assert "P37 recurrent PPO" in page.locator(".p37-real-panel").inner_text()
