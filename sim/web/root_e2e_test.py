@@ -3,6 +3,7 @@
 This checks the actual manufacturer-derived MuJoCo models and attached P37
 policy assets, not procedural stand-ins or a screenshot of robot animation.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -79,9 +80,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page = browser.new_page(viewport={"width": 1512, "height": 982})
             response = page.goto(origin, wait_until="domcontentloaded", timeout=45000)
             assert response is not None and response.status == 200
-            page.get_by_role("heading", name="One brain. Different bodies.").wait_for(
-                timeout=35000
-            )
+            page.get_by_role("heading", name="One brain. Different bodies.").wait_for(timeout=35000)
             page.get_by_role("button", name="Unitree G1").wait_for(timeout=30000)
             assert page.locator(".robot-catalog button").count() == 10
             assert "reference arm" not in page.locator("main").inner_text().lower()
@@ -89,9 +88,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert "P37 recurrent PPO" in page.locator(".p37-real-panel").inner_text()
             assert "walking" in page.locator(".policy-evidence").inner_text().lower()
             assert page.locator(".menagerie-viewer").count() == 1
-            assert "scene=unitree_g1" in page.locator(
-                "iframe.menagerie-viewer"
-            ).get_attribute("src")
+            assert "scene=unitree_g1" in page.locator("iframe.menagerie-viewer").get_attribute(
+                "src"
+            )
             assert page.url == origin
             page.frame_locator("iframe.menagerie-viewer").locator("canvas").first.wait_for(
                 state="visible", timeout=120000
@@ -102,27 +101,21 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
                 timeout=120000,
             )
             page.screenshot(path=str(screenshots / "g1-p37-live-inference.png"), timeout=90000)
-            page.get_by_role("combobox", name="Select a robot").select_option(
-                "franka_panda"
+            page.get_by_role("combobox", name="Select a robot").select_option("franka_panda")
+            assert "scene=franka_panda" in page.locator("iframe.menagerie-viewer").get_attribute(
+                "src"
             )
-            assert "scene=franka_panda" in page.locator(
-                "iframe.menagerie-viewer"
-            ).get_attribute("src")
             page.frame_locator("iframe.menagerie-viewer").locator("canvas").first.wait_for(
                 state="visible", timeout=120000
             )
             page.screenshot(path=str(screenshots / "panda-real-model.png"), timeout=90000)
             assert "no policy" in page.locator(".p37-real-panel").inner_text().lower()
-            page.get_by_role("combobox", name="Select a robot").select_option(
-                "unitree_go2"
+            page.get_by_role("combobox", name="Select a robot").select_option("unitree_go2")
+            assert "scene=unitree_go2" in page.locator("iframe.menagerie-viewer").get_attribute(
+                "src"
             )
-            assert "scene=unitree_go2" in page.locator(
-                "iframe.menagerie-viewer"
-            ).get_attribute("src")
             assert "no policy" in page.locator(".p37-real-panel").inner_text().lower()
-            page.get_by_role("combobox", name="Select a robot").select_option(
-                "unitree_g1"
-            )
+            page.get_by_role("combobox", name="Select a robot").select_option("unitree_g1")
             assert page.url == origin
             assert "P37 recurrent PPO" in page.locator(".p37-real-panel").inner_text()
             page.set_viewport_size({"width": 390, "height": 844})
