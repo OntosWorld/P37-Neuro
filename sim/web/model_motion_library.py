@@ -136,15 +136,13 @@ def _other_motor_clip(model: mujoco.MjModel, mode: str) -> tuple[np.ndarray, lis
     """Fallback for free-body motor-only models without hinge transmissions."""
     if model.nu < 1:
         raise ValueError("robot has no actuators for physical motion")
-    names = [
-        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i)
-        for i in range(model.nu)
-    ]
+    names = [mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i) for i in range(model.nu)]
     if not all(names):
         raise ValueError("non-joint actuator is unnamed")
     reference = (
         np.asarray(model.key_ctrl[0], dtype=np.float64)
-        if model.nkey else np.zeros(model.nu, dtype=np.float64)
+        if model.nkey
+        else np.zeros(model.nu, dtype=np.float64)
     )
     t = np.arange(FRAMES, dtype=np.float64) / RATE
     cycle = 2 * np.pi * t / (FRAMES / RATE)
@@ -200,8 +198,7 @@ def create_motion(model: mujoco.MjModel, robot_id: str, mode: str, out: Path) ->
         actions, names, rest = _drone_clip(model, mode)
         action_kind = "motor_effort"
     elif any(
-        int(model.actuator_trntype[i]) != int(mujoco.mjtTrn.mjTRN_JOINT)
-        for i in range(model.nu)
+        int(model.actuator_trntype[i]) != int(mujoco.mjtTrn.mjTRN_JOINT) for i in range(model.nu)
     ):
         # Mixed tendon/site/joint bodies need native actuator-level control.
         # Avoid an incomplete joint index, which silently moves the wrong motor.
