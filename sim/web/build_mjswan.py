@@ -14,8 +14,8 @@ from pathlib import Path
 
 import mjswan
 import mujoco
-from mjswan.mjlab.env import build_single_entity_trace_env
 from catalog import ROBOTS, RobotScene, check_catalog
+from mjswan.mjlab.env import build_single_entity_trace_env
 from p37_onnx_browser import VALID_BODIES, verified_policy
 
 ROOT = Path(__file__).resolve().parent
