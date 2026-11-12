@@ -5,6 +5,7 @@ from a pinned GitHub Actions artifact and are verified before build. Inference
 runs in the user's browser through mjswan/ONNX Runtime Web with actual MuJoCo
 joint observations and physical actuator targets.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -37,8 +38,7 @@ def _joint_names(model: mujoco.MjModel, contract: dict, robot: str) -> tuple[str
     if len(names) != model.nu or len(set(names)) != len(names):
         raise ValueError(f"{robot}: expected one distinct joint per actuator")
     model_names = {
-        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, j)
-        for j in range(model.njnt)
+        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, j) for j in range(model.njnt)
     }
     if any(name not in model_names for name in names):
         raise ValueError(f"{robot}: policy joint name absent from MuJoCo model")
@@ -51,8 +51,10 @@ def _default_pose(model: mujoco.MjModel, names: tuple[str, ...], contract: dict,
     if robot == "unitree_g1":
         return [float(v) for v in contract["default_joint_pos_rad"]]
     pose = model.key_qpos[0] if model.nkey else model.qpos0
-    return [float(pose[model.jnt_qposadr[
-        mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)]]) for name in names]
+    return [
+        float(pose[model.jnt_qposadr[mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_JOINT, name)]])
+        for name in names
+    ]
 
 
 def _flatten_joint_input(graph: onnx.GraphProto, count: int) -> None:
@@ -61,16 +63,20 @@ def _flatten_joint_input(graph: onnx.GraphProto, count: int) -> None:
     renamed = original + "_flat_mjswan"
     graph.input[0].name = renamed
     graph.input[0].type.tensor_type.shape.CopyFrom(
-        helper.make_tensor_value_info(renamed, TensorProto.FLOAT, [1, 2 * count])
-        .type.tensor_type.shape
+        helper.make_tensor_value_info(
+            renamed, TensorProto.FLOAT, [1, 2 * count]
+        ).type.tensor_type.shape
     )
     dims_name = "p37_joint_reshape_dims"
-    graph.initializer.append(numpy_helper.from_array(
-        np.asarray([1, count, 2], dtype=np.int64), name=dims_name
-    ))
-    graph.node.insert(0, helper.make_node(
-        "Reshape", [renamed, dims_name], [original], name="P37JointObservationsReshape"
-    ))
+    graph.initializer.append(
+        numpy_helper.from_array(np.asarray([1, count, 2], dtype=np.int64), name=dims_name)
+    )
+    graph.node.insert(
+        0,
+        helper.make_node(
+            "Reshape", [renamed, dims_name], [original], name="P37JointObservationsReshape"
+        ),
+    )
 
 
 def verified_policy(onnx_path: Path, contract_path: Path, robot: str, model: mujoco.MjModel):
@@ -80,11 +86,13 @@ def verified_policy(onnx_path: Path, contract_path: Path, robot: str, model: muj
     if hashlib.sha256(contents).hexdigest() != EXPECTED_ONNX_SHA256:
         raise ValueError("P37 ONNX bytes do not match the verified artifact")
     contract = json.loads(contract_path.read_text(encoding="utf-8"))
-    if (contract.get("onnx_sha256") != EXPECTED_ONNX_SHA256
-            or contract.get("p37_checkpoint_sha256") != EXPECTED_CHECKPOINT_SHA256
-            or contract.get("qualified_for_walking") is not False
-            or contract.get("control_dt_s") != 0.02
-            or contract.get("action_scale_rad") != 0.35):
+    if (
+        contract.get("onnx_sha256") != EXPECTED_ONNX_SHA256
+        or contract.get("p37_checkpoint_sha256") != EXPECTED_CHECKPOINT_SHA256
+        or contract.get("qualified_for_walking") is not False
+        or contract.get("control_dt_s") != 0.02
+        or contract.get("action_scale_rad") != 0.35
+    ):
         raise ValueError("Unrecognized experimental policy contract")
     if not OBS_SOURCE.is_file():
         raise FileNotFoundError("P37 native joint observation adapter missing")
@@ -97,27 +105,39 @@ def verified_policy(onnx_path: Path, contract_path: Path, robot: str, model: muj
     onnx.checker.check_model(network)
     source = str(OBS_SOURCE.resolve())
     observations = {
-        "p37_joints": ObservationGroupCfg(terms={
-            "joint_state": ObservationTermCfg(func=ObservationBinding(
-                ts_name="P37JointResidual", ts_src=source,
-                defaults={"count": len(joint_names), "default_pose": pose},
-            )),
-        }),
-        "p37_task": ObservationGroupCfg(terms={
-            "task_context": ObservationTermCfg(func=ObservationBinding(
-                ts_name="P37TaskContext", ts_src=source,
-                defaults={"desired_velocity_x": 0.3},
-            )),
-        }),
+        "p37_joints": ObservationGroupCfg(
+            terms={
+                "joint_state": ObservationTermCfg(
+                    func=ObservationBinding(
+                        ts_name="P37JointResidual",
+                        ts_src=source,
+                        defaults={"count": len(joint_names), "default_pose": pose},
+                    )
+                ),
+            }
+        ),
+        "p37_task": ObservationGroupCfg(
+            terms={
+                "task_context": ObservationTermCfg(
+                    func=ObservationBinding(
+                        ts_name="P37TaskContext",
+                        ts_src=source,
+                        defaults={"desired_velocity_x": 0.3},
+                    )
+                ),
+            }
+        ),
     }
-    actions = {"p37_joint_target": JointPositionActionCfg(
-        entity_name="",
-        actuator_names=tuple(joint_names),
-        scale=0.35,
-        use_default_offset=True,
-        stiffness=35.0,
-        damping=1.5,
-    )}
+    actions = {
+        "p37_joint_target": JointPositionActionCfg(
+            entity_name="",
+            actuator_names=tuple(joint_names),
+            scale=0.35,
+            use_default_offset=True,
+            stiffness=35.0,
+            damping=1.5,
+        )
+    }
     return {
         "name": "P37 Experimental Recurrent PPO",
         "policy": network,
