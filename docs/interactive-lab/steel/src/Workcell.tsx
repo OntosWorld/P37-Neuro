@@ -263,7 +263,12 @@ function ReferenceRobotControl({ refRobot, target, body, baseline, gripper, onGr
     drive('shoulder', target * (1 - fraction) + goal[0] * fraction, 24, 8, 21);
     drive('elbow', -.64 * (1 - fraction) + goal[1] * fraction, 20, 7, 17);
     drive('wrist', .52 * (1 - fraction) + goal[2] * fraction, 15, 6, 11);
-    const opening = Math.max(0, Math.min(.035, gripper));
+    // The visible reference demonstration cycles reach, jaw closure, and
+    // retraction. These are deterministic motor targets: no claim of grasp
+    // success, object transport or P37 policy inference.
+    const taskOpening = !baseline ? gripper :
+      phase < 2.9 ? .035 : phase < 5.1 ? .006 : .035;
+    const opening = Math.max(0, Math.min(.035, taskOpening));
     drive('left_finger_slide', opening, 150, 10, 15);
     drive('right_finger_slide', opening, 150, 10, 15);
   });
