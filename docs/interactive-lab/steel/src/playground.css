@@ -354,3 +354,24 @@ body,.app-shell{color:#242827!important}
 @media(max-width:390px){
   .site-header nav a:nth-child(2){display:none!important}
 }
+
+/* One-page integrated real robot catalog and MuJoCo scene. This viewer is an
+   embedded asset, never a secondary public navigation destination. */
+.menagerie-viewer{position:absolute;inset:0;width:100%;height:100%;border:0;background:#d9dcdb}
+.robot-catalog{margin:18px 0 14px;border-top:1px solid #e5e8e5;padding-top:16px}
+.catalog-heading{font-size:10px;letter-spacing:.08em;font-weight:650;color:#343d37;display:flex;justify-content:space-between;gap:8px;margin-bottom:11px}
+.catalog-heading span{color:#818984;white-space:nowrap}
+.catalog-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+.catalog-choices button{min-width:0;text-align:left;border:1px solid #e1e5e1;background:#fafbfa;border-radius:6px;padding:12px 10px;color:#26322c}
+.catalog-choices button strong{display:block;white-space:normal;font-size:11px;line-height:1.25}
+.catalog-choices button small{display:block;color:#7a857c;font-size:10px;line-height:1.35;margin-top:4px}
+.catalog-choices button:hover{background:#f0f4f1;border-color:#a5b4aa}
+.catalog-choices button.selected{background:#212a25;border-color:#212a25;color:#fff}
+.catalog-choices button.selected small{color:#d3dbd5}
+.reference-controls{border:0;padding:0;margin:0;min-width:0}
+.reference-controls legend{font-size:10px;color:#7b867d;margin:12px 0 8px}
+.reference-controls[disabled]{opacity:.43}
+.stage-robot-actions{display:flex;gap:8px;padding:0;border:0;margin:0;min-width:0;flex-wrap:wrap}
+.stage-robot-actions[disabled]{opacity:.46}
+.model-mode-label{font-size:11px;color:#535d56}
+@media(max-width:690px){.catalog-choices{grid-template-columns:repeat(2,minmax(0,1fr))}.catalog-choices button{min-height:58px}}
