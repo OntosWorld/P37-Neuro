@@ -104,21 +104,24 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
                 state="visible", timeout=20000
             )
             page.screenshot(path=str(screenshots / "g1-live-p37-desktop.png"), timeout=90000)
-            assert page.get_by_role("button", name="Run P37 experimental").get_attribute(
-                "aria-pressed"
-            ) == "true"
+            assert (
+                page.get_by_role("button", name="Run P37 experimental").get_attribute(
+                    "aria-pressed"
+                )
+                == "true"
+            )
             page.get_by_role("button", name="Model only").click()
-            assert "scene=unitree_g1&" in page.locator(
-                "iframe.real-robot-frame"
-            ).get_attribute("src")
+            assert "scene=unitree_g1&" in page.locator("iframe.real-robot-frame").get_attribute(
+                "src"
+            )
             page.get_by_role("button", name="Unitree Go2").click()
             assert "scene=unitree_go2_p37_experimental" in page.locator(
                 "iframe.real-robot-frame"
             ).get_attribute("src")
             page.get_by_role("button", name="Franka Panda").click()
-            assert "scene=franka_panda&" in page.locator(
-                "iframe.real-robot-frame"
-            ).get_attribute("src")
+            assert "scene=franka_panda&" in page.locator("iframe.real-robot-frame").get_attribute(
+                "src"
+            )
             assert page.get_by_role("button", name="Run P37 experimental").is_disabled()
             assert page.url == origin, "robot choice changed the public URL"
             page.screenshot(path=str(screenshots / "panda-real-geometry.png"), timeout=90000)
