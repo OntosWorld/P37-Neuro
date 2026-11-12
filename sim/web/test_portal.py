@@ -85,7 +85,7 @@ def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
     assert 'shutil.copytree(simulator, output / "simulator")' in assembler
     assert '"catalog.json"' in assembler
     assert "for robot in ROBOTS" in assembler
-    assert "iframe" in root_app and "menagerie-viewer" in root_app
-    assert "Select real robot body" in root_app
+    assert "iframe" in root_app and "real-robot-frame" in root_app
+    assert "Choose manufacturer robot" in root_app
     assert "unitree_g1" in root_app and "franka_panda" in root_app
-    assert "no trained P37" in root_app.lower() or "no qualified P37" in root_app
+    assert "unqualified" in root_app.lower() and "P37" in root_app
