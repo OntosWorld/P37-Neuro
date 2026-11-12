@@ -69,7 +69,12 @@ def _light_scene(spec: mujoco.MjSpec, robot: RobotScene) -> None:
         )
 
 
-def build(menagerie: Path, base_path: str = "/simulator/") -> Path:
+def build(
+    menagerie: Path,
+    base_path: str = "/simulator/",
+    *,
+    p37_artifact: Path | None = None,
+) -> Path:
     check_catalog()
     menagerie = menagerie.resolve()
     if not menagerie.is_dir():
@@ -90,6 +95,10 @@ def build(menagerie: Path, base_path: str = "/simulator/") -> Path:
         "Passive physics and user forces are not learned skills."
     )
 
+    if p37_artifact is None:
+        raise ValueError("The public build requires the verified P37 ONNX artifact")
+    from p37_browser_policy import attach_g1_policy
+
     built_scenes = []
     for robot in ROBOTS:
         path = menagerie / robot.model / "scene.xml"
@@ -97,7 +106,17 @@ def build(menagerie: Path, base_path: str = "/simulator/") -> Path:
             raise FileNotFoundError(f"Missing physical robot model: {path}")
         spec = mujoco.MjSpec.from_file(str(path))
         _light_scene(spec, robot)
-        scene = project.add_scene(spec=spec, name=robot.name)
+        scene = project.add_scene(
+            spec=spec,
+            name=robot.name,
+            control_dt=0.02 if robot.id == "unitree_g1" else None,
+        )
+        if robot.id == "unitree_g1":
+            attach_g1_policy(
+                scene,
+                path,
+                p37_artifact,
+            )
         scene.set_viewer(
             mjswan.ViewerConfig(
                 lookat=robot.camera,
@@ -135,8 +154,9 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--menagerie", type=Path, required=True)
     parser.add_argument("--base-path", default="/simulator/")
+    parser.add_argument("--p37-artifact", type=Path, required=True)
     args = parser.parse_args()
-    print(build(args.menagerie, args.base_path))
+    print(build(args.menagerie, args.base_path, p37_artifact=args.p37_artifact))
 
 
 if __name__ == "__main__":
