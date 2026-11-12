@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Physics, Scene, type SceneHandle, type SimStatsSample } from '@skild-ai/steel-webgpu/react';
 import { Workcell, PRESETS, initialItems, nextItemId } from './Workcell';
-import type { LooseItem, ObjectType, Preset, RobotType } from './Workcell';
+import type { ItemMotionSample, LooseItem, ObjectType, Preset, RobotType } from './Workcell';
 import type { SourceFrame } from './SourceTrajectory';
 
 type SourceData = { publication: { source: string; learned_policy_attached: boolean }; traces: { frames: SourceFrame[] }[] };
@@ -17,10 +17,11 @@ const CAMERA_MOBILE = {
   target: [0, 0, .88] as [number,number,number],
   fov: 46,
 };
-function LiveScene({ preset, robot, items, paused, collision, pose,
-  sceneRef, onSample, onReady, onError, sourceFrames, sourcePlaying }: {
+function LiveScene({ preset, robot, items, paused, collision, pose, gripper,
+  sceneRef, onSample, onMotion, onReady, onError, sourceFrames, sourcePlaying }: {
   preset: Preset; robot: RobotType; items: LooseItem[]; paused: boolean; collision: boolean;
-  pose: number; sceneRef: React.RefObject<SceneHandle | null>;
+  pose: number; gripper: number; sceneRef: React.RefObject<SceneHandle | null>;
+  onMotion: (sample: ItemMotionSample) => void;
   onSample: (s: SimStatsSample | null) => void; onReady: () => void; onError: (s: string) => void;
   sourceFrames: SourceFrame[]; sourcePlaying: boolean;
 }) {
@@ -42,7 +43,7 @@ function LiveScene({ preset, robot, items, paused, collision, pose,
   >
     <Scene ref={sceneRef} gravity={[0,0,-9.81]} fps={60} paused={paused} collision={collision}
       pickable controls camera={mobile ? CAMERA_MOBILE : CAMERA_DESKTOP} onLoaded={onReady} onError={e=>onError(String(e))}>
-      <Workcell preset={preset} robot={robot} items={items} pose={pose} onStats={onSample} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
+      <Workcell preset={preset} robot={robot} items={items} pose={pose} gripper={gripper} onStats={onSample} onMotion={onMotion} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
     </Scene>
   </Physics>;
 }
@@ -52,6 +53,9 @@ export function App() {
   const [items, setItems] = useState<LooseItem[]>(() => initialItems('workcell'));
   const [selectedObject, setSelectedObject] = useState<ObjectType>('parcel');
   const [pose, setPose] = useState(.18);
+  const [gripper, setGripper] = useState(.035);
+  const [trackedId, setTrackedId] = useState<number | null>(null);
+  const [itemMotion, setItemMotion] = useState<Record<number, ItemMotionSample>>({});
   const [paused, setPaused] = useState(false);
   const [collision, setCollision] = useState(false);
   const [status, setStatus] = useState('Requesting WebGPU');
@@ -61,6 +65,27 @@ export function App() {
   const [sourceEpisode, setSourceEpisode] = useState(0);
   const [sourcePlaying, setSourcePlaying] = useState(true);
   const scene = useRef<SceneHandle>(null);
+  const onMotion = useCallback((sample: ItemMotionSample) => {
+    setItemMotion(previous => {
+      const last = previous[sample.id];
+      if (last &&
+          Math.hypot(
+            sample.position[0] - last.position[0],
+            sample.position[1] - last.position[1],
+            sample.position[2] - last.position[2],
+          ) < .004 &&
+          sample.at - last.at < 1.5) return previous;
+      return { ...previous, [sample.id]: sample };
+    });
+  }, []);
+  const tracked = items.find(item => item.id === trackedId) ?? items[0];
+  const livePosition = tracked ? itemMotion[tracked.id]?.position : undefined;
+  const travel = tracked && livePosition ?
+    Math.hypot(
+      livePosition[0] - tracked.position[0],
+      livePosition[1] - tracked.position[1],
+      livePosition[2] - tracked.position[2],
+    ) : undefined;
   useEffect(() => {
     if (!showSource || sourceData) return;
     const abort = new AbortController();
@@ -86,10 +111,12 @@ export function App() {
     return () => abort.abort();
   }, [showSource, sourceData]);
   const changePreset = (next: Preset) => {
-    setPreset(next); setItems(initialItems(next)); setStatus('Loading physics environment');
+    setPreset(next); setItems(initialItems(next)); setItemMotion({}); setTrackedId(null);
+    setStatus('Loading physics environment');
   };
   const reset = () => {
     setItems(initialItems(preset));
+    setItemMotion({}); setTrackedId(null);
     scene.current?.reset();
     setStatus('Resetting scene');
   };
@@ -97,8 +124,21 @@ export function App() {
     if (items.length >= 12) { setStatus('Maximum of 12 loose objects'); return; }
     const row = items.length % 3, col = Math.floor(items.length / 3) % 3;
     const position: [number,number,number] = [.10 + row * .23, -.25 + col * .24, 1.3 + Math.floor(items.length / 3) * .16];
-    setItems([...items, { id: nextItemId(), type: selectedObject, position }]);
-    setStatus('Scene rebuilt with added ' + selectedObject);
+    const item: LooseItem = { id: nextItemId(), type: selectedObject, position };
+    setItems([...items, item]); setTrackedId(item.id);
+    setStatus('New ' + selectedObject + ' added to the physics scene');
+  };
+  const dropTest = () => {
+    if (items.length >= 12) { setStatus('Maximum of 12 loose objects'); return; }
+    const item: LooseItem = {
+      id: nextItemId(),
+      type: 'parcel',
+      position: [.18, -.12, 1.48],
+    };
+    setItems(previous => [...previous, item]);
+    setTrackedId(item.id);
+    setPaused(false);
+    setStatus('Drop test active — watching a physical parcel settle');
   };
   return <div className="app-shell">
     <header className="site-header">
@@ -143,7 +183,8 @@ export function App() {
           </div>
           <div className="canvas-wrap">
             <LiveScene key={preset + '-' + robot} preset={preset} robot={robot} items={items}
-              paused={paused} collision={collision} pose={pose} sceneRef={scene}
+              paused={paused} collision={collision} pose={pose} gripper={gripper} sceneRef={scene}
+              onMotion={onMotion}
               onSample={setStats} onReady={()=>setStatus('Steel physics active')}
               onError={setStatus} sourceFrames={showSource ? (sourceData?.traces[sourceEpisode]?.frames ?? []) : []}
               sourcePlaying={showSource && sourcePlaying && !paused}/>
@@ -180,7 +221,14 @@ export function App() {
             <option value="compact">P37 reference / compact</option>
             <option value="extended">P37 reference / extended</option>
           </select>
-          <p className="helper">Original procedural robots with different link lengths. Neither is a Panda, Sawyer, IIWA or UR5e model.</p>
+          <p className="helper">Original reference arms. Two independently driven parallel-jaw fingers now collide with simulated objects; grasp success is not assumed.</p>
+          <label htmlFor="jaw-aperture">Gripper clearance <output>{(44 + gripper * 2000).toFixed(0)} mm</output></label>
+          <input id="jaw-aperture" type="range" min="0" max=".035" step=".001"
+            value={gripper} onChange={e=>setGripper(Number(e.target.value))}/>
+          <div className="jaw-actions">
+            <button type="button" onClick={()=>setGripper(0)}>Close fingers</button>
+            <button type="button" onClick={()=>setGripper(.035)}>Open fingers</button>
+          </div>
           <label htmlFor="pose">Shoulder target <output>{pose.toFixed(2)} rad</output></label>
           <input id="pose" type="range" min="-1.2" max="1.2" step=".01" value={pose} onChange={e=>setPose(Number(e.target.value))}/>
           <div className="rule"/>
@@ -192,6 +240,11 @@ export function App() {
             <option value="bin">Storage bin</option>
           </select>
           <button className="primary" onClick={addItem}>+ Drop object into scene</button>
+          <button className="contact-demo" onClick={dropTest}>Run gravity & contact test</button>
+          <label htmlFor="tracked-body">Inspect physical object</label>
+          <select id="tracked-body" value={tracked?.id ?? ''} onChange={e=>setTrackedId(Number(e.target.value))}>
+            {items.map(item=><option key={item.id} value={item.id}>{item.type} #{item.id}</option>)}
+          </select>
           <p className="helper">Objects have mass and contact geometry. Adding an object rebuilds the scene, resetting existing bodies.</p>
           <div className="rule"/>
           <label>Source-data replay</label>
@@ -218,12 +271,16 @@ export function App() {
           <div className="info-row"><span>Physics backend</span><strong>Steel / WebGPU</strong></div>
           <div className="info-row"><span>Simulation time</span><strong>{stats ? stats.time.toFixed(1) + ' s' : '—'}</strong></div>
           <div className="info-row"><span>Solver contacts</span><strong>{stats?.contacts ?? '—'}</strong></div>
+          <div className="info-row"><span>Tracked object</span><strong>{tracked ? tracked.type + ' #' + tracked.id : '—'}</strong></div>
+          <div className="info-row"><span>Object height</span><strong>{livePosition ? livePosition[2].toFixed(3) + ' m' : '—'}</strong></div>
+          <div className="info-row"><span>Object travel</span><strong>{travel !== undefined ? (1000 * travel).toFixed(0) + ' mm' : '—'}</strong></div>
+          <div className="info-row"><span>Jaw clearance</span><strong>{(44+gripper*2000).toFixed(0)} mm</strong></div>
           <div className="info-row"><span>Movable objects</span><strong>{items.length}</strong></div>
           <div className="info-row"><span>Robot geometry</span><strong>{robot}</strong></div>
           <div className="info-row"><span>Recorded dataset</span><strong>{showSource ? "MimicGen Panda source" : "None"}</strong></div>
           <div className="rule"/>
           <div className="section-cap">What is running</div>
-          <p className="evidence-copy">Steel simulates rigid-body contacts. The reference robot receives deterministic joint position commands. All furniture and materials were created for this demo.</p>
+          <p className="evidence-copy">Steel simulates articulated robot joints, independently actuated gripper fingers and finite-mass objects. Object positions are measured from the physics body poses rather than inferred from animations.</p>
           <div className="flag">Policy checkpoint: <b>None</b><br/>MimicGen model training: <b>Not executed</b><br/>Recorded source playback: <b>{showSource ? "Active" : "Off"}</b><br/>Learned cross-body transfer: <b>Unverified</b></div>
           <div className="section-cap">P37 integration</div>
           <p className="evidence-copy">The <a href="../compare/index.html">recorded experiment viewer</a> accepts canonical P37 episodes. The MimicGen HDF5 adapter preserves dataset-native actions without claiming they are joint commands.</p>
@@ -231,7 +288,7 @@ export function App() {
         </div>
       </section>
       <section className="bottom-grid">
-        <div><span className="overline">01 / Physics</span><h2>Interact with the scene.</h2><p>A table, chair, monitor and loose objects have physical collision geometry. Studio lighting and procedural materials provide a realistic industrial workcell.</p></div>
+        <div><span className="overline">01 / Physics</span><h2>Interact with the scene.</h2><p>A table, chair, monitor and loose objects have physical collision geometry. Test a drop, inspect object travel and change the contact-ready gripper clearance.</p></div>
         <div><span className="overline">02 / Training data</span><h2>Work with published demonstrations.</h2><p>MimicGen supplies HDF5 manipulation data from Panda, Sawyer, IIWA and UR5e. The P37 adapter imports recorded observations and controller-native actions for inspection.</p></div>
         <div><span className="overline">03 / Qualification</span><h2>Measure before claiming.</h2><p>Actual P37 checkpoints and held-out task evaluation are required for learned transfer claims. An interactive physics workcell is a separate engineering milestone.</p></div>
       </section>
