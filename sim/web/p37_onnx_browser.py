@@ -14,11 +14,10 @@ from pathlib import Path
 import mujoco
 import numpy as np
 import onnx
-from onnx import TensorProto, helper, numpy_helper
-
 from mjswan.envs.mdp.actions import JointPositionActionCfg
 from mjswan.envs.mdp.observations import ObservationBinding
 from mjswan.managers.observation_manager import ObservationGroupCfg, ObservationTermCfg
+from onnx import TensorProto, helper, numpy_helper
 
 EXPECTED_ONNX_SHA256 = "894d33ac78e0d654b00cf85319b5dcf4accf1d0c93b1264b4e40f105670905e3"
 EXPECTED_CHECKPOINT_SHA256 = "b3619374aa0f9b44a2fc80fa6005589abdfdac8e84cdcadbd8486df4f2285c95"
