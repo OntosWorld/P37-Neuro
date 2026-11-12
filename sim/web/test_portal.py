@@ -76,19 +76,16 @@ def test_public_demos_keep_capability_claims_evidence_gated() -> None:
     assert "demos.css" in html and "demos.js" in html
 
 
-def test_interactive_lab_is_additive_to_brain_lab() -> None:
-    """The public assembly keeps existing physics and adds research pages."""
+def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
+    """The canonical root embeds the real-robot viewer without extra public navigation."""
     assembler = (ROOT / "assemble_site.py").read_text(encoding="utf-8")
-    root_page = (ROOT / "index.html").read_text(encoding="utf-8")
-    demos_page = (ROOT / "demos" / "index.html").read_text(encoding="utf-8")
-    for marker in (
-        'shutil.copytree(viewer, output / "simulator")',
-        '"lab"',
-        '"compare/samples/mimicgen-square-source.json"',
-        '"steel/samples/mimicgen-square-source.json"',
-    ):
-        assert marker in assembler
-    for marker in ("./demos/", "./lab/steel/", "./lab/compare/?sample=mimicgen"):
-        assert marker in root_page
-    for marker in ("../lab/steel/", "../lab/compare/?sample=mimicgen"):
-        assert marker in demos_page
+    root_app = (
+        ROOT.parents[1] / "docs" / "interactive-lab" / "steel" / "src" / "App.tsx"
+    ).read_text(encoding="utf-8")
+    assert 'shutil.copytree(simulator, output / "simulator")' in assembler
+    assert '"catalog.json"' in assembler
+    assert "for robot in ROBOTS" in assembler
+    assert "iframe" in root_app and "menagerie-viewer" in root_app
+    assert "Select real robot body" in root_app
+    assert "unitree_g1" in root_app and "franka_panda" in root_app
+    assert "no trained P37" in root_app.lower() or "no qualified P37" in root_app
