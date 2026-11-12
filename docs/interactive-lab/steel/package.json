@@ -4,10 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 0.0.0.0",
-    "build": "tsc --noEmit && vite build",
+    "dev": "node scripts/sync-panda.mjs && vite --host 0.0.0.0",
+    "build": "node scripts/sync-panda.mjs && tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "sync:assets": "node scripts/sync-panda.mjs"
   },
   "dependencies": {
     "@react-three/fiber": "9.8.2",
