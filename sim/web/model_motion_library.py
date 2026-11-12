@@ -27,16 +27,19 @@ def _transmissions(model: mujoco.MjModel) -> tuple[list[str], list[int]]:
     joints: list[int] = []
     for index in range(model.nu):
         if int(model.actuator_trntype[index]) != int(mujoco.mjtTrn.mjTRN_JOINT):
-            raise ValueError("non-joint transmission")
+            # Some official bodies have site/tendon actuators alongside
+            # ordinary joint motors. Animate supported joints without
+            # inventing a joint mapping for those other transmissions.
+            continue
         joint = int(model.actuator_trnid[index, 0])
         if int(model.jnt_type[joint]) not in (
             int(mujoco.mjtJoint.mjJNT_HINGE),
             int(mujoco.mjtJoint.mjJNT_SLIDE),
         ):
-            raise ValueError("unsupported actuated joint")
+            continue
         name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, joint)
         if not name or name in names:
-            raise ValueError("unnamed/duplicate actuated joint")
+            continue
         names.append(name)
         joints.append(joint)
     return names, joints
@@ -80,7 +83,7 @@ def _amplitude(model: mujoco.MjModel, joints: list[int], rest: np.ndarray) -> np
 def _joint_clip(model: mujoco.MjModel, mode: str) -> tuple[np.ndarray, list[str], np.ndarray]:
     names, joints = _transmissions(model)
     if not names:
-        raise ValueError("no driven joints")
+        raise ValueError("no supported driven joints")
     rest = _reference(model, joints)
     amplitudes = _amplitude(model, joints, rest)
     t = np.arange(FRAMES, dtype=np.float64) / RATE
@@ -129,6 +132,38 @@ def _drone_clip(model: mujoco.MjModel, mode: str) -> tuple[np.ndarray, list[str]
     return output.astype(np.float32), names, hover
 
 
+def _other_motor_clip(model: mujoco.MjModel, mode: str) -> tuple[np.ndarray, list[str], np.ndarray]:
+    """Fallback for free-body motor-only models without hinge transmissions."""
+    if model.nu < 1:
+        raise ValueError("robot has no actuators for physical motion")
+    names = [
+        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i)
+        for i in range(model.nu)
+    ]
+    if not all(names):
+        raise ValueError("non-joint actuator is unnamed")
+    reference = (
+        np.asarray(model.key_ctrl[0], dtype=np.float64)
+        if model.nkey else np.zeros(model.nu, dtype=np.float64)
+    )
+    t = np.arange(FRAMES, dtype=np.float64) / RATE
+    cycle = 2 * np.pi * t / (FRAMES / RATE)
+    output = np.tile(reference, (FRAMES, 1))
+    if mode != "hold":
+        for i in range(model.nu):
+            wave = np.sin(cycle * (1 if mode == "articulation" else 2) + i * 0.7)
+            scale = 0.06 if model.actuator_ctrllimited[i] else 0.02
+            if model.actuator_ctrllimited[i]:
+                low, high = model.actuator_ctrlrange[i]
+                scale = min(scale, 0.1 * (high - low))
+            output[:, i] += scale * wave
+    for i in range(model.nu):
+        if model.actuator_ctrllimited[i]:
+            low, high = model.actuator_ctrlrange[i]
+            output[:, i] = np.clip(output[:, i], low, high)
+    return output.astype(np.float32), names, reference
+
+
 def _onnx_table(actions: np.ndarray) -> onnx.ModelProto:
     count, width = actions.shape
     node = [
@@ -165,8 +200,14 @@ def create_motion(model: mujoco.MjModel, robot_id: str, mode: str, out: Path) ->
         actions, names, rest = _drone_clip(model, mode)
         action_kind = "motor_effort"
     else:
-        actions, names, rest = _joint_clip(model, mode)
-        action_kind = "joint_position"
+        try:
+            actions, names, rest = _joint_clip(model, mode)
+            action_kind = "joint_position"
+        except ValueError as exc:
+            if str(exc) != "no supported driven joints":
+                raise
+            actions, names, rest = _other_motor_clip(model, mode)
+            action_kind = "motor_effort"
     out.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(
         out / f"{robot_id}-{mode}.npz",
@@ -195,6 +236,7 @@ def create_motion(model: mujoco.MjModel, robot_id: str, mode: str, out: Path) ->
         "frames": FRAMES,
         "duration_s": FRAMES / RATE,
         "actuators": len(names),
+        "actuator_or_joint_names": names,
         "onnx_sha256": hashlib.sha256(onnx_path.read_bytes()).hexdigest(),
         "dataset_file": f"{robot_id}-{mode}.npz",
     }
@@ -203,6 +245,7 @@ def create_motion(model: mujoco.MjModel, robot_id: str, mode: str, out: Path) ->
 def create_library(menagerie: Path, robots, output: Path) -> dict:
     index = {"schema_version": 1, "kind": "p37_model_derived_motions", "motions": {}}
     for robot in robots:
+        print(f"Building model-compatible motion dataset: {robot.id}", flush=True)
         model = mujoco.MjModel.from_xml_path(str(menagerie / robot.model / "scene.xml"))
         index["motions"][robot.id] = [
             create_motion(model, robot.id, mode, output) for mode in MODES
