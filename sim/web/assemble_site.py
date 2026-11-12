@@ -71,15 +71,15 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     for robot in policy_bodies:
         scene_id = robot + "_p37_experimental"
         matched = [
-            scene for project in manifest["projects"]
-            for scene in project["scenes"] if scene["id"] == scene_id
+            scene
+            for project in manifest["projects"]
+            for scene in project["scenes"]
+            if scene["id"] == scene_id
         ]
         if len(matched) != 1:
             raise RuntimeError(f"Live P37 experimental scene missing: {scene_id}")
         policies = matched[0].get("policies", [])
-        if not any(
-            p.get("id") == "p37_experimental_recurrent_ppo" for p in policies
-        ):
+        if not any(p.get("id") == "p37_experimental_recurrent_ppo" for p in policies):
             raise RuntimeError(f"Verified ONNX policy not attached to {scene_id}")
     metadata = {
         "schema_version": 1,
