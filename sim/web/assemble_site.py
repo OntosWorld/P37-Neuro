@@ -69,6 +69,27 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     required = {robot.id for robot in ROBOTS}
     if not required <= ids:
         raise RuntimeError(f"MuJoCo robot scenes missing: {sorted(required - ids)}")
+    motions = json.loads((output / "simulator" / "motion_data" / "index.json").read_text(
+        encoding="utf-8"
+    ))
+    if motions.get("kind") != "p37_model_derived_motions":
+        raise RuntimeError("Expected real model-derived per-robot motion datasets")
+    for robot in ROBOTS:
+        clips = motions.get("motions", {}).get(robot.id, [])
+        if {clip.get("id") for clip in clips} != {"articulation", "motion_cycle", "hold"}:
+            raise RuntimeError(f"Missing movement clips for {robot.id}")
+        scene = next(
+            scene for project in manifest["projects"]
+            for scene in project["scenes"] if scene["id"] == robot.id
+        )
+        policy_ids = {policy.get("id") for policy in scene.get("policies", [])}
+        if not {"motor_articulation", "movement_cycle", "hold_position"} <= policy_ids:
+            raise RuntimeError(f"Motion playback not physically attached to {robot.id}")
+        for clip in clips:
+            if clip["is_learned_p37_policy"] or clip["is_qualified_locomotion"]:
+                raise RuntimeError("Motion dataset cannot be mislabeled as P37 intelligence")
+            if not (output / "simulator" / "motion_data" / clip["dataset_file"]).is_file():
+                raise FileNotFoundError(f"Missing actual trajectory for {robot.id}")
     g1_scene = next(
         scene
         for project in manifest["projects"]
@@ -88,6 +109,9 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         "physics_engine": "MuJoCo WebAssembly",
         "controllers": "experimental-P37-recurrent-ONNX-G1; passive-physics-other-bodies",
         "manufacturer_robots": sorted(robot.id for robot in ROBOTS),
+        "motion_dataset_source": "MuJoCo Menagerie model-derived actuator targets",
+        "motion_dataset_modes_per_robot": 3,
+        "all_robot_motion_playback": True,
         "panda_loader": "native-MuJoCo-Menagerie-scene",
         "trained_p37_policy_attached": True,
         "experimental_policy_robot": "unitree_g1",
@@ -95,7 +119,7 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         "qualified_cross_body_transfer": False,
         "notes": (
             "G1 runs real experimental P37 ONNX inference in native MuJoCo. "
-            "Other real robot bodies remain passive model physics. "
+            "All bodies have model-derived motion playback; these are not learned skills. "
             "P37 locomotion, recovery and cross-body transfer are unqualified."
         ),
     }
