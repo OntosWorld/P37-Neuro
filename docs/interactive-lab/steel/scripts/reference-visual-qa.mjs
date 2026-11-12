@@ -140,6 +140,34 @@ async function qa(){
       scenes:controls.map(b=>({label:b.innerText,active:b.getAttribute('aria-pressed')})),
       headerHeight:nav?.getBoundingClientRect().height};
   });
+  // Visual parity gate: validate computed reference-aligned structure, not
+  // merely a successful Vite build or the presence of matching text.
+  results.p37.editorial = await page.evaluate(() => {
+    const nav=document.querySelector('.site-header nav');
+    const stage=document.querySelector('.canvas-wrap');
+    const side=document.querySelector('.playground-panel');
+    const controls=document.querySelector('.playground-scenes button');
+    const metrics=el=>el?{
+      width:Math.round(el.getBoundingClientRect().width),
+      height:Math.round(el.getBoundingClientRect().height),
+      background:getComputedStyle(el).backgroundColor,
+      radius:parseFloat(getComputedStyle(el).borderTopLeftRadius)||0
+    }:null;
+    return {nav:metrics(nav),stage:metrics(stage),
+      sidebar:metrics(side),sceneButton:metrics(controls)};
+  });
+  if(!results.p37.editorial.nav || results.p37.editorial.nav.radius>12 ||
+     !(results.p37.editorial.nav.background==='rgba(0, 0, 0, 0)' ||
+       results.p37.editorial.nav.background==='transparent'))
+    throw new Error('Reference UI mismatch: navigation must use a quiet editorial surface');
+  if(results.p37.editorial.sceneButton?.radius>12)
+    throw new Error('Reference UI mismatch: scene buttons have an oversized pill shape');
+  if(results.p37.editorial.sidebar?.width<280 ||
+     results.p37.editorial.sidebar?.width>350)
+    throw new Error('Reference UI mismatch: configuration panel no longer matches the target width');
+  if(results.p37.editorial.stage?.height<450)
+    throw new Error('Reference UI mismatch: physics viewport too shallow');
+
   if(results.p37.layout.stageShare<.36)throw new Error('Simulator viewport occupies less than 36% of desktop width');
   if(results.p37.layout.scenes.length!==3)throw new Error('Scene quick-switcher missing');
   results.webgpu.adapter=await webgpuAdapter(page);
