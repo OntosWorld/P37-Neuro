@@ -71,9 +71,9 @@ def make_mjswan_recurrent_actor(original: onnx.ModelProto) -> onnx.ModelProto:
     # Torch exported joint_state was position residual and velocity
     # interleaved per joint. Reconstruct that original ordering exactly.
     adapter = [
-        helper.make_node("Split", ["actor"], ["p37_q", "p37_dq", "p37_lin", "p37_ang",
+        helper.make_node("Split", ["actor", "p37_obs_split"], ["p37_q", "p37_dq", "p37_lin", "p37_ang",
                                              "p37_grav", "p37_goal"],
-                         axis=1, split=[29, 29, 3, 3, 1, 1], name="p37_obs_unpack"),
+                         axis=1, name="p37_obs_unpack"),
         helper.make_node("Unsqueeze", ["p37_q", "p37_axis2"], ["p37_q3"]),
         helper.make_node("Unsqueeze", ["p37_dq", "p37_axis2"], ["p37_dq3"]),
         helper.make_node("Concat", ["p37_q3", "p37_dq3"], ["joint_state"], axis=2),
@@ -85,6 +85,7 @@ def make_mjswan_recurrent_actor(original: onnx.ModelProto) -> onnx.ModelProto:
     graph.initializer.extend([
         helper.make_tensor("p37_axis1", TensorProto.INT64, [1], [1]),
         helper.make_tensor("p37_axis2", TensorProto.INT64, [1], [2]),
+        helper.make_tensor("p37_obs_split", TensorProto.INT64, [6], [29, 29, 3, 3, 1, 1]),
     ])
     nodes = list(graph.node)
     del graph.node[:]
