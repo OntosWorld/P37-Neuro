@@ -5,6 +5,15 @@ type Robot = {
   short: string; task: string; capability: string;
 };
 type Catalog = { robots: Robot[] };
+type MotionMode = 'motion_cycle' | 'articulation' | 'hold' | 'p37_experimental';
+type MotionClip = {
+  robot_id: string; id: string; name: string; source: string;
+  dataset_file: string; frames: number; control_hz: number;
+  is_learned_p37_policy: boolean; is_qualified_locomotion: boolean;
+};
+type MotionLibrary = {
+  schema_version: number; kind: string; motions: Record<string, MotionClip[]>;
+};
 type BuildInfo = {
   trained_p37_policy_attached: boolean;
   qualified_cross_body_transfer: boolean;
@@ -29,6 +38,9 @@ const CATEGORIES = ['All', 'Humanoids', 'Quadrupeds', 'Manipulators', 'Mobile', 
 export function App() {
   const [catalog, setCatalog] = useState<Robot[]>([]);
   const [selected, setSelected] = useState('unitree_g1');
+  const [motion, setMotion] = useState<MotionMode>('motion_cycle');
+  const [lastMotion, setLastMotion] = useState<MotionMode>('motion_cycle');
+  const [motionLibrary, setMotionLibrary] = useState<MotionLibrary | null>(null);
   const [category, setCategory] = useState('All');
   const [panel, setPanel] = useState(false);
   const [reload, setReload] = useState(0);
@@ -48,19 +60,29 @@ export function App() {
         .then(async r => { if (!r.ok) throw new Error('Policy evidence missing'); return r.json() as Promise<Evidence>; }),
       fetch(import.meta.env.BASE_URL + 'p37-evidence.json', { signal: abort.signal })
         .then(async r => { if (!r.ok) throw new Error('G1 evidence missing'); return r.json() as Promise<G1Evidence>; }),
-    ]).then(([data, info, trials, evaluation]) => {
+      fetch(import.meta.env.BASE_URL + 'simulator/motion_data/index.json',
+        { signal: abort.signal }).then(async r => {
+          if (!r.ok) throw new Error('Movement dataset not deployed');
+          return r.json() as Promise<MotionLibrary>;
+        }),
+    ]).then(([data, info, trials, evaluation, motions]) => {
       if (!Array.isArray(data.robots) || data.robots.length !== 10
         || !data.robots.some(r => r.id === 'unitree_g1')
         || info.manufacturer_robots.length !== 10
         || trials.qualified_for_walking !== false
         || trials.qualified_for_cross_body_task_transfer !== false
-        || evaluation.qualification !== 'unqualified') {
+        || evaluation.qualification !== 'unqualified'
+        || motions.schema_version !== 1
+        || motions.kind !== 'p37_model_derived_motions'
+        || data.robots.some(r => !motions.motions[r.id]
+          || motions.motions[r.id].length !== 3)) {
         throw new Error('Robot catalog and P37 evidence did not pass integrity checks');
       }
       setCatalog(data.robots);
       setBuild(info);
       setEvidence(trials);
       setG1Evidence(evaluation);
+      setMotionLibrary(motions);
     }).catch(reason => {
       if (!abort.signal.aborted) setError(String(reason));
     });
@@ -69,17 +91,36 @@ export function App() {
   const current = catalog.find(r => r.id === selected);
   const selection = useMemo(() => catalog.filter(robot =>
     category === 'All' || robot.kind === category), [catalog, category]);
-  const p37Active = selected === 'unitree_g1'
+  const p37Available = selected === 'unitree_g1'
     && build?.trained_p37_policy_attached === true
     && build.experimental_policy_robot === 'unitree_g1'
     && build.p37_checkpoint_sha256 === evidence?.checkpoint_sha256;
+  const p37Active = p37Available && motion === 'p37_experimental';
+  const currentMotion = motionLibrary?.motions[selected]?.find(clip => clip.id === motion);
+  const setPlayback = (next: MotionMode) => {
+    if (next === 'p37_experimental' && !p37Available) return;
+    if (next !== 'hold') setLastMotion(next);
+    setMotion(next);
+    setStageLoaded(false);
+    setReload(x => x + 1);
+  };
+  const playableMode = (mode: MotionMode) => ({
+    motion_cycle: 'movement_cycle',
+    articulation: 'motor_articulation',
+    hold: 'hold_position',
+    p37_experimental: 'p37_g1_experimental_recurrent_ppo',
+  })[mode];
   const selectRobot = (robot: Robot) => {
     setSelected(robot.id);
+    setMotion('motion_cycle');
+    setLastMotion('motion_cycle');
     setStageLoaded(false);
     setReload(x => x + 1);
   };
   const url = import.meta.env.BASE_URL + 'simulator/?project=p37_robot_models&scene='
-    + encodeURIComponent(selected) + '&panel=' + (panel ? '1' : '0');
+    + encodeURIComponent(selected)
+    + '&policy=' + encodeURIComponent(playableMode(motion))
+    + '&panel=' + (panel ? '1' : '0');
   return <div className="app-shell p37-real">
     <header className="site-header">
       <a className="brand" href="./">ONTOS <span>/ P37 NEURO</span></a>
@@ -88,17 +129,16 @@ export function App() {
         <a href="#evidence">Research evidence</a>
         <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noreferrer">GitHub ↗</a>
       </nav>
-      <span className="build-tag">LIVE EXPERIMENT / 01</span>
+      <span className="build-tag">POWERED BY P37-NEURO</span>
     </header>
     <main>
       <section className="title-row">
         <span className="overline">P37 / CROSS-EMBODIMENT ROBOTICS</span>
         <h1>One brain. Different bodies.</h1>
         <p className="intro">
-          Explore ten real robot models in a live physics environment.
-          Unitree G1 runs an experimental P37 policy in the browser when its
-          verified model is available. Other robots run native MuJoCo physics
-          without a learned controller.
+          Explore ten real robot models with motion data and physical simulation.
+          Select a movement sequence, inspect the joints and test collisions.
+          G1 also offers an experimental P37 learned policy.
         </p>
       </section>
       <section className="lab-grid" id="simulator" aria-label="Live manufacturer robot simulation">
@@ -113,12 +153,13 @@ export function App() {
               <span className="muted"> / MuJoCo · WebAssembly</span></div>
             <div className="stage-tools-head">
               <span>{p37Active ? 'P37 RECURRENT ONNX / EXPERIMENTAL' :
-                'MANUFACTURER MODEL / PASSIVE PHYSICS'}</span>
+                motion === 'hold' ? 'HOLD POSITION / NATIVE PHYSICS' :
+                'MOTION DATASET / NATIVE PHYSICS'}</span>
             </div>
           </div>
           <div className="canvas-wrap p37-scene">
             {catalog.length > 0 && current ? <iframe
-              key={selected + '-' + reload + '-' + panel}
+              key={selected + '-' + reload + '-' + panel + '-' + motion}
               title={current.name + ' — real MuJoCo robot'}
               className="menagerie-viewer"
               src={url}
@@ -136,13 +177,18 @@ export function App() {
             <div className="camera-tip">DRAG TO ORBIT · SELECT A BODY TO INTERACT</div>
           </div>
           <div className="playground-embodiment p37-stage-actions">
-            <span>Controller</span>
-            <strong>{p37Active ? 'P37 learned policy · unqualified' : 'Native physics · no policy'}</strong>
+            <span>Motion mode</span>
+            <strong>{p37Active ? 'Experimental P37 recurrent PPO' :
+              motion === 'hold' ? 'Hold pose · model-derived' :
+              'Recorded joint targets · model-derived'}</strong>
             <span className="playground-disclaimer">{stageLoaded ?
               'Viewer loaded · inspect motion inside the live scene' : 'Loading native simulation…'}</span>
           </div>
           <div className="viewport-controls">
             <div className="action-row">
+              <button type="button" onClick={() => setPlayback(
+                motion === 'hold' ? lastMotion : 'hold'
+              )}>{motion === 'hold' ? 'Play motion' : 'Hold motion'}</button>
               <button type="button" onClick={() => {
                 setStageLoaded(false); setReload(x => x + 1);
               }}>↻ Reset simulation</button>
@@ -152,7 +198,7 @@ export function App() {
             </div>
             <div className="status-line" role="status">{p37Active ?
               'Experimental P37 inference · walking not qualified' :
-              'Real robot model · manual physics interaction'}</div>
+              'Model-derived dataset replay through MuJoCo actuators · not a learned P37 skill'}</div>
           </div>
         </div>
         <aside className="playground-panel p37-real-panel">
@@ -181,13 +227,32 @@ export function App() {
               </div>
             </div>
             <div className="rule"/>
+            <div className="section-cap">Movement dataset</div>
+            <div className="p37-motion-controls" role="group" aria-label="Choose motion dataset">
+              <button type="button" aria-pressed={motion==='motion_cycle'}
+                onClick={()=>setPlayback('motion_cycle')}>Movement cycle</button>
+              <button type="button" aria-pressed={motion==='articulation'}
+                onClick={()=>setPlayback('articulation')}>Articulation</button>
+              <button type="button" aria-pressed={motion==='hold'}
+                onClick={()=>setPlayback('hold')}>Hold pose</button>
+              {p37Available && <button type="button" aria-pressed={p37Active}
+                onClick={()=>setPlayback('p37_experimental')}>P37 experimental model</button>}
+            </div>
+            <p className="helper">Motion data is sampled from each real robot's
+              MuJoCo joint limits, reference pose and actuator contract.
+              It is a synthesized trajectory, not recorded human motion or learned P37 behavior.</p>
+            {currentMotion && <a className="policy-source-link"
+              href={import.meta.env.BASE_URL+'simulator/motion_data/'+currentMotion.dataset_file}
+              download>Download this robot's motion dataset (.npz) ↗</a>}
+            <div className="rule"/>
             <div className="section-cap">Selected experiment</div>
             <p className="evidence-copy">{current?.task ?? 'Select a robot'}. {current?.capability ?? ''}
-              {' '}{p37Active ? 'G1 receives ONNX inference and joint commands at 50Hz.' :
-              'This model has passive physics and user forces; it is not a trained autonomous task.'}</p>
+              {' '}{p37Active ? 'G1 receives genuine experimental ONNX inference and 29-joint commands at 50Hz.' :
+              'The motion dataset supplies model-compatible joint or motor targets through MuJoCo physics. It is not a trained autonomous skill.'}</p>
             <div className="info-row"><span>Physics engine</span><strong>MuJoCo</strong></div>
             <div className="info-row"><span>3D geometry</span><strong>Manufacturer-derived</strong></div>
-            <div className="info-row"><span>Policy</span><strong>{p37Active ? 'P37 recurrent PPO' : 'None'}</strong></div>
+            <div className="info-row"><span>Controller</span><strong>{p37Active ? 'P37 recurrent PPO' : 'Dataset motor replay'}</strong></div>
+            <div className="info-row"><span>Source</span><strong>{p37Active ? 'Experimental P37 checkpoint' : 'MuJoCo model-derived motion'}</strong></div>
             <div className="info-row"><span>Learning qualification</span><strong>Unqualified</strong></div>
             {error && <p className="helper" role="alert">{error}</p>}
           </div>
@@ -226,8 +291,9 @@ export function App() {
           {' '}The independent G1 walking smoke test recorded falls in
           {' '}{g1Evidence?.evaluation.seeds.filter(t => t.fallen).length ?? '—'} of
           {' '}{g1Evidence?.evaluation.seeds.length ?? '—'} trials.
-          Only the G1 scene has an experimental browser policy; other robot models
-          are physical viewers, not policy-transfer demonstrations.
+          All ten robots have model-derived movement datasets controlling their
+          physical actuators. Only G1 has an experimental learned P37 policy.
+          Dataset playback on other models is not evidence of learned skill transfer.
         </p>
         {evidence && <a className="policy-source-link"
           href={evidence.provenance.workflow} target="_blank" rel="noreferrer">
