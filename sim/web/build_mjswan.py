@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from pathlib import Path
 
 import mjswan
@@ -122,38 +123,32 @@ def build(
                 path,
                 p37_artifact,
             )
-        compiled = mujoco.MjModel.from_xml_path(str(path))
         for clip in library["motions"][robot.id]:
             clip_id = clip["id"]
             policy_model = onnx.load(str(motion_dir / f"{robot.id}-{clip_id}.onnx"))
-            if robot.id == "crazyflie_2":
-                # Crazyflie uses four *site* motors; these commands are
-                # physical thrust/moments sourced from the official hover keyframe.
+            if clip["physics_control"] == "motor_effort":
+                # Includes Crazyflie site-thrust/moment actuators and any
+                # motor-only source model; never pretend they are joints.
                 replay_actions = {
                     "motor": JointEffortActionCfg(
-                        actuator_names=(".*",),
+                        actuator_names=tuple(
+                            re.escape(name) for name in clip["actuator_or_joint_names"]
+                        ),
                         scale=1.0,
                     )
                 }
                 action_names = None
             else:
+                action_names = clip["actuator_or_joint_names"]
                 replay_actions = {
                     "joint_pos": JointPositionActionCfg(
-                        actuator_names=(".*",),
+                        actuator_names=tuple(re.escape(name) for name in action_names),
                         scale=0.35,
                         use_default_offset=True,
                         stiffness=45.0,
                         damping=2.0,
                     )
                 }
-                action_names = [
-                    mujoco.mj_id2name(
-                        compiled,
-                        mujoco.mjtObj.mjOBJ_JOINT,
-                        int(compiled.actuator_trnid[i, 0]),
-                    )
-                    for i in range(compiled.nu)
-                ]
             scene.add_policy(
                 name=clip["name"],
                 policy=policy_model,
