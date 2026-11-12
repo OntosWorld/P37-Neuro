@@ -90,8 +90,12 @@ def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
     assert "unitree_g1" in root_app
     assert "One brain. Different bodies." in root_app
     assert "P37 recurrent PPO" in root_app
-    assert "Other robots run native MuJoCo physics" in root_app
-    assert "no policy" in root_app.lower()
+    assert "Movement cycle" in root_app
+    assert "Articulation" in root_app
+    assert "Hold motion" in root_app
+    assert "not a trained autonomous skill" in root_app.lower()
+    assert "POWERED BY P37-NEURO" in root_app
+    assert "model_derived" in (ROOT / "model_motion_library.py").read_text(encoding="utf-8")
     assert "compact arm" not in root_app.lower()
     assert "extended arm" not in root_app.lower()
     assert "attach_g1_policy" in (ROOT / "build_mjswan.py").read_text(encoding="utf-8")
