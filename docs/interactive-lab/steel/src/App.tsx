@@ -82,6 +82,8 @@ export function App() {
   }, []);
   const tracked = items.find(item => item.id === trackedId) ?? items[0];
   const livePosition = tracked ? itemMotion[tracked.id]?.position : undefined;
+  const gripBaseMm = robot === 'panda' ? 0 : 44;
+  const measuredGripMm = gripState ? gripBaseMm+1000*(gripState.left+gripState.right) : undefined;
   const travel = tracked && livePosition ?
     Math.hypot(
       livePosition[0] - tracked.position[0],
@@ -193,10 +195,11 @@ export function App() {
             <div className="camera-tip">DRAG OBJECTS TO PULL · DRAG EMPTY SPACE TO ORBIT</div>
           </div>
           <div className="playground-embodiment" role="group" aria-label="Choose reference robot">
-            <span>Reference robot</span>
+            <span>Robot model</span>
             <button type="button" aria-pressed={robot==='compact'} onClick={()=>{setRobot('compact');setGripState(null);}}>Compact arm</button>
             <button type="button" aria-pressed={robot==='extended'} onClick={()=>{setRobot('extended');setGripState(null);}}>Extended arm</button>
-            <span className="playground-disclaimer">Procedural geometry · no learned P37 policy</span>
+            <button type="button" aria-pressed={robot==='panda'} onClick={()=>{setRobot('panda');setGripState(null);setStatus('Loading full-mesh Panda MJCF');}}>Franka Panda (full mesh)</button>
+            <span className="playground-disclaimer">{robot==='panda' ? 'MuJoCo Menagerie / Apache-2.0 · deterministic joints' : 'Original reference geometry'} · no trained P37 policy</span>
           </div>
           <div className="viewport-controls">
             <div className="action-row">
@@ -218,21 +221,25 @@ export function App() {
           </select>
           <p className="helper">{PRESETS.find(p=>p.id===preset)?.detail}</p>
           <div className="rule"/>
-          <label htmlFor="robot">Reference embodiment</label>
+          <label htmlFor="robot">Robot embodiment</label>
           <select id="robot" value={robot} onChange={e=>{setRobot(e.target.value as RobotType);setGripState(null);setStatus('Switching robot morphology');}}>
             <option value="compact">P37 reference / compact</option>
             <option value="extended">P37 reference / extended</option>
+            <option value="panda">Franka Panda / full manufacturer-derived mesh</option>
           </select>
-          <p className="helper">Original reference arms. Two independently driven parallel-jaw fingers now collide with simulated objects; grasp success is not assumed.</p>
-          <label htmlFor="jaw-aperture">Gripper clearance <output>{(44 + gripper * 2000).toFixed(0)} mm</output></label>
+          <p className="helper">{robot === 'panda' ?
+            <>Apache-2.0 Panda meshes and 7-joint model from <a href="https://github.com/google-deepmind/mujoco_menagerie/tree/main/franka_emika_panda" target="_blank" rel="noreferrer">MuJoCo Menagerie</a>. This high-detail model adds about 33 MB to the scene and uses deterministic position control. No learned P37 policy.</> :
+            <>Original compact/extended reference arms with motor-driven colliding gripper fingers. They are not manufacturer models, and grasp success is not assumed.</>}
+          </p>
+          <label htmlFor="jaw-aperture">Gripper target <output>{(gripBaseMm + gripper * 2000).toFixed(0)} mm</output></label>
           <input id="jaw-aperture" type="range" min="0" max=".035" step=".001"
             value={gripper} onChange={e=>setGripper(Number(e.target.value))}/>
           <div className="jaw-actions">
             <button type="button" onClick={()=>setGripper(0)}>Close fingers</button>
             <button type="button" onClick={()=>setGripper(.035)}>Open fingers</button>
           </div>
-          <label htmlFor="pose">Shoulder target <output>{pose.toFixed(2)} rad</output></label>
-          <input id="pose" type="range" min="-1.2" max="1.2" step=".01" value={pose} onChange={e=>setPose(Number(e.target.value))}/>
+          <label htmlFor="pose">Shoulder target <output>{robot==='panda' ? 'fixed baseline' : pose.toFixed(2)+' rad'}</output></label>
+          <input id="pose" type="range" min="-1.2" max="1.2" step=".01" value={pose} disabled={robot==='panda'} onChange={e=>setPose(Number(e.target.value))}/>
           <div className="rule"/>
           <label htmlFor="item">Add real-world object</label>
           <select id="item" value={selectedObject} onChange={e=>setSelectedObject(e.target.value as ObjectType)}>
@@ -276,16 +283,16 @@ export function App() {
           <div className="info-row"><span>Tracked object</span><strong>{tracked ? tracked.type + ' #' + tracked.id : '—'}</strong></div>
           <div className="info-row"><span>Object height</span><strong>{livePosition ? livePosition[2].toFixed(3) + ' m' : '—'}</strong></div>
           <div className="info-row"><span>Object travel</span><strong>{travel !== undefined ? (1000 * travel).toFixed(0) + ' mm' : '—'}</strong></div>
-          <div className="info-row"><span>Jaw target</span><strong>{(44+gripper*2000).toFixed(0)} mm</strong></div>
+          <div className="info-row"><span>Jaw target</span><strong>{(gripBaseMm+gripper*2000).toFixed(0)} mm</strong></div>
           <div className="info-row"><span>Measured jaw clearance</span>
-            <strong>{gripState ? (44+1000*(gripState.left+gripState.right)).toFixed(0)+' mm' : '—'}</strong>
+            <strong>{measuredGripMm !== undefined ? measuredGripMm.toFixed(0)+' mm' : '—'}</strong>
           </div>
           <div className="info-row"><span>Movable objects</span><strong>{items.length}</strong></div>
-          <div className="info-row"><span>Robot geometry</span><strong>{robot}</strong></div>
+          <div className="info-row"><span>Robot geometry</span><strong>{robot==='panda' ? 'Franka Panda / Menagerie' : robot+' / P37 reference'}</strong></div>
           <div className="info-row"><span>Recorded dataset</span><strong>{showSource ? "MimicGen Panda source" : "None"}</strong></div>
           <div className="rule"/>
           <div className="section-cap">What is running</div>
-          <p className="evidence-copy">Steel simulates articulated robot joints, independently actuated gripper fingers and finite-mass objects. Object positions are measured from the physics body poses rather than inferred from animations.</p>
+          <p className="evidence-copy">Steel simulates articulated robot joints, actuated gripper fingers and finite-mass objects. Object positions and finger clearance are read from physics state. The Panda model is externally sourced; all controls here are deterministic.</p>
           <div className="flag">Policy checkpoint: <b>None</b><br/>MimicGen model training: <b>Not executed</b><br/>Recorded source playback: <b>{showSource ? "Active" : "Off"}</b><br/>Learned cross-body transfer: <b>Unverified</b></div>
           <div className="section-cap">P37 integration</div>
           <p className="evidence-copy">The <a href="../compare/index.html">recorded experiment viewer</a> accepts canonical P37 episodes. The MimicGen HDF5 adapter preserves dataset-native actions without claiming they are joint commands.</p>
