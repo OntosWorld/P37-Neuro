@@ -187,6 +187,41 @@ async function qa(){
     !/swiftshader/i.test(JSON.stringify(results.webgpu.adapter??{}));
   results.webgpu.objectCount={before:objectCount,after:Number(await counter.innerText())};
   await capture(page,'p37-with-object-desktop.png');
+
+  // The parallel jaws must move as real solver joints, not merely update a
+  // slider or rotate a decorative mesh. Values come from Sim.state().jointQ.
+  const clearance=page.locator('.info-row').filter({hasText:'Measured jaw clearance'}).locator('strong');
+  await page.waitForFunction(()=>{
+    const row=[...document.querySelectorAll('.info-row')].find(el=>el.innerText.includes('Measured jaw clearance'));
+    return row && Number.isFinite(Number.parseFloat(row.querySelector('strong')?.textContent??''));
+  },undefined,{timeout:20000});
+  results.webgpu.jawInitial=Number.parseFloat(await clearance.innerText());
+  await page.getByRole('button',{name:'Close fingers'}).click();
+  await page.waitForFunction(()=>{
+    const row=[...document.querySelectorAll('.info-row')].find(el=>el.innerText.includes('Measured jaw clearance'));
+    return Number.parseFloat(row?.querySelector('strong')?.textContent??'NaN') < 82;
+  },undefined,{timeout:18000});
+  results.webgpu.jawClosed=Number.parseFloat(await clearance.innerText());
+  await capture(page,'p37-robot-gripper-closed.png');
+  await page.getByRole('button',{name:'Open fingers'}).click();
+  await page.waitForFunction(()=>{
+    const row=[...document.querySelectorAll('.info-row')].find(el=>el.innerText.includes('Measured jaw clearance'));
+    return Number.parseFloat(row?.querySelector('strong')?.textContent??'NaN') > 95;
+  },undefined,{timeout:18000});
+  results.webgpu.jawOpened=Number.parseFloat(await clearance.innerText());
+
+  // A mass-carrying parcel must fall under gravity, contact the worktop and
+  // settle above its collider. This is a physics result, not a CSS animation.
+  await page.getByRole('button',{name:'Run gravity & contact test'}).click();
+  await page.waitForTimeout(3500);
+  const bodyHeight=Number.parseFloat(await page.locator('.info-row')
+    .filter({hasText:'Object height'}).locator('strong').innerText());
+  const bodyTravel=Number.parseFloat(await page.locator('.info-row')
+    .filter({hasText:'Object travel'}).locator('strong').innerText());
+  results.webgpu.drop={heightM:bodyHeight,travelMm:bodyTravel};
+  if(!(bodyHeight>.78&&bodyHeight<1.09&&bodyTravel>250))
+    throw new Error('Physical parcel did not visibly settle on table: '+JSON.stringify(results.webgpu.drop));
+  await capture(page,'p37-parcel-physical-contact.png');
   await page.setViewportSize({width:390,height:844});
   await page.waitForTimeout(700);
   results.p37.mobile=await page.evaluate(()=>({
