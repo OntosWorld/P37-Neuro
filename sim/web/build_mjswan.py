@@ -11,11 +11,12 @@ import argparse
 import json
 import os
 from pathlib import Path
+from types import SimpleNamespace
 
 import mjswan
 import mujoco
+import numpy as np
 from catalog import ROBOTS, RobotScene, check_catalog
-from mjswan.mjlab.env import build_single_entity_trace_env
 from p37_onnx_browser import VALID_BODIES, verified_policy
 
 ROOT = Path(__file__).resolve().parent
@@ -135,14 +136,19 @@ def build(
                     origin_type=mjswan.ViewerConfig.OriginType.WORLD,
                 )
             )
-            # A trace environment is needed even when the custom observation
-            # classes are native TS bindings, so mjswan can inspect its MDP.
+            # These observations are explicit TypeScript ObservationBindings:
+            # there is no Python/mjlab function to trace. mjswan still needs a
+            # context for MDP assembly. Supply only an action-width contract
+            # (matching actual actuators), avoiding the unnecessary mjlab/torch
+            # tracing backend and its large GPU dependencies.
+            model = mujoco.MjModel.from_xml_path(str(path))
             experiment.set_trace_env(
-                build_single_entity_trace_env(
-                    lambda model_path=str(path): mujoco.MjSpec.from_file(model_path)
+                SimpleNamespace(
+                    action_manager=SimpleNamespace(
+                        action=np.zeros((1, model.nu), dtype=np.float32)
+                    )
                 )
             )
-            model = mujoco.MjModel.from_xml_path(str(path))
             experiment.add_policy(**verified_policy(policy_onnx, policy_contract, robot.id, model))
             built_scenes.append(robot.id + "_p37_experimental")
 
