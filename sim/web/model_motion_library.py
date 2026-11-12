@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import hashlib
 import json
-import math
 from pathlib import Path
 
 import mujoco
@@ -56,7 +55,7 @@ def _reference(model: mujoco.MjModel, joints: list[int]) -> np.ndarray:
 
 def _amplitude(model: mujoco.MjModel, joints: list[int], rest: np.ndarray) -> np.ndarray:
     values = []
-    for i, (joint, centre) in enumerate(zip(joints, rest, strict=True)):
+    for joint, centre in zip(joints, rest, strict=True):
         name = mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_JOINT, joint).lower()
         scale = 0.21 if any(
             token in name
