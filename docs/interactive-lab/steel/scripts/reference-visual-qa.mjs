@@ -237,6 +237,36 @@ async function qa(){
   await page.evaluate(()=>window.scrollTo(0,0));
   await wait(180);
   await capture(page,'p37-skild-style-mobile.png');
+
+  // Qualify the separately sourced real Panda geometry on the hardware GPU.
+  // The ~34MB source is cached in our built site; no third-party browser load.
+  if (process.platform === 'darwin') {
+    await page.setViewportSize({width:1512,height:982});
+    let manufacturerMeshes = 0;
+    const onAsset = response => {
+      if (response.ok() && response.url().includes('/vendor/panda/assets/')) manufacturerMeshes++;
+    };
+    page.on('response',onAsset);
+    await page.getByRole('button',{name:/Franka Panda \(full mesh\)/}).click();
+    await page.waitForFunction(()=>{
+      const title=document.querySelector('.status-line')?.textContent??'';
+      return title.includes('Steel physics active');
+    },undefined,{timeout:180000});
+    await page.waitForTimeout(2500);
+    const manufacturer=await page.locator('.info-row').filter({hasText:'Robot geometry'})
+      .locator('strong').innerText();
+    const timeBefore=await page.locator('.info-row').filter({hasText:'Simulation time'})
+      .locator('strong').innerText();
+    await page.waitForTimeout(1400);
+    const timeAfter=await page.locator('.info-row').filter({hasText:'Simulation time'})
+      .locator('strong').innerText();
+    if(!manufacturer.includes('Franka Panda')||timeBefore===timeAfter||manufacturerMeshes<35)
+      throw new Error('Full-mesh Panda did not run: '+JSON.stringify({manufacturer,timeBefore,timeAfter,manufacturerMeshes}));
+    results.webgpu.manufacturer={model:manufacturer,meshFiles:manufacturerMeshes,
+      modelLicense:'Apache-2.0',sourceCommit:'370c43965323c0944b433b202aac5058b5f907a9'};
+    await capture(page,'p37-full-mesh-franka-panda.png');
+    page.off('response',onAsset);
+  }
 }
 try{
   await qa();
