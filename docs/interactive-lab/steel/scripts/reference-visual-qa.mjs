@@ -126,7 +126,7 @@ async function qa(){
   page=await browser.newPage({viewport:{width:1512,height:982},deviceScaleFactor:1});
   page.on('pageerror',error=>results.errors.push('P37 script: '+error.message));
   page.on('response',r=>{if(r.status()>=400)results.errors.push('P37 HTTP '+r.status()+' '+r.url())});
-  const response=await page.goto(host,{waitUntil:'domcontentloaded',timeout:45000});
+  const response=await page.goto(host+'?debugPhysics=1',{waitUntil:'domcontentloaded',timeout:45000});
   if(!response?.ok())throw new Error('P37 page did not load successfully');
   results.p37.layout=await page.evaluate(()=>{
     const stage=document.querySelector('.canvas-wrap')?.getBoundingClientRect();
@@ -270,9 +270,12 @@ async function qa(){
 }
 try{
   await qa();
-}catch(error){
+ }catch(error){
   results.failure=String(error);
-  if(page)try{await capture(page,'p37-qa-failure.png')}catch{}
+  if(page) {
+    try{results.webgpu.debug=await page.evaluate(()=>window.__p37PhysicsDebug??null)}catch{}
+    try{await capture(page,'p37-qa-failure.png')}catch{}
+  }
   process.exitCode=1;
 }finally{
   results.finishedAt=new Date().toISOString();
