@@ -53,12 +53,13 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert clip["is_learned_p37_policy"] is False
             assert clip["is_qualified_locomotion"] is False
             assert (site / "simulator/motion_data" / clip["dataset_file"]).is_file()
-    assert any(
-        "p37" in p["id"] for p in scenes["unitree_g1"]["policies"]
-    ), "Experimental G1 P37 policy missing"
+    assert any("p37" in p["id"] for p in scenes["unitree_g1"]["policies"]), (
+        "Experimental G1 P37 policy missing"
+    )
     assert all(
         not any("p37" in p["id"] for p in scene["policies"])
-        for key, scene in scenes.items() if key != "unitree_g1"
+        for key, scene in scenes.items()
+        if key != "unitree_g1"
     ), "Learned policy falsely attached to another body"
     for old_route in ("lab", "demos", "test"):
         assert not (site / old_route).exists()
@@ -115,9 +116,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
                 "iframe.menagerie-viewer"
             ).get_attribute("src")
             page.get_by_role("button", name="Hold motion").click()
-            assert "policy=hold_position" in page.locator(
-                "iframe.menagerie-viewer"
-            ).get_attribute("src")
+            assert "policy=hold_position" in page.locator("iframe.menagerie-viewer").get_attribute(
+                "src"
+            )
             page.get_by_role("button", name="Play motion").click()
             assert "policy=motor_articulation" in page.locator(
                 "iframe.menagerie-viewer"
