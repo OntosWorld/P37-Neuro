@@ -7,7 +7,6 @@ behavior and contact separately.
 from __future__ import annotations
 
 import argparse
-import contextlib
 import http.server
 import json
 import socketserver
@@ -68,7 +67,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             response = page.goto(origin, wait_until="domcontentloaded", timeout=45000)
             assert response is not None and response.status == 200
             assert "P37-Neuro" in page.title()
-            page.get_by_role("heading", name="Robots, interacting with the world.").wait_for(timeout=35000)
+            page.get_by_role("heading", name="Robots, interacting with the world.").wait_for(
+                timeout=35000
+            )
             assert page.locator(".canvas-wrap").count() == 1
             assert page.get_by_role("button", name="Pause robot task").is_visible()
             assert page.get_by_role("button", name="Close fingers").is_visible()
@@ -91,7 +92,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert page.url == origin, "robot selection must not create new public URL"
             assert page.request.get(origin + "simulator/manifest.json").status == 200
             page.get_by_role("combobox", name="Robot embodiment").select_option("unitree_g1")
-            assert "scene=unitree_g1" in page.locator("iframe.menagerie-viewer").get_attribute("src")
+            assert "scene=unitree_g1" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
             page.get_by_role("combobox", name="Robot embodiment").select_option("compact")
             assert page.locator("iframe.menagerie-viewer").count() == 0
             page.get_by_role("button", name="Pause robot task").click()
