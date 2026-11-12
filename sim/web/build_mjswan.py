@@ -144,9 +144,7 @@ def build(
             model = mujoco.MjModel.from_xml_path(str(path))
             experiment.set_trace_env(
                 SimpleNamespace(
-                    action_manager=SimpleNamespace(
-                        action=np.zeros((1, model.nu), dtype=np.float32)
-                    )
+                    action_manager=SimpleNamespace(action=np.zeros((1, model.nu), dtype=np.float32))
                 )
             )
             experiment.add_policy(**verified_policy(policy_onnx, policy_contract, robot.id, model))
