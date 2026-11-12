@@ -135,87 +135,98 @@ function smooth(t: number): number {
   const x = Math.max(0, Math.min(1, t));
   return x * x * (3 - 2 * x);
 }
-function ReferenceRobotControl({ refRobot, target, body, baseline, gripper }: {
+type JointReading = { q: number; qd: number };
+function ReferenceRobotControl({ refRobot, target, body, baseline, gripper, onGripSample }: {
   refRobot: React.RefObject<RobotHandle | null>;
   target: number;
   body: RobotType;
   baseline: boolean;
   gripper: number;
+  onGripSample: (sample: GripStateSample) => void;
 }) {
+  const world = useWorld();
+  const readings = useRef<Map<string, JointReading>>(new Map());
   const goal = referenceReachPose(body);
+
+  useEffect(() => {
+    if (!world) return;
+    let active = true;
+    let busy = false;
+    let lastReport = 0;
+    const timer = setInterval(async () => {
+      const robot = refRobot.current;
+      if (!robot || busy) return;
+      busy = true;
+      try {
+        // Direct, real solver joint-coordinate GPU readback. URDF joints do not
+        // have motor Kp by default in steel-webgpu v0.1.0; the PD controller
+        // below needs this observation to apply *physical joint forces*.
+        const state = await world.sim.state();
+        if (!active) return;
+        for (const [name, index] of robot.dofs) {
+          if (Number.isFinite(state.jointQ[index]) && Number.isFinite(state.jointQd[index]))
+            readings.current.set(name, { q: state.jointQ[index], qd: state.jointQd[index] });
+        }
+        if (world.sim.time - lastReport >= .5) {
+          const left = readings.current.get(body === 'panda' ? 'finger_joint1' : 'left_finger_slide');
+          const right = readings.current.get(body === 'panda' ? 'finger_joint2' : 'right_finger_slide');
+          if (left && right) {
+            onGripSample({ left: left.q, right: right.q, time: world.sim.time });
+            lastReport = world.sim.time;
+          }
+        }
+      } catch (error) {
+        // Leave telemetry unavailable on WebGPU loss; never invent joint data.
+        console.warn('Steel joint state readback unavailable', error);
+      } finally {
+        busy = false;
+      }
+    }, 100);
+    return () => { active = false; clearInterval(timer); readings.current.clear(); };
+  }, [world, refRobot, body, onGripSample]);
+
   useBeforeStep((sim) => {
     const robot = refRobot.current;
     if (!robot) return;
     if (body === 'panda') {
-      // Apache-2.0 Menagerie Panda: seven actuated joints, conservative fixed
-      // reference pose. This is the real manufacturer-derived MJCF geometry
-      // but deterministic control, not a trained P37 robot policy.
-      const pandaHome = [0, -.23, .0, -1.58, .0, 1.52, -.79];
+      // Manufacturer-derived Panda geometry (Apache-2.0, MuJoCo Menagerie).
+      // Seven servo position commands, not a learned P37 policy.
+      const pandaHome = [0, -.23, 0, -1.58, 0, 1.52, -.79];
       const names = ['joint1','joint2','joint3','joint4','joint5','joint6','joint7'];
       names.forEach((name, index) => {
         if (robot.dofs.has(name)) robot.setJointTarget(name, pandaHome[index]);
       });
       const jaw = Math.max(0, Math.min(.035, gripper));
-      if (robot.dofs.has('finger_joint1')) robot.setJointTarget('finger_joint1', jaw);
-      if (robot.dofs.has('finger_joint2')) robot.setJointTarget('finger_joint2', jaw);
+      for (const name of ['finger_joint1','finger_joint2'])
+        if (robot.dofs.has(name)) robot.setJointTarget(name, jaw);
       return;
     }
+    // Original reference URDFs: a force-limited PD servo on each Newton joint.
+    // Steel's URDF parser currently sets damping only, not Kp, so a plain
+    // setJointTarget() would leave these bodies motionless. The PD force below
+    // uses GPU-measured q and qd. No object attachment/teleport is performed.
+    const drive = (name: string, commanded: number, kp: number, kd: number, forceMax: number) => {
+      if (!robot.dofs.has(name)) return;
+      robot.setJointTarget(name, commanded);
+      const actual = readings.current.get(name);
+      if (!actual) return;
+      const force = Math.max(-forceMax, Math.min(forceMax,
+        kp * (commanded - actual.q) - kd * actual.qd));
+      robot.setJointForce(name, force);
+    };
     const phase = sim.time % 8.5;
     const fraction = !baseline ? 0 :
       phase < .5 ? 0 :
       phase < 3.2 ? smooth((phase - .5) / 2.7) :
       phase < 5 ? 1 :
       phase < 7.8 ? 1 - smooth((phase - 5) / 2.8) : 0;
-    const shoulder = target * (1 - fraction) + goal[0] * fraction;
-    const elbow = -.64 * (1 - fraction) + goal[1] * fraction;
-    const wrist = .52 * (1 - fraction) + goal[2] * fraction;
-    if (robot.dofs.has('shoulder')) robot.setJointTarget('shoulder', shoulder);
-    if (robot.dofs.has('elbow')) robot.setJointTarget('elbow', elbow);
-    if (robot.dofs.has('wrist')) robot.setJointTarget('wrist', wrist);
-    // Actuated prismatic jaws. The solver decides whether finite-mass objects
-    // actually move; we never teleport an object or mark a grasp successful.
+    drive('shoulder', target * (1 - fraction) + goal[0] * fraction, 155, 18, 100);
+    drive('elbow', -.64 * (1 - fraction) + goal[1] * fraction, 180, 18, 75);
+    drive('wrist', .52 * (1 - fraction) + goal[2] * fraction, 100, 12, 42);
     const opening = Math.max(0, Math.min(.035, gripper));
-    if (robot.dofs.has('left_finger_slide')) robot.setJointTarget('left_finger_slide', opening);
-    if (robot.dofs.has('right_finger_slide')) robot.setJointTarget('right_finger_slide', opening);
+    drive('left_finger_slide', opening, 440, 24, 40);
+    drive('right_finger_slide', opening, 440, 24, 40);
   });
-  return null;
-}
-function GripperTelemetry({ robotRef, onSample }: {
-  robotRef: React.RefObject<RobotHandle | null>;
-  onSample: (sample: GripStateSample) => void;
-}) {
-  const world = useWorld();
-  useEffect(() => {
-    if (!world) return;
-    let active = true;
-    let busy = false;
-    const timer = setInterval(async () => {
-      const robot = robotRef.current;
-      const left = robot?.dofs.get('left_finger_slide') ?? robot?.dofs.get('finger_joint1');
-      const right = robot?.dofs.get('right_finger_slide') ?? robot?.dofs.get('finger_joint2');
-      if (left === undefined || right === undefined || busy) return;
-      busy = true;
-      try {
-        // Read the two actual Newton joint coordinates from GPU memory;
-        // commanded gripper opening is NEVER substituted for measurement.
-        const state = await world.sim.state();
-        if (active && Number.isFinite(state.jointQ[left]) && Number.isFinite(state.jointQ[right])) {
-          onSample({
-            left: state.jointQ[left],
-            right: state.jointQ[right],
-            time: world.sim.time,
-          });
-        }
-      } catch (error) {
-        // GPU loss and transient readback failures are handled by the Scene
-        // error boundary. Keep telemetry marked unavailable until valid.
-        console.warn('Steel gripper state readback unavailable', error);
-      } finally {
-        busy = false;
-      }
-    }, 850);
-    return () => { active = false; clearInterval(timer); };
-  }, [world, robotRef, onSample]);
   return null;
 }
 function StatsFeed({ onSample }: { onSample: (s: SimStatsSample | null) => void }) {
@@ -242,8 +253,7 @@ export function Workcell({ preset, robot, items, pose, baseline = true, gripper,
       <URDF src={import.meta.env.BASE_URL + 'robots/' + robot + '.urdf'} ref={robotRef}
         xform={[-.63,.05,.805,0,0,0,1]}/>
     }
-    <ReferenceRobotControl refRobot={robotRef} target={pose} body={robot} baseline={baseline} gripper={gripper}/>
-    <GripperTelemetry robotRef={robotRef} onSample={onGripSample}/>
+    <ReferenceRobotControl refRobot={robotRef} target={pose} body={robot} baseline={baseline} gripper={gripper} onGripSample={onGripSample}/>
     <IndustrialSet preset={preset}/>
     {sourceFrames.length >= 2 && <SourceTrajectory frames={sourceFrames} playing={sourcePlaying}/>}
     <StatsFeed onSample={onStats}/>
