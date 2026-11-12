@@ -248,7 +248,7 @@ export function Workcell({ preset, robot, items, pose, baseline = true, gripper,
     <FurnitureColliders preset={preset}/>
     {items.map(item => <LooseObject key={item.id} item={item} onMotion={onMotion}/>)}
     {robot === 'panda' ?
-      <MJCF src={import.meta.env.BASE_URL + 'vendor/panda/panda.xml'} ref={robotRef}
+      <MJCF src={import.meta.env.BASE_URL + 'vendor/panda/panda-steel.xml'} ref={robotRef}
         xform={[-.63,.05,.814,0,0,0,1]}/> :
       <URDF src={import.meta.env.BASE_URL + 'robots/' + robot + '.urdf'} ref={robotRef}
         xform={[-.63,.05,.805,0,0,0,1]}/>
