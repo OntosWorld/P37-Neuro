@@ -89,7 +89,7 @@
   </link>
   <joint name="left_finger_slide" type="prismatic">
     <parent link="tool"/><child link="left_finger"/>
-    <origin xyz="0.061 0.032 0"/><axis xyz="0 1 0"/>
+    <origin xyz="0.075 0.032 0"/><axis xyz="0 1 0"/>
     <limit lower="0" upper="0.035" effort="45" velocity="0.12"/>
     <dynamics damping="2.8"/>
   </joint>
@@ -102,7 +102,7 @@
   </link>
   <joint name="right_finger_slide" type="prismatic">
     <parent link="tool"/><child link="right_finger"/>
-    <origin xyz="0.061 -0.032 0"/><axis xyz="0 -1 0"/>
+    <origin xyz="0.075 -0.032 0"/><axis xyz="0 -1 0"/>
     <limit lower="0" upper="0.035" effort="45" velocity="0.12"/>
     <dynamics damping="2.8"/>
   </joint>
