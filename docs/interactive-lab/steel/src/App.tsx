@@ -135,7 +135,7 @@ export function App() {
     const item: LooseItem = {
       id: nextItemId(),
       type: 'parcel',
-      position: [.18, -.12, 1.48],
+      position: [.52, -.33, 1.48],
     };
     setItems(previous => [...previous, item]);
     setTrackedId(item.id);
