@@ -51,6 +51,7 @@ function LiveScene({ preset, robot, items, paused, collision, pose, gripper, bas
 export function App() {
   const [preset, setPreset] = useState<Preset>('workcell');
   const [robot, setRobot] = useState<RobotType>('compact');
+  const [p37Qualification, setP37Qualification] = useState('Checking published qualification');
   const [items, setItems] = useState<LooseItem[]>(() => initialItems('workcell'));
   const [selectedObject, setSelectedObject] = useState<ObjectType>('parcel');
   const [pose, setPose] = useState(.18);
@@ -68,6 +69,25 @@ export function App() {
   const [sourceEpisode, setSourceEpisode] = useState(0);
   const [sourcePlaying, setSourcePlaying] = useState(true);
   const scene = useRef<SceneHandle>(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(import.meta.env.BASE_URL + 'policy-qualification.json', {signal:controller.signal})
+      .then(async response => {
+        if(!response.ok) throw new Error('No published policy qualification record');
+        const record = await response.json() as {
+          trained_policy_attached?: boolean;
+          qualified_for_browser_execution?: boolean;
+          checkpoint_sha256?: string | null;
+          evidence_url?: string | null;
+        };
+        if(record.trained_policy_attached && record.qualified_for_browser_execution)
+          throw new Error('Policy qualification must be backed by an integrated inference runtime');
+        setP37Qualification('No qualified P37 inference attached');
+      }).catch(error => {
+        if(!controller.signal.aborted) setP37Qualification('Policy status unverified: '+String(error));
+      });
+    return () => controller.abort();
+  }, []);
   const onMotion = useCallback((sample: ItemMotionSample) => {
     setItemMotion(previous => {
       const last = previous[sample.id];
@@ -208,8 +228,8 @@ export function App() {
             <span>Robot model</span>
             <button type="button" aria-pressed={robot==='compact'} onClick={()=>{setRobot('compact');setGripState(null);}}>Compact arm</button>
             <button type="button" aria-pressed={robot==='extended'} onClick={()=>{setRobot('extended');setGripState(null);}}>Extended arm</button>
-            <button type="button" aria-pressed={robot==='panda'} onClick={()=>{setRobot('panda');setGripState(null);setStatus('Loading full-mesh Panda MJCF');}}>Franka Panda (full mesh)</button>
-            <span className="playground-disclaimer">{robot==='panda' ? 'MuJoCo Menagerie / Apache-2.0 · deterministic joints' : 'Original reference geometry'} · no trained P37 policy</span>
+            <button type="button" aria-pressed={robot==='panda'} onClick={()=>{setRobot('panda');setGripState(null);setStatus('Loading sourced Panda with approximate collision bodies');}}>Franka Panda (browser model)</button>
+            <span className="playground-disclaimer">{robot==='panda' ? 'MuJoCo Menagerie / Apache-2.0 · browser mesh + proxy collisions' : 'Original reference geometry'} · no trained P37 policy</span>
           </div>
           <div className="viewport-controls">
             <div className="action-row">
@@ -238,10 +258,10 @@ export function App() {
           <select id="robot" value={robot} onChange={e=>{setRobot(e.target.value as RobotType);setGripState(null);setStatus('Switching robot morphology');}}>
             <option value="compact">P37 reference / compact</option>
             <option value="extended">P37 reference / extended</option>
-            <option value="panda">Franka Panda / full manufacturer-derived mesh</option>
+            <option value="panda">Franka Panda / sourced geometry, proxy contacts</option>
           </select>
           <p className="helper">{robot === 'panda' ?
-            <>Apache-2.0 Panda meshes and 7-joint model from <a href="https://github.com/google-deepmind/mujoco_menagerie/tree/main/franka_emika_panda" target="_blank" rel="noreferrer">MuJoCo Menagerie</a>. This high-detail model adds about 33 MB to the scene and uses deterministic position control. No learned P37 policy.</> :
+            <>Apache-2.0 Panda meshes and 7-joint model from <a href="https://github.com/google-deepmind/mujoco_menagerie/tree/main/franka_emika_panda" target="_blank" rel="noreferrer">MuJoCo Menagerie</a>. This performance-optimized Panda model retains manufacturer-derived articulated structure and representative meshes, using approximate collision proxies. Original high-detail source remains pinned. No learned P37 policy.</> :
             <>Original compact/extended reference arms with motor-driven colliding gripper fingers. They are not manufacturer models, and grasp success is not assumed.</>}
           </p>
           <label htmlFor="jaw-aperture">Gripper target <output>{(gripBaseMm + gripper * 2000).toFixed(0)} mm</output></label>
@@ -301,12 +321,12 @@ export function App() {
             <strong>{measuredGripMm !== undefined ? measuredGripMm.toFixed(0)+' mm' : '—'}</strong>
           </div>
           <div className="info-row"><span>Movable objects</span><strong>{items.length}</strong></div>
-          <div className="info-row"><span>Robot geometry</span><strong>{robot==='panda' ? 'Franka Panda / Menagerie' : robot+' / P37 reference'}</strong></div>
+          <div className="info-row"><span>Robot geometry</span><strong>{robot==='panda' ? 'Franka Panda / Menagerie proxy contact' : robot+' / P37 reference'}</strong></div>
           <div className="info-row"><span>Recorded dataset</span><strong>{showSource ? "MimicGen Panda source" : "None"}</strong></div>
           <div className="rule"/>
           <div className="section-cap">What is running</div>
           <p className="evidence-copy">Steel simulates articulated robot joints, actuated gripper fingers and finite-mass objects. Object positions and finger clearance are read from physics state. The Panda model is externally sourced; all controls here are deterministic.</p>
-          <div className="flag">Policy checkpoint: <b>None</b><br/>MimicGen model training: <b>Not executed</b><br/>Recorded source playback: <b>{showSource ? "Active" : "Off"}</b><br/>Learned cross-body transfer: <b>Unverified</b></div>
+          <div className="flag">Policy qualification: <b>{p37Qualification}</b><br/>MimicGen model training: <b>Not executed</b><br/>Recorded source playback: <b>{showSource ? "Active" : "Off"}</b><br/>Learned cross-body transfer: <b>Unverified</b></div>
           <div className="section-cap">P37 integration</div>
           <p className="evidence-copy">The recorded MimicGen source motion can be enabled above for side-by-side inspection. The visible reference arm uses an explicit deterministic controller; a trained P37 checkpoint is not driving these actions.</p>
         </aside>
