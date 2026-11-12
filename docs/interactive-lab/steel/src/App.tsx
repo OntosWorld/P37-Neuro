@@ -315,10 +315,10 @@ export function App() {
           <legend>{isMuJoCo ? 'Reference-arm controls unavailable for this model' : 'Reference arm motor controls'}</legend>
           <label htmlFor="jaw-aperture">Gripper target <output>{(gripBaseMm + gripper * 2000).toFixed(0)} mm</output></label>
           <input id="jaw-aperture" type="range" min="0" max=".035" step=".001"
-            value={gripper} onChange={e=>setGripper(Number(e.target.value))}/>
+            value={gripper} onChange={e=>{setReachCycle(false);setGripper(Number(e.target.value));}}/>
           <div className="jaw-actions">
-            <button type="button" onClick={()=>setGripper(0)}>Close fingers</button>
-            <button type="button" onClick={()=>setGripper(.035)}>Open fingers</button>
+            <button type="button" onClick={()=>{setReachCycle(false);setGripper(0);}}>Close fingers</button>
+            <button type="button" onClick={()=>{setReachCycle(false);setGripper(.035);}}>Open fingers</button>
           </div>
           <label htmlFor="pose">Shoulder target <output>{robot==='panda' ? 'fixed baseline' : pose.toFixed(2)+' rad'}</output></label>
           <input id="pose" type="range" min="-1.2" max="1.2" step=".01" value={pose} disabled={robot==='panda'} onChange={e=>setPose(Number(e.target.value))}/>
