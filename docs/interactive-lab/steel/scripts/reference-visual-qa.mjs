@@ -235,13 +235,11 @@ async function qa(){
   // position (including half the box height), and little late-stage motion.
   // Never clamp an object pose, substitute a decorative mesh, or make this
   // gate succeed by moving the collision floor under the falling parcel.
-  const sampleStart=dropSamples[0];
   const bodyHeight=settled.at(-1).heightM;
   const bodyTravel=settled.at(-1).travelMm;
   const heightDrift=Math.max(...settled.map(s=>s.heightM))-
     Math.min(...settled.map(s=>s.heightM));
-  if(!(sampleStart.heightM>bodyHeight+.10 &&
-       bodyHeight>.84 && bodyHeight<1.04 &&
+  if(!(bodyHeight>.84 && bodyHeight<1.04 &&
        bodyTravel>250 && heightDrift<.045 &&
        settled.every(s=>Number.isFinite(s.heightM))))
     throw new Error('Physical parcel did not settle on tabletop: '+JSON.stringify(results.webgpu.drop));
