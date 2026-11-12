@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>P37 Neuro — Public simulation test</title>
+<style>
+:root{font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#181b1f;background:#fafafa}*{box-sizing:border-box}body{margin:0}header{background:#fff;border-bottom:1px solid #e3e5e7;padding:20px max(24px,calc((100vw - 1200px)/2))}header a{font-weight:750;color:#17191c;text-decoration:none;letter-spacing:-.04em;font-size:20px}header span{font-size:12px;color:#777;margin-left:20px;text-transform:uppercase;letter-spacing:.12em}main{max-width:1200px;margin:0 auto;padding:62px 24px 90px}.eyebrow{color:#a95a1d;text-transform:uppercase;letter-spacing:.13em;font-size:12px;font-weight:750}h1{font-size:clamp(38px,5vw,66px);letter-spacing:-.065em;line-height:1.06;font-weight:650;margin:12px 0 20px;max-width:820px}p{color:#5c6269;line-height:1.6} .lead{max-width:760px;font-size:17px} .layout{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:28px;margin-top:44px}.panel{background:#fff;border:1px solid #e3e5e7;border-radius:12px;padding:28px;margin-bottom:22px}.panel h2{font-size:22px;letter-spacing:-.04em;margin:0 0 8px}.panel h3{font-size:15px;margin:25px 0 11px}.panel p{font-size:14px}.steps{padding-left:22px;color:#454b51;line-height:1.75}.steps li{margin-bottom:5px}.button{display:inline-flex;align-items:center;justify-content:center;background:#1d2125;border:1px solid #1d2125;color:white;padding:12px 17px;font-size:13px;font-weight:650;text-decoration:none;border-radius:6px;cursor:pointer;margin:6px 7px 6px 0}.button.light{background:white;color:#222;border-color:#d5d9dd}.button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid #98531d;outline-offset:3px}.status{font-size:13px;word-break:break-word;margin:10px 0}.status strong{color:#1b1e22}.note{border-left:3px solid #c98952;padding:12px 15px;background:#fcf8f4;font-size:13px;color:#53483f}.field{margin:19px 0}label{display:block;font-size:13px;font-weight:650;margin-bottom:7px}input,select,textarea{font:inherit;font-size:14px;color:#222;min-height:42px;border:1px solid #d8dcdf;border-radius:6px;background:#fff;padding:10px 12px;width:100%}textarea{min-height:100px;resize:vertical}small{color:#676e73}.test{border-top:1px solid #e8eaed;padding:18px 0}.test p{margin:5px 0 12px}.test select{max-width:270px}.pill{font-weight:600;font-size:12px;color:#77512e;background:#fcf5ec;padding:5px 8px;border-radius:3px}.meta{font-size:12px;line-height:1.8;color:#777;overflow-wrap:anywhere}.actions{display:flex;flex-wrap:wrap;gap:8px}.checkbox{display:flex;gap:10px;align-items:flex-start;font-weight:400;line-height:1.6}.checkbox input{width:auto;min-height:0;margin-top:5px}.topnote{margin-top:30px}@media(max-width:850px){main{padding-top:38px}.layout{grid-template-columns:1fr}.panel{padding:20px}header{padding:18px 24px}header span{margin-left:10px}}@media(max-width:420px){h1{font-size:36px}.button{width:100%;margin:5px 0}}
+</style>
+</head>
+<body>
+<header><a href="../">P37 / NEURO</a><span>Simulation quality review</span></header>
+<main>
+<div class="eyebrow">External test protocol · Public beta</div>
+<h1>Test the robot simulation.</h1>
+<p class="lead">Help us evaluate how the robots look, move, and interact with the world. This page records your observations and browser environment. It does not claim to measure robot performance or prove that a P37 learned policy is controlling a robot.</p>
+<div class="layout"><div>
+<section class="panel"><h2>01 / Run the demos</h2><p>Run at least one Steel workcell scene and one MuJoCo robot scene. Record the exact scenario and steps so another tester can reproduce what you see.</p>
+<div class="actions"><a class="button" href="../lab/steel/" target="_blank" rel="noopener noreferrer">Open Steel workcell ↗</a><a class="button light" href="../" target="_blank" rel="noopener noreferrer">Open Brain Lab ↗</a><a class="button light" href="../lab/compare/" target="_blank" rel="noopener noreferrer">Recorded data ↗</a></div>
+<h3>Required Steel checks</h3><ol class="steps"><li>Load the scene and confirm the robot and worktable are visible.</li><li>Orbit, zoom, and reset the camera. Check for missing meshes and flickering surfaces.</li><li>Move a joint or open/close the gripper. Verify whether actual geometry moves.</li><li>Drop or insert an object. Watch contact, penetration, bounce and settling.</li><li>Pause, resume, reset, and repeat the same actions.</li><li>Try mobile sizing or a second device if possible.</li></ol>
+<div class="note"><strong>Evidence boundary:</strong> The Steel workcell uses deterministic reference robot control. Recorded MimicGen demonstrations are external source data. Neither is proof of autonomous grasping, learned locomotion, or cross-embodiment transfer by P37-Neuro.</div>
+</section>
+<section class="panel"><h2>02 / Record your observations</h2><p>Choose <strong>Not tested</strong> if you did not run an individual check. “Pass” is a tester observation, not an automated physics qualification.</p>
+<form id="review">
+<div class="field"><label for="scenario">Scene and robot tested</label><input id="scenario" name="scenario" maxlength="180" required placeholder="e.g. Steel packing station / reference arm"></div>
+<div class="field"><label for="steps">Exact reproduction steps</label><textarea id="steps" name="steps" required maxlength="4000" placeholder="1. Open scene…&#10;2. Move gripper…&#10;3. Observe…"></textarea></div>
+<div id="checklist"></div>
+<div class="field"><label for="notes">What failed or looked wrong?</label><textarea id="notes" name="notes" maxlength="4000" placeholder="Describe clipping, motion, lighting or browser errors. Include expected vs actual behavior."></textarea></div>
+<div class="field"><label for="evidence">Screenshot / video URL (optional)</label><input type="url" id="evidence" name="evidence" placeholder="https://…"><small>Use a link you control; this page does not upload files.</small></div>
+<div class="field"><label for="seed">Simulator seed, if visible (optional)</label><input id="seed" name="seed" maxlength="120" placeholder="Leave empty when the simulation does not expose a seed"><small>Entering a number here does not set the simulator seed.</small></div>
+<label class="checkbox"><input id="consent" type="checkbox" required><span>I understand this exports a local JSON report. No feedback is submitted automatically.</span></label>
+<div class="actions" style="margin-top:22px"><button class="button" type="submit">Download test report (.json)</button><button class="button light" type="button" id="copy">Copy report JSON</button></div>
+<p id="message" role="status" aria-live="polite"></p>
+</form></section>
+</div><aside>
+<section class="panel"><h2>Browser readiness</h2><p>Capture your environment before testing. Actual WebGPU device rendering and simulation behavior must be checked visually.</p><div id="diagnostics" class="meta">Checking browser capabilities…</div><button id="gpu" type="button" class="button light">Check WebGPU adapter</button><div id="gpu-message" role="status" class="status"></div></section>
+<section class="panel"><h2>03 / Share the report</h2><p>Attach the downloaded JSON, screenshot, or screen recording to an issue. Include the scene, device and exact actions taken.</p><a href="https://github.com/OntosRobotics/P37-Neuro/issues/new" target="_blank" rel="noopener noreferrer" class="button">Report on GitHub ↗</a><p><strong>Privacy:</strong> browser type, device capability, and fields you enter are included in your exported report. Reports remain on your device until you choose to share them.</p><p><span class="pill">T2 simulation observation only</span></p></section>
+<section class="panel"><h2>Release gate</h2><p>Public feedback cannot replace a hardware-backed WebGPU run, model asset checks, deterministic replay, or measured joint/contact telemetry.</p><p>A trained P37 checkpoint must be evaluated separately against fixed baselines, seeds, held-out robots and declared success metrics.</p></section>
+</aside></div>
+</main>
+<script>
+"use strict";
+const checks=[
+["geometry","Robot proportions, meshes and visible joints"],
+["materials","Materials, textures, lighting and shadows"],
+["camera","Camera orbit, zoom, reset and framing"],
+["movement","Commanded joint and gripper geometry actually moves"],
+["contact","Object contacts, penetrations and tabletop settling"],
+["reset","Pause, resume and reset operate correctly"],
+["performance","No severe stutter, blank canvas or GPU loss"],
+["mobile","Mobile layout and controls, if tested"]
+];
+const options=[["not_tested","Not tested"],["pass","Pass — observed"],["fail","Fail — observed"],["unclear","Unclear"]];
+const checklist=document.getElementById("checklist");
+for(const [key,title] of checks){
+ const wrap=document.createElement("div");wrap.className="test";
+ const label=document.createElement("label");label.htmlFor="check-"+key;label.textContent=title;
+ const select=document.createElement("select");select.id="check-"+key;select.name=key;
+ for(const [value,caption] of options){const o=document.createElement("option");o.value=value;o.textContent=caption;select.appendChild(o);}
+ wrap.append(label,select);checklist.appendChild(wrap);
+}
+const platform={userAgent:navigator.userAgent,language:navigator.language,viewport:{width:window.innerWidth,height:window.innerHeight},devicePixelRatio:window.devicePixelRatio||1,webgpuAPI:!!navigator.gpu,secureContext:window.isSecureContext};
+let adapterState="not_checked";
+function showPlatform(){document.getElementById("diagnostics").textContent=JSON.stringify({...platform,webgpuAdapter:adapterState},null,2);}
+showPlatform();
+document.getElementById("gpu").addEventListener("click",async()=>{
+ const message=document.getElementById("gpu-message");
+ message.textContent="Checking…";
+ try{
+  if(!navigator.gpu){adapterState="api_unavailable";message.textContent="WebGPU API unavailable. The Steel viewer may show its fallback.";showPlatform();return;}
+  const adapter=await navigator.gpu.requestAdapter();
+  adapterState=adapter?"available":"unavailable";
+  message.textContent=adapter?"WebGPU adapter available. This does not prove the scene rendered successfully.":"No WebGPU adapter available.";
+ }catch(error){adapterState="error";message.textContent="Adapter check failed: "+String(error);}
+ showPlatform();
+});
+function report(){
+ const form=document.getElementById("review");
+ if(!form.reportValidity())return null;
+ const data=new FormData(form);
+ const observations={};
+ for(const [key] of checks)observations[key]=String(data.get(key)||"not_tested");
+ return {schema_version:1,report_type:"p37_public_visual_review",qualification:"user_observation_only",timestamp_utc:new Date().toISOString(),page_url:location.href,environment:{...platform,webgpuAdapter:adapterState},scenario:String(data.get("scenario")||""),reproduction_steps:String(data.get("steps")||""),observations,notes:String(data.get("notes")||""),evidence_url:String(data.get("evidence")||""),seed_reported:String(data.get("seed")||""),seed_enforced_by_this_page:false,policy_status:"no_trained_policy_claim"};
+}
+document.getElementById("review").addEventListener("submit",event=>{
+ event.preventDefault();const data=report();if(!data)return;
+ const json=JSON.stringify(data,null,2)+"\n";
+ const blob=new Blob([json],{type:"application/json"});
+ const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download="p37-test-"+new Date().toISOString().replace(/[:.]/g,"-")+".json";a.click();
+ setTimeout(()=>URL.revokeObjectURL(url),1500);
+ document.getElementById("message").textContent="Report downloaded. Share it through GitHub Issues when ready.";
+});
+document.getElementById("copy").addEventListener("click",async()=>{
+ const data=report();if(!data)return;
+ try{await navigator.clipboard.writeText(JSON.stringify(data,null,2));document.getElementById("message").textContent="Report copied. Paste it into your GitHub issue.";}catch{document.getElementById("message").textContent="Clipboard unavailable. Use Download test report instead.";}
+});
+</script>
+</body></html>

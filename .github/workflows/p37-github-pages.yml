@@ -9,6 +9,7 @@ on:
   push:
     branches: [main]
     paths:
+      - "docs/interactive-lab/**"
       - "sim/web/**"
       - ".github/workflows/p37-github-pages.yml"
   workflow_dispatch:
@@ -83,6 +84,7 @@ jobs:
           assert (site / "lab/compare/index.html").is_file()
           assert (site / "lab/compare/samples/mimicgen-square-source.json").is_file()
           assert (site / "lab/steel/index.html").is_file()
+          assert (site / "test/index.html").is_file()
           assert (site / "lab/steel/samples/mimicgen-square-source.json").is_file()
           metadata = {
               "host": "github-pages",
