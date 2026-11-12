@@ -81,10 +81,10 @@ function Workbench({ preset }: {preset:Preset}) {
   const metal='#414d53';
   return <group>
     {/* Floor-to-worktop frame. Same extents as Steel's static tabletop and legs. */}
-    <RoundedSolid size={[1.85,.98,.084]} position={[0,0,.76]} color={edge}
+    <RoundedSolid size={[1.85,.98,.096]} position={[0,0,.75]} color={edge}
       radius={.012} roughness={.42} metalness={steel?.72:.40}/>
-    <mesh position={[0,0,.803]} castShadow receiveShadow>
-      <boxGeometry args={[1.81,.94,.007]}/>
+    <mesh position={[0,0,.805]} castShadow receiveShadow>
+      <boxGeometry args={[1.81,.94,.018]}/>
       <meshPhysicalMaterial color={steel?'#a0a8ab':'#c0a48b'} map={steel?undefined:oak}
         metalness={steel?.54:.06} roughness={steel?.32:.52} clearcoat={.16}/>
     </mesh>
@@ -177,9 +177,12 @@ function Monitor() {
 
 function Room() {
   return <group>
-    <mesh receiveShadow position={[0,0,-.035]}>
-      <boxGeometry args={[10,10,.11]}/>
-      <meshStandardMaterial color="#b7beb9" roughness={.96} metalness={.025}/>
+    {/* Studio draws its own infinite checker ground at z=0. Render one stable
+         untextured plane 18mm above it so the two surfaces never z-fight.
+         The physics Ground collider remains at 0 in the Steel scene. */}
+    <mesh receiveShadow position={[0,0,.018]}>
+      <planeGeometry args={[100,100]}/>
+      <meshStandardMaterial color="#b9bcb9" roughness={.94} metalness={0}/>
     </mesh>
     {/* Concrete panels and physical looking expansion joints. Backdrop only. */}
     <mesh receiveShadow position={[0,3.2,1.55]}>
@@ -210,13 +213,13 @@ function Room() {
     </mesh>
     {/* A constrained floor zone makes object dimensions readable. */}
     {[-1.3,1.3].map(x=>
-      <mesh key={'floor-x'+x} position={[x,0,.026]}>
+      <mesh key={'floor-x'+x} position={[x,0,.023]}>
         <boxGeometry args={[.018,2.65,.004]}/>
         <meshBasicMaterial color="#a19a74"/>
       </mesh>
     )}
     {[-1.15,1.15].map(y=>
-      <mesh key={'floor-y'+y} position={[0,y,.026]}>
+      <mesh key={'floor-y'+y} position={[0,y,.023]}>
         <boxGeometry args={[2.62,.018,.004]}/>
         <meshBasicMaterial color="#a19a74"/>
       </mesh>
@@ -226,14 +229,13 @@ function Room() {
 
 function Lighting() {
   return <>
-    <ambientLight intensity={.34} color="#d8e5e6"/>
-    <hemisphereLight args={['#cfe0e2','#4e5a58',1.2]}/>
-    <directionalLight position={[2.6,-3.4,5.3]} color="#fff5e9" intensity={2.7}
-      castShadow shadow-mapSize={[2048,2048]}
-      shadow-bias={-.00045} shadow-normalBias={.012}/>
-    <spotLight position={[-2.3,-1.4,3.8]} color="#d6eeff" intensity={140}
+    <ambientLight intensity={.18} color="#e2e9e6"/>
+    <hemisphereLight args={['#e3e8e6','#7f8984',.48]}/>
+    <directionalLight position={[2.6,-3.4,5.3]} color="#fff8ed" intensity={.9}
+      castShadow={false}/>
+    <spotLight position={[-2.3,-1.4,3.8]} color="#e1edf1" intensity={52}
       angle={.65} penumbra={.94} decay={2} castShadow={false}/>
-    <spotLight position={[1.6,1.3,3.4]} color="#fff1d9" intensity={100}
+    <spotLight position={[1.6,1.3,3.4]} color="#fff3df" intensity={38}
       angle={.66} penumbra={1} decay={2}/>
   </>;
 }
