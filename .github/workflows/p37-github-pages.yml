@@ -19,8 +19,8 @@ permissions:
   contents: read
 
 concurrency:
-  group: p37-neuro-github-pages
-  cancel-in-progress: false
+  group: p37-neuro-github-pages-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
