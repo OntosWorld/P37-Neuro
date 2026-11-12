@@ -4,6 +4,7 @@ This GitHub Pages smoke test checks the publish layout even on CI machines
 without hardware WebGPU. Dedicated Apple Metal GPU tests still qualify solver
 behavior and contact separately.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -45,7 +46,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             requested = urlsplit(path).path
             if not requested.startswith(url_prefix):
                 return str(site / "__not_found__")
-            return super().translate_path("/" + requested[len(url_prefix):])
+            return super().translate_path("/" + requested[len(url_prefix) :])
 
         def __init__(self, *args, **kwargs):
             super().__init__(*args, directory=str(site), **kwargs)
@@ -59,10 +60,15 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     origin = f"http://127.0.0.1:{server.server_port}{url_prefix}"
     try:
         with sync_playwright() as playwright:
-            browser = playwright.chromium.launch(headless=True, args=[
-                "--no-sandbox", "--disable-dev-shm-usage",
-                "--enable-unsafe-swiftshader", "--use-angle=swiftshader",
-            ])
+            browser = playwright.chromium.launch(
+                headless=True,
+                args=[
+                    "--no-sandbox",
+                    "--disable-dev-shm-usage",
+                    "--enable-unsafe-swiftshader",
+                    "--use-angle=swiftshader",
+                ],
+            )
             page = browser.new_page(viewport={"width": 1512, "height": 982})
             response = page.goto(origin, wait_until="domcontentloaded", timeout=45000)
             assert response is not None and response.status == 200
@@ -92,9 +98,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert page.url == origin, "robot selection must not create new public URL"
             assert page.request.get(origin + "simulator/manifest.json").status == 200
             page.get_by_role("combobox", name="Robot embodiment").select_option("unitree_g1")
-            assert "scene=unitree_g1" in page.locator(
-                "iframe.menagerie-viewer"
-            ).get_attribute("src")
+            assert "scene=unitree_g1" in page.locator("iframe.menagerie-viewer").get_attribute(
+                "src"
+            )
             page.get_by_role("combobox", name="Robot embodiment").select_option("compact")
             assert page.locator("iframe.menagerie-viewer").count() == 0
             page.get_by_role("button", name="Pause robot task").click()
@@ -110,8 +116,12 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     finally:
         server.shutdown()
         server.server_close()
-    return {"single_root": True, "default_task_running": True,
-            "controls_available": True, "mobile_checked": True}
+    return {
+        "single_root": True,
+        "default_task_running": True,
+        "controls_available": True,
+        "mobile_checked": True,
+    }
 
 
 def main() -> None:
