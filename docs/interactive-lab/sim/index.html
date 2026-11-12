@@ -12,6 +12,58 @@
 @media(max-width:860px){.intro{grid-template-columns:1fr}.row{grid-template-columns:1fr}.robots{grid-template-columns:repeat(3,minmax(0,1fr))}aside{border-right:none;border-bottom:1px solid var(--line)}#field{height:430px}.stats{grid-template-columns:1fr 1fr}.stat:nth-child(2){border-right:0}.stat:nth-child(-n+2){border-bottom:1px solid var(--line)}.footnote{grid-template-columns:1fr}}
 @media(max-width:540px){.nav a:nth-child(2){display:none}.robots{grid-template-columns:1fr 1fr}.stat{padding:17px}.stat strong{font-size:19px}}
 @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+
+/* P37 research pages — light Steel-playground visual grammar.
+   Existing robot/evidence functions are unchanged. */
+:root{color-scheme:light;--bg:#fff;--panel:#fff;--card:#fff;--border:#dee3de;
+ --line:#dee3de;--ink:#1e3029;--text:#1e3029;--muted:#7a887f;
+ --mint:#1e332b;--a:#1e332b;--gold:#ad723d;font-family:Arial,Helvetica,sans-serif}
+body{background:#fff!important;color:#23352e!important;font-family:Arial,Helvetica,sans-serif!important}
+header{background:#fff!important;border-color:#dce2dc!important}
+.brand{color:#26362c!important;letter-spacing:.045em!important;font-weight:650!important}
+.brand span{color:#7c8881!important}
+.nav,.nav a{color:#5f7065!important}
+.nav a:hover{color:#173527!important}
+h1{font-size:clamp(36px,3.6vw,48px)!important;line-height:1.06!important;
+ color:#1d3028!important;letter-spacing:-.048em!important;font-weight:470!important}
+h2{color:#21352c!important;letter-spacing:-.043em!important;font-weight:500!important}
+.eyebrow,.over{color:#fb6914!important;font-size:13px!important;letter-spacing:.08em!important}
+.intro,.lede,.lead,.hero-note,.note{color:#7e8a82!important}
+button,.action,select{border-radius:999px!important;background:#fff!important;
+ color:#21372c!important;border:1px solid #d3dcd3!important}
+button:hover,.action:hover,select:hover{background:#eef1ed!important;border-color:#b1c0b4!important}
+button.active,button[aria-pressed=true],button.primary,.action.primary,.source-replay button{
+ background:#1d332b!important;color:#fff!important;border-color:#1d332b!important;font-weight:500!important}
+button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible{
+ outline:2px solid #ef7b25!important;outline-offset:3px}
+.lab,.workspace,.bar,.card,.compare,.scene{border-color:#dce3dc!important;
+ border-radius:15px!important;background:#fff!important}
+.toolbar,.topbar{background:#fff!important;border-color:#dce3dc!important;color:#21362c!important}
+.left,.right,aside{background:#fff!important;border-color:#dce3dc!important}
+.scenario,.robot{border-radius:9px!important}
+.scenario.active,.robot.active{background:#e9efeb!important;color:#153225!important;
+ border-color:#aebeb0!important}
+.scenario.active strong,.robot.active strong,.robot.active span{color:#193c2c!important}
+.scene,.stage{background:radial-gradient(ellipse at 50% 35%,#d8dcda,#bfc6c1 67%,#aab4ad)!important}
+.scene-top,.scene-bottom,.stagefoot{border-color:#dce3dc!important;color:#657369!important}
+.trajectory,#field{background-color:#e6e9e6!important}
+.rail{background:#d9e2da!important}.fill{background:#1e3a2c!important}
+input[type=range]{accent-color:#1e3a2c!important}
+.flag,.flags,.notice{background:#f2f4f1!important;color:#56675b!important;
+ border-color:#d9e1d8!important}
+.card,.compare,.empty{border-radius:14px!important}
+.status:before{background:#1a392b!important}
+.meta,.helper,.muted{color:#708077!important}
+.tracks,.track-label{color:#52695b!important}
+.track-value,output{color:#1b3729!important}
+.gridline{border-color:#e3e9e2!important}
+footer{background:#fff!important;border-color:#dce3dc!important;color:#7c887d!important}
+footer a{color:#284b37!important}
+@media(max-width:800px){h1{font-size:clamp(33px,7.8vw,44px)!important}}
+@media(max-width:520px){h1{font-size:clamp(31px,9vw,41px)!important}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{
+ scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
 </style></head><body><div class="shell">
 <header><a class="brand" href="../index.html">ONTOS / P37 NEURO</a><nav class="nav"><a href="../index.html">Architecture</a><a href="../compare/index.html">Recorded evidence</a><a href="https://ontosrobotics.github.io/P37-Neuro/">Brain Lab ↗</a></nav></header>
 <div class="intro"><div><div class="over">Experimental interface / Kinematics</div><h1>One objective.<br>Different robot bodies.</h1><p class="lead">Move the target. Switch the robot. See how different link lengths and joint constraints affect a common reaching objective.</p></div><div class="note"><strong>Deterministic controller demo</strong>This is a planar inverse-kinematics sandbox, driven by a numerical solver. It does not execute P37 policy weights, MuJoCo physics, learned adaptation, or a validated cross-embodiment benchmark.</div></div>

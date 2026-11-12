@@ -24,6 +24,9 @@
     "@webgpu/types": "0.1.74",
     "@vitejs/plugin-react": "6.2.1",
     "typescript": "~5.9.3",
-    "vite": "^8.0.0"
+    "vite": "^8.0.0",
+    "playwright": "^1.55.0",
+    "pngjs": "^7.0.0",
+    "@types/pngjs": "^6.0.5"
   }
 }

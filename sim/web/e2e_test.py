@@ -291,6 +291,35 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 1")
             page.screenshot(path=str(screenshots / "demos-mobile.png"), timeout=90000)
 
+            # The preceding MuJoCo and dual-body comparisons spawn several
+            # long-lived WebGL/SwiftShader contexts. A new *page* is not enough:
+            # the browser GPU process can keep those contexts allocated and
+            # make a subsequent 2D-only HTML navigation hang indefinitely.
+            # Start a fresh browser process with GPU disabled for source-data
+            # playback. This still checks the real rendered 2D canvas and JS.
+            page.close()
+            browser.close()
+            browser = playwright.chromium.launch(
+                headless=True,
+                args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-gpu"],
+            )
+            page = browser.new_page(viewport={"width": 1440, "height": 900})
+            page.on("pageerror", lambda error: failures.append(str(error)))
+            page.on(
+                "response",
+                lambda response: (
+                    failures.append(f"HTTP {response.status}: {response.url}")
+                    if response.status >= 400
+                    else None
+                ),
+            )
+            page.on(
+                "console",
+                lambda message: (
+                    console_errors.append(message.text) if message.type == "error" else None
+                ),
+            )
+
             # The new evidence pages are additive and must work at the same Pages prefix.
             assert page.request.get(origin + "lab/steel/").status == 200
             original = page.request.get(origin + "lab/compare/samples/mimicgen-square-source.json")
@@ -312,6 +341,27 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/") -> dict:
                 in page.locator("#sourceCredit").inner_text()
             )
             page.screenshot(path=str(screenshots / "mimicgen-real-data.png"), timeout=30000)
+            # Review all independent P37 research surfaces at the same
+            # desktop/mobile breakpoints as the Steel visual reference.
+            page.set_viewport_size({"width": 390, "height": 844})
+            page.screenshot(path=str(screenshots / "mimicgen-mobile.png"), timeout=30000)
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2")
+            for route, label in (
+                ("lab/", "architecture"),
+                ("lab/sim/", "kinematics"),
+            ):
+                page.set_viewport_size({"width": 1512, "height": 982})
+                check = page.goto(origin + route, wait_until="domcontentloaded", timeout=30000)
+                assert check is not None and check.status == 200
+                page.locator("h1").first.wait_for(state="visible", timeout=15000)
+                assert (
+                    page.evaluate("getComputedStyle(document.body).backgroundColor")
+                    == "rgb(255, 255, 255)"
+                )
+                page.screenshot(path=str(screenshots / f"{label}-desktop.png"), timeout=30000)
+                page.set_viewport_size({"width": 390, "height": 844})
+                assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 2")
+                page.screenshot(path=str(screenshots / f"{label}-mobile.png"), timeout=30000)
 
             if failures:
                 raise AssertionError("Browser runtime errors: " + " | ".join(failures[:8]))

@@ -7,10 +7,15 @@ import type { SourceFrame } from './SourceTrajectory';
 type SourceData = { publication: { source: string; learned_policy_attached: boolean }; traces: { frames: SourceFrame[] }[] };
 
 
-const CAMERA = {
-  position: [2.65, -3.2, 2.2] as [number,number,number],
-  target: [0, 0, .89] as [number,number,number],
+const CAMERA_DESKTOP = {
+  position: [2.05, -2.65, 1.82] as [number,number,number],
+  target: [0, 0, .88] as [number,number,number],
   fov: 40,
+};
+const CAMERA_MOBILE = {
+  position: [2.75, -3.35, 2.20] as [number,number,number],
+  target: [0, 0, .88] as [number,number,number],
+  fov: 46,
 };
 function LiveScene({ preset, robot, items, paused, collision, pose,
   sceneRef, onSample, onReady, onError, sourceFrames, sourcePlaying }: {
@@ -19,6 +24,13 @@ function LiveScene({ preset, robot, items, paused, collision, pose,
   onSample: (s: SimStatsSample | null) => void; onReady: () => void; onError: (s: string) => void;
   sourceFrames: SourceFrame[]; sourcePlaying: boolean;
 }) {
+  const [mobile, setMobile] = useState(() => window.matchMedia('(max-width: 690px)').matches);
+  useEffect(() => {
+    const query = window.matchMedia('(max-width: 690px)');
+    const onChange = () => setMobile(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
   return <Physics
     style={{ position: 'absolute', inset: 0 }}
     fallback={<div className="viewer-notice"><div className="spinner"/>Requesting Steel WebGPU device...</div>}
@@ -29,7 +41,7 @@ function LiveScene({ preset, robot, items, paused, collision, pose,
     onError={e => onError(String(e))}
   >
     <Scene ref={sceneRef} gravity={[0,0,-9.81]} fps={60} paused={paused} collision={collision}
-      pickable controls camera={CAMERA} onLoaded={onReady} onError={e=>onError(String(e))}>
+      pickable controls camera={mobile ? CAMERA_MOBILE : CAMERA_DESKTOP} onLoaded={onReady} onError={e=>onError(String(e))}>
       <Workcell preset={preset} robot={robot} items={items} pose={pose} onStats={onSample} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
     </Scene>
   </Physics>;
@@ -101,15 +113,60 @@ export function App() {
     <main>
       <div className="title-row">
         <div>
-          <span className="overline">Interactive simulation / WebGPU</span>
-          <h1>Robots in a physical world.</h1>
-          <p className="intro">Explore a realistic workcell with articulated reference robots, furniture and movable objects. Contact physics runs directly in your browser.</p>
+          <span className="overline">LIVE DEMO</span>
+          <h1>P37-Neuro, running in your browser</h1>
+          <p className="intro">Every scene runs live on your GPU through Steel WebGPU. Choose a robot configuration, move objects around and inspect the physics as it runs.</p>
         </div>
         <div className="hero-note"><strong>About this demonstration</strong>
           <p>Live Steel physics and a deterministic joint controller. No trained P37-Neuro checkpoint is attached. MimicGen demonstrations are imported separately and never presented as this robot’s learned behavior.</p>
         </div>
       </div>
       <section className="lab-grid" aria-label="Interactive Steel research workcell">
+        <div className="viewport">
+          <div className="playground-scenes" role="group" aria-label="Choose physics environment">
+            <span className="playground-scenes-label">Scenes</span>
+            {PRESETS.map(p=><button type="button" key={p.id}
+              aria-pressed={preset===p.id} className={preset===p.id?'active':''}
+              onClick={()=>changePreset(p.id)}>{p.label}</button>)}
+          </div>
+          <div className="viewport-top">
+            <div><span className="live-dot"/> LIVE GPU PHYSICS <span className="muted">/ Steel WebGPU</span></div>
+            <div className="stage-tools-head">
+              <span>REFERENCE ROBOT · NO TRAINED POLICY</span>
+              <button type="button" className="stage-expand" title="Expand simulation"
+                aria-label="Expand simulation" onClick={event=>{
+                  const viewport=event.currentTarget.closest('.viewport');
+                  if(document.fullscreenElement)void document.exitFullscreen();
+                  else if(viewport)void viewport.requestFullscreen();
+                }}>⛶</button>
+            </div>
+          </div>
+          <div className="canvas-wrap">
+            <LiveScene key={preset + '-' + robot} preset={preset} robot={robot} items={items}
+              paused={paused} collision={collision} pose={pose} sceneRef={scene}
+              onSample={setStats} onReady={()=>setStatus('Steel physics active')}
+              onError={setStatus} sourceFrames={showSource ? (sourceData?.traces[sourceEpisode]?.frames ?? []) : []}
+              sourcePlaying={showSource && sourcePlaying && !paused}/>
+            <div className="camera-tip">DRAG OBJECTS TO PULL · DRAG EMPTY SPACE TO ORBIT</div>
+          </div>
+          <div className="playground-embodiment" role="group" aria-label="Choose reference robot">
+            <span>Reference robot</span>
+            <button type="button" aria-pressed={robot==='compact'} onClick={()=>setRobot('compact')}>Compact arm</button>
+            <button type="button" aria-pressed={robot==='extended'} onClick={()=>setRobot('extended')}>Extended arm</button>
+            <span className="playground-disclaimer">Procedural geometry · no learned P37 policy</span>
+          </div>
+          <div className="viewport-controls">
+            <div className="action-row">
+              <button onClick={()=>setPaused(!paused)}>{paused ? '▶ Resume' : 'Ⅱ Pause'}</button>
+              <button onClick={reset}>↻ Reset</button>
+              <button aria-pressed={collision} onClick={()=>setCollision(!collision)}>
+                {collision ? 'Hide collision geometry' : 'Show collision geometry'}
+              </button>
+            </div>
+            <div className="status-line" role="status">{status}</div>
+          </div>
+        </div>
+        <div className="playground-panel">
         <aside className="side-panel">
           <div className="section-heading"><span>CONFIGURATION</span><span>01 / 04</span></div>
           <label htmlFor="preset">Environment</label>
@@ -156,30 +213,6 @@ export function App() {
           <a className="small-link" href="https://huggingface.co/datasets/amandlek/mimicgen_datasets" target="_blank" rel="noreferrer">MimicGen source dataset ↗</a>
           <a className="small-link" href="../compare/index.html?sample=mimicgen">Watch official source motion in P37 ↗</a>
         </aside>
-        <div className="viewport">
-          <div className="viewport-top">
-            <div><span className="live-dot"/> LIVE GPU PHYSICS <span className="muted">/ Steel WebGPU</span></div>
-            <span>REFERENCE ROBOT · NO TRAINED POLICY</span>
-          </div>
-          <div className="canvas-wrap">
-            <LiveScene key={preset + '-' + robot} preset={preset} robot={robot} items={items}
-              paused={paused} collision={collision} pose={pose} sceneRef={scene}
-              onSample={setStats} onReady={()=>setStatus('Steel physics active')}
-              onError={setStatus} sourceFrames={showSource ? (sourceData?.traces[sourceEpisode]?.frames ?? []) : []}
-              sourcePlaying={showSource && sourcePlaying && !paused}/>
-            <div className="camera-tip">DRAG OBJECTS TO PULL · DRAG EMPTY SPACE TO ORBIT</div>
-          </div>
-          <div className="viewport-controls">
-            <div className="action-row">
-              <button onClick={()=>setPaused(!paused)}>{paused ? '▶ Resume' : 'Ⅱ Pause'}</button>
-              <button onClick={reset}>↻ Reset</button>
-              <button aria-pressed={collision} onClick={()=>setCollision(!collision)}>
-                {collision ? 'Hide collision geometry' : 'Show collision geometry'}
-              </button>
-            </div>
-            <div className="status-line" role="status">{status}</div>
-          </div>
-        </div>
         <aside className="evidence-panel">
           <div className="section-heading"><span>EXPERIMENT STATUS</span><span>02 / 04</span></div>
           <div className="info-row"><span>Physics backend</span><strong>Steel / WebGPU</strong></div>
@@ -195,6 +228,7 @@ export function App() {
           <div className="section-cap">P37 integration</div>
           <p className="evidence-copy">The <a href="../compare/index.html">recorded experiment viewer</a> accepts canonical P37 episodes. The MimicGen HDF5 adapter preserves dataset-native actions without claiming they are joint commands.</p>
         </aside>
+        </div>
       </section>
       <section className="bottom-grid">
         <div><span className="overline">01 / Physics</span><h2>Interact with the scene.</h2><p>A table, chair, monitor and loose objects have physical collision geometry. Studio lighting and procedural materials provide a realistic industrial workcell.</p></div>
