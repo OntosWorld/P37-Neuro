@@ -157,7 +157,8 @@ async function qa(){
       sidebar:metrics(side),sceneButton:metrics(controls)};
   });
   if(!results.p37.editorial.nav || results.p37.editorial.nav.radius>12 ||
-     !/rgba\\(0, 0, 0, 0\\)|transparent/.test(results.p37.editorial.nav.background))
+     !(results.p37.editorial.nav.background==='rgba(0, 0, 0, 0)' ||
+       results.p37.editorial.nav.background==='transparent'))
     throw new Error('Reference UI mismatch: navigation must use a quiet editorial surface');
   if(results.p37.editorial.sceneButton?.radius>12)
     throw new Error('Reference UI mismatch: scene buttons have an oversized pill shape');
