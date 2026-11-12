@@ -142,14 +142,17 @@ export function App() {
     // Isolate the contact experiment. The former test put another parcel
     // into an already active packing cell with overlapping loose objects;
     // those collisions could launch the parcel off the workbench.
-    setPreset('inspection');
+    // Keep the existing Scene mounted. Switching presets here remounted the
+    // WebGPU Scene while the QA readback was in flight; zero-valued default
+    // poses were then mistaken for a parcel falling through the tabletop.
+    // Rebuild only the loose-object set, retaining the current fixed workbench.
     setItems([item]);
     setItemMotion({});
     setTrackedId(item.id);
     setGripState(null);
     setReachCycle(false);
     setPaused(false);
-    setStatus('Isolated tabletop drop: one parcel, gravity and contact');
+    setStatus('Isolated tabletop drop: waiting for physics readback');
   };
   return <div className="app-shell">
     <header className="site-header">
