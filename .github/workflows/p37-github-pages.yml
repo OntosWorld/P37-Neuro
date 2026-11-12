@@ -17,6 +17,7 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: p37-neuro-github-pages-${{ github.ref }}
@@ -40,11 +41,21 @@ jobs:
         run: |
           npm install --no-audit --no-fund
           npm run build
-      - name: Build manufacturer-derived robot physics bundle
+      - name: Obtain reviewed P37 G1 experimental model
+        uses: actions/download-artifact@v4
+        with:
+          name: p37-g1-experimental-not-qualified
+          run-id: 42896162520
+          github-token: ${{ github.token }}
+          path: _p37_policy
+      - name: Build manufacturer-derived robots and P37 browser controller
         run: |
-          python -m pip install "mjswan" "mujoco"
+          python -m pip install "mjswan[examples]" "mujoco"
           git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
-          python sim/web/build_mjswan.py --menagerie _menagerie --base-path /P37-Neuro/simulator/
+          python sim/web/build_mjswan.py \
+            --menagerie _menagerie \
+            --base-path /P37-Neuro/simulator/ \
+            --p37-artifact _p37_policy
       - name: Publish only the canonical root experience
         run: python sim/web/assemble_site.py --output _pages
       - name: Validate root page and isolated browser assets

@@ -403,3 +403,42 @@ body,.app-shell{color:#242827!important}
   .policy-evidence-grid{grid-template-columns:1fr}
   .policy-evidence-card{padding:17px}
 }
+
+/* Native-only robot showcase: all rendered bodies come from pinned MuJoCo
+   Menagerie meshes. No procedural stand-in robot is exposed on this page. */
+.p37-real .title-row{padding-top:58px!important;padding-bottom:35px!important}
+.p37-real .title-row h1{font-size:clamp(42px,5vw,70px)!important;line-height:1.03!important;letter-spacing:-.06em!important;max-width:1050px!important}
+.p37-real .title-row .intro{font-size:15px!important;max-width:820px!important}
+.p37-real .lab-grid{grid-template-columns:minmax(0,1fr) 345px!important;gap:19px!important;max-width:1320px!important}
+.p37-real .lab-grid>.viewport{border-radius:9px!important;background:#daddda!important}
+.p37-real .canvas-wrap.p37-scene{height:clamp(590px,52vw,730px)!important;min-height:590px!important;background:#d6d9d7!important}
+.p37-scene{position:relative}
+.p37-stage-name{position:absolute;left:21px;top:20px;z-index:2;pointer-events:none;display:flex;flex-direction:column;gap:4px;padding:14px 18px;background:rgba(255,255,255,.9);border:1px solid rgba(231,234,232,.9);border-radius:6px;max-width:min(320px,64%)}
+.p37-stage-name small{font-size:9px;letter-spacing:.12em;color:#78817c}
+.p37-stage-name strong{font-weight:600;letter-spacing:-.04em;font-size:25px;color:#242a27;line-height:1.18}
+.p37-stage-name span{font-size:11px;color:#758079}
+.p37-real .playground-scenes{flex-wrap:wrap;gap:6px!important}
+.p37-real .playground-scenes button{padding:8px 12px!important}
+.p37-real .playground-panel{max-height:900px!important}
+.p37-real .catalog-choices{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.p37-real .catalog-choices button{min-height:64px;padding:12px 11px}
+.p37-real .catalog-choices button strong{font-size:12px}
+.p37-real .viewport-controls{min-height:67px}
+.p37-real .viewport-controls .action-row button{border-radius:5px!important}
+.p37-stage-actions strong{font-size:11px;font-weight:550;color:#25392e}
+.p37-real .status-line{font-size:11px;max-width:none}
+@media(max-width:900px){
+ .p37-real .lab-grid{grid-template-columns:minmax(0,1fr) 310px!important}
+}
+@media(max-width:690px){
+ .p37-real .title-row{padding-top:29px!important;padding-bottom:24px!important}
+ .p37-real .title-row h1{font-size:clamp(37px,9vw,48px)!important}
+ .p37-real .lab-grid{grid-template-columns:1fr!important;gap:14px!important}
+ .p37-real .canvas-wrap.p37-scene{height:clamp(450px,95vw,550px)!important;min-height:450px!important}
+ .p37-real .playground-panel{max-height:none!important}
+ .p37-real .playground-scenes{padding:11px!important}
+ .p37-real .playground-scenes button{padding:8px!important}
+ .p37-stage-name{top:12px;left:12px;padding:10px 12px;max-width:69%}
+ .p37-stage-name strong{font-size:21px}
+ .p37-real .viewport-controls{min-height:0}
+}

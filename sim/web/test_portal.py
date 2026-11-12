@@ -87,5 +87,14 @@ def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
     assert "for robot in ROBOTS" in assembler
     assert "iframe" in root_app and "menagerie-viewer" in root_app
     assert "Select real robot body" in root_app
-    assert "unitree_g1" in root_app and "franka_panda" in root_app
-    assert "no trained P37" in root_app.lower() or "no qualified P37" in root_app
+    assert "unitree_g1" in root_app
+    assert "One brain. Different bodies." in root_app
+    assert "P37 recurrent PPO" in root_app
+    assert "Other robots run native MuJoCo physics" in root_app
+    assert "no policy" in root_app.lower()
+    assert "compact arm" not in root_app.lower()
+    assert "extended arm" not in root_app.lower()
+    assert "attach_g1_policy" in (ROOT / "build_mjswan.py").read_text(encoding="utf-8")
+    adapter = (ROOT / "p37_browser_policy.py").read_text(encoding="utf-8")
+    assert "next_memory" in adapter and "adapt_hx" in adapter
+    assert "p37_checkpoint_sha256" in assembler
