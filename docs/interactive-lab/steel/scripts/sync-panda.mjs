@@ -72,10 +72,12 @@ await Promise.all(Array.from({length:6},async()=>{
 const originalMJCF=await readFile(resolve(destination,'panda.xml'),'utf8');
 if(!originalMJCF.includes('</actuator>'))throw new Error('Panda actuator block missing');
 const compatMJCF=originalMJCF.replace('</actuator>',
-  '  <!-- Modified by Ontos for Steel WebGPU: physical finger joint drives. -->\\n'+
-  '  <position joint="finger_joint1" kp="400" kv="35"/>\\n'+
-  '  <position joint="finger_joint2" kp="400" kv="35"/>\\n'+
-  '</actuator>').replace(/\\n/g,'\\n');
+  '  <!-- Modified by Ontos for Steel WebGPU: physical finger joint drives. -->\n'+
+  '  <position joint="finger_joint1" kp="400" kv="35"/>\n'+
+  '  <position joint="finger_joint2" kp="400" kv="35"/>\n'+
+  '</actuator>');
+if(compatMJCF.includes('\\\\n') || !compatMJCF.includes('<position joint="finger_joint1"'))
+  throw new Error('Invalid Steel Panda compatibility XML: encoded newlines or missing finger drives');
 await writeFile(resolve(destination,'panda-steel.xml'),compatMJCF);
 await writeFile(resolve(destination,'SOURCE.json'),JSON.stringify({
   source:manifest.origin,
