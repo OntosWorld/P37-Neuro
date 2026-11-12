@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
   BoxCollider, CylinderCollider, Ground, RigidBody,
-  SphereCollider, URDF, useBeforeStep, useSimStats, useWorld,
+  SphereCollider, URDF, MJCF, useBeforeStep, useSimStats, useWorld,
   type RigidBodyHandle, type RobotHandle, type SceneHandle, type SimStatsSample,
 } from '@skild-ai/steel-webgpu/react';
 import type { Vec3 } from '@skild-ai/steel-webgpu';
@@ -11,7 +11,7 @@ import { IndustrialSet, ProductDetail } from './IndustrialSet';
 import { SourceTrajectory, type SourceFrame } from './SourceTrajectory';
 
 export type Preset = 'workcell' | 'packing' | 'inspection';
-export type RobotType = 'compact' | 'extended';
+export type RobotType = 'compact' | 'extended' | 'panda';
 export type ObjectType = 'parcel' | 'canister' | 'ball' | 'bin';
 export type LooseItem = { id: number; type: ObjectType; position: Vec3 };
 export type ItemMotionSample = { id: number; position: Vec3; at: number };
@@ -146,6 +146,20 @@ function ReferenceRobotControl({ refRobot, target, body, baseline, gripper }: {
   useBeforeStep((sim) => {
     const robot = refRobot.current;
     if (!robot) return;
+    if (body === 'panda') {
+      // Apache-2.0 Menagerie Panda: seven actuated joints, conservative fixed
+      // reference pose. This is the real manufacturer-derived MJCF geometry
+      // but deterministic control, not a trained P37 robot policy.
+      const pandaHome = [0, -.23, .0, -1.58, .0, 1.52, -.79];
+      const names = ['joint1','joint2','joint3','joint4','joint5','joint6','joint7'];
+      names.forEach((name, index) => {
+        if (robot.dofs.has(name)) robot.setJointTarget(name, pandaHome[index]);
+      });
+      const jaw = Math.max(0, Math.min(.035, gripper));
+      if (robot.dofs.has('finger_joint1')) robot.setJointTarget('finger_joint1', jaw);
+      if (robot.dofs.has('finger_joint2')) robot.setJointTarget('finger_joint2', jaw);
+      return;
+    }
     const phase = sim.time % 8.5;
     const fraction = !baseline ? 0 :
       phase < .5 ? 0 :
@@ -177,8 +191,8 @@ function GripperTelemetry({ robotRef, onSample }: {
     let busy = false;
     const timer = setInterval(async () => {
       const robot = robotRef.current;
-      const left = robot?.dofs.get('left_finger_slide');
-      const right = robot?.dofs.get('right_finger_slide');
+      const left = robot?.dofs.get('left_finger_slide') ?? robot?.dofs.get('finger_joint1');
+      const right = robot?.dofs.get('right_finger_slide') ?? robot?.dofs.get('finger_joint2');
       if (left === undefined || right === undefined || busy) return;
       busy = true;
       try {
@@ -222,8 +236,12 @@ export function Workcell({ preset, robot, items, pose, baseline = true, gripper,
   return <>
     <FurnitureColliders preset={preset}/>
     {items.map(item => <LooseObject key={item.id} item={item} onMotion={onMotion}/>)}
-    <URDF src={import.meta.env.BASE_URL + 'robots/' + robot + '.urdf'} ref={robotRef}
-      xform={[-.63,.05,.805,0,0,0,1]}/>
+    {robot === 'panda' ?
+      <MJCF src={import.meta.env.BASE_URL + 'vendor/panda/panda.xml'} ref={robotRef}
+        xform={[-.63,.05,.814,0,0,0,1]}/> :
+      <URDF src={import.meta.env.BASE_URL + 'robots/' + robot + '.urdf'} ref={robotRef}
+        xform={[-.63,.05,.805,0,0,0,1]}/>
+    }
     <ReferenceRobotControl refRobot={robotRef} target={pose} body={robot} baseline={baseline} gripper={gripper}/>
     <GripperTelemetry robotRef={robotRef} onSample={onGripSample}/>
     <IndustrialSet preset={preset}/>
