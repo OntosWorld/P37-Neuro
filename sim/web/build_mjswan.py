@@ -17,7 +17,7 @@ import mjswan
 import mujoco
 import onnx
 from catalog import ROBOTS, RobotScene, check_catalog
-from mjswan.envs.mdp.actions import JointEffortActionCfg, JointPositionActionCfg
+from mjswan.envs.mdp.actions import JointPositionActionCfg, MuscleActivationActionCfg
 from model_motion_library import create_library
 
 ROOT = Path(__file__).resolve().parent
@@ -130,10 +130,11 @@ def build(
                 # Includes Crazyflie site-thrust/moment actuators and any
                 # motor-only source model; never pretend they are joints.
                 replay_actions = {
-                    "motor": JointEffortActionCfg(
+                    "motor": MuscleActivationActionCfg(
                         actuator_names=tuple(
                             re.escape(name) for name in clip["actuator_or_joint_names"]
                         ),
+                        action_mode="direct",
                         scale=1.0,
                     )
                 }
