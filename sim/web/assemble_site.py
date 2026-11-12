@@ -65,19 +65,34 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     required = {robot.id for robot in ROBOTS}
     if not required <= ids:
         raise RuntimeError(f"MuJoCo robot scenes missing: {sorted(required - ids)}")
+    g1_scene = next(
+        scene
+        for project in manifest["projects"]
+        for scene in project["scenes"]
+        if scene["id"] == "unitree_g1"
+    )
+    g1_policies = g1_scene.get("policies", [])
+    if not g1_policies:
+        raise RuntimeError("Native G1 scene has no compiled P37 browser controller")
+    if not any("p37" in json.dumps(policy).lower() for policy in g1_policies):
+        raise RuntimeError("The actual P37 learned policy is not registered in native G1")
+    cross = json.loads((output / "p37-cross-body-evidence.json").read_text(encoding="utf-8"))
     metadata = {
         "schema_version": 1,
         "site_entry": "/P37-Neuro/",
         "experience": "single-root-steel-webgpu",
-        "physics_engine": "Steel WebGPU",
-        "controllers": "deterministic-reference-for-Steel; passive-physics-for-MuJoCo",
+        "physics_engine": "MuJoCo WebAssembly",
+        "controllers": "experimental-P37-recurrent-ONNX-G1; passive-physics-other-bodies",
         "manufacturer_robots": sorted(robot.id for robot in ROBOTS),
         "panda_loader": "native-MuJoCo-Menagerie-scene",
-        "trained_p37_policy_attached": False,
+        "trained_p37_policy_attached": True,
+        "experimental_policy_robot": "unitree_g1",
+        "p37_checkpoint_sha256": cross["checkpoint_sha256"],
         "qualified_cross_body_transfer": False,
         "notes": (
-            "MuJoCo bodies are physics models with no learned policy. "
-            "Steel reference actions are deterministic."
+            "G1 runs real experimental P37 ONNX inference in native MuJoCo. "
+            "Other real robot bodies remain passive model physics. "
+            "P37 locomotion, recovery and cross-body transfer are unqualified."
         ),
     }
     (output / "build-info.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
