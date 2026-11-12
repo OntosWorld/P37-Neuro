@@ -23,14 +23,16 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     dist = STEEL / "dist"
     if not (dist / "index.html").is_file():
         raise FileNotFoundError("Build docs/interactive-lab/steel before publishing")
-    if not (dist / "robots" / "compact.urdf").is_file():
-        raise FileNotFoundError("Physical reference robot missing from Steel assets")
     output = output.resolve()
     if output in (ROOT, STEEL, dist) or ROOT not in output.parents:
         raise ValueError("Output must be a separate build folder inside repository")
     if output.exists():
         shutil.rmtree(output)
     shutil.copytree(dist, output)
+    # Do not ship the earlier procedural URDF arms or Panda workcell assets.
+    # Every displayed robot now originates from a manufacturer-derived scene.
+    for old_assets in ("robots", "vendor", "samples"):
+        shutil.rmtree(output / old_assets, ignore_errors=True)
     # MuJoCo viewer is an internal runtime asset of this one-page application.
     # Users stay on /P37-Neuro/ while changing the 10 manufacturer models.
     simulator = ROOT / "sim" / "web" / "dist"
@@ -65,19 +67,36 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     required = {robot.id for robot in ROBOTS}
     if not required <= ids:
         raise RuntimeError(f"MuJoCo robot scenes missing: {sorted(required - ids)}")
+    policy_bodies = ("unitree_g1", "unitree_go2")
+    for robot in policy_bodies:
+        scene_id = robot + "_p37_experimental"
+        matched = [
+            scene
+            for project in manifest["projects"]
+            for scene in project["scenes"]
+            if scene["id"] == scene_id
+        ]
+        if len(matched) != 1:
+            raise RuntimeError(f"Live P37 experimental scene missing: {scene_id}")
+        policies = matched[0].get("policies", [])
+        if not any(p.get("id") == "p37_experimental_recurrent_ppo" for p in policies):
+            raise RuntimeError(f"Verified ONNX policy not attached to {scene_id}")
     metadata = {
         "schema_version": 1,
         "site_entry": "/P37-Neuro/",
-        "experience": "single-root-steel-webgpu",
-        "physics_engine": "Steel WebGPU",
-        "controllers": "deterministic-reference-for-Steel; passive-physics-for-MuJoCo",
+        "experience": "single-root-native-mujoco-p37",
+        "physics_engine": "MuJoCo WebAssembly",
+        "controllers": "real-onnx-recurrent-p37-experimental-or-passive",
         "manufacturer_robots": sorted(robot.id for robot in ROBOTS),
         "panda_loader": "native-MuJoCo-Menagerie-scene",
-        "trained_p37_policy_attached": False,
+        "trained_p37_policy_attached": True,
+        "active_policy_robots": list(policy_bodies),
+        "model_only_robots": sorted(required),
+        "onnx_sha256": "894d33ac78e0d654b00cf85319b5dcf4accf1d0c93b1264b4e40f105670905e3",
         "qualified_cross_body_transfer": False,
         "notes": (
-            "MuJoCo bodies are physics models with no learned policy. "
-            "Steel reference actions are deterministic."
+            "G1 and Go2 have an experimental recurrent P37 ONNX policy in browser. "
+            "Unqualified for walking or task transfer. Other scenes are passive."
         ),
     }
     (output / "build-info.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "node scripts/sync-panda.mjs && vite --host 0.0.0.0",
-    "build": "node scripts/sync-panda.mjs && tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "typecheck": "tsc --noEmit",
     "sync:assets": "node scripts/sync-panda.mjs"
