@@ -102,9 +102,9 @@ function LooseObject({ item, onMotion }: {
   const ref = useRef<RigidBodyHandle>(null);
   return <>
     <RigidBody ref={ref} name={'item-'+item.id} position={item.position} mass={{ parcel: .45, canister: .36, ball: .13, bin: .62 }[item.type]}>
-      {item.type === 'ball' && <SphereCollider radius={.062} restitution={.55} color={[.67,.78,.73]}/>}
-      {item.type === 'canister' && <CylinderCollider radius={.053} halfHeight={.076} color={[.66,.73,.77]}/>}
-      {item.type === 'parcel' && <BoxCollider hx={.113} hy={.094} hz={.078} color={[.57,.42,.29]}/>}
+      {item.type === 'ball' && <SphereCollider radius={.062} mu={.45} restitution={.18} color={[.67,.78,.73]}/>}
+      {item.type === 'canister' && <CylinderCollider radius={.053} halfHeight={.076} mu={.68} restitution={.03} color={[.66,.73,.77]}/>}
+      {item.type === 'parcel' && <BoxCollider hx={.113} hy={.094} hz={.078} mu={.83} restitution={.01} gap={.009} color={[.57,.42,.29]}/>}
       {item.type === 'bin' && <>
         <BoxCollider hx={.118} hy={.094} hz={.008} position={[0,0,-.052]} color={[.36,.45,.5]}/>
         {[-.111,.111].map(x => <BoxCollider key={'bx'+x} hx={.006} hy={.095} hz={.064} position={[x,0,.005]} color={[.36,.45,.5]}/>)}
