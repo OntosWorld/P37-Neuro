@@ -18,7 +18,7 @@ from onnx import TensorProto, helper
 
 RATE = 50
 FRAMES = 200
-MODES = ("articulation", "motion_cycle")
+MODES = ("articulation", "motion_cycle", "hold")
 CONTROL_DT = 1.0 / RATE
 
 
@@ -82,7 +82,9 @@ def _joint_clip(model: mujoco.MjModel, mode: str) -> tuple[np.ndarray, list[str]
     t = np.arange(FRAMES, dtype=np.float64) / RATE
     cycle = 2 * np.pi * t / (FRAMES / RATE)
     phase = np.array([(i % 5) * 0.43 for i in range(len(joints))])
-    if mode == "articulation":
+    if mode == "hold":
+        wave = np.zeros((FRAMES, len(joints)), dtype=np.float64)
+    elif mode == "articulation":
         wave = np.sin(cycle[:, None] + phase[None, :]) * np.sin(cycle[:, None] / 2)
     else:
         wave = np.sin(2 * cycle[:, None] + phase[None, :]) * 0.72
@@ -110,6 +112,8 @@ def _drone_clip(model: mujoco.MjModel, mode: str) -> tuple[np.ndarray, list[str]
     t = np.arange(FRAMES, dtype=np.float64) / RATE
     cycle = 2 * np.pi * t / (FRAMES / RATE)
     output = np.tile(hover, (FRAMES, 1))
+    if mode == "hold":
+        return output.astype(np.float32), names, hover
     output[:, 0] += 0.025 * np.sin(cycle)
     output[:, 1] += 0.12 * np.sin(cycle * (1 if mode == "articulation" else 2))
     output[:, 2] += 0.10 * np.cos(cycle)
@@ -171,7 +175,11 @@ def create_motion(model: mujoco.MjModel, robot_id: str, mode: str, out: Path) ->
     return {
         "robot_id": robot_id,
         "id": mode,
-        "name": "Motor articulation" if mode == "articulation" else "Movement cycle",
+        "name": {
+            "articulation": "Motor articulation",
+            "motion_cycle": "Movement cycle",
+            "hold": "Hold position",
+        }[mode],
         "source": "model-derived sampled actuator trajectory",
         "source_model": "Google DeepMind MuJoCo Menagerie",
         "is_teleoperation_or_recorded_demonstration": False,
