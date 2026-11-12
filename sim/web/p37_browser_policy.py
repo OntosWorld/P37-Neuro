@@ -25,13 +25,16 @@ EXPECTED_CHECKPOINT_SHA256 = "b3619374aa0f9b44a2fc80fa6005589abdfdac8e84cdcadbd8
 CONTROL_DT = 0.02
 
 
-def _gravity_z(env, *, asset_cfg: SceneEntityCfg = SceneEntityCfg(name="robot")):
+_ROBOT = SceneEntityCfg(name="robot")
+
+
+def _gravity_z(env, *, asset_cfg: SceneEntityCfg = _ROBOT):
     """Training input is the *last component* of projected local gravity."""
     robot = env.scene[asset_cfg.name]
     return robot.data.projected_gravity_b[:, 2:3]
 
 
-def _forward_command(env, *, asset_cfg: SceneEntityCfg = SceneEntityCfg(name="robot")):
+def _forward_command(env, *, asset_cfg: SceneEntityCfg = _ROBOT):
     """The experimental G1 checkpoint was trained with a fixed 0.3 m/s goal."""
     robot = env.scene[asset_cfg.name]
     return torch.ones_like(robot.data.joint_pos[:, :1]) * 0.3
@@ -71,9 +74,11 @@ def make_mjswan_recurrent_actor(original: onnx.ModelProto) -> onnx.ModelProto:
     # Torch exported joint_state was position residual and velocity
     # interleaved per joint. Reconstruct that original ordering exactly.
     adapter = [
-        helper.make_node("Split", ["actor", "p37_obs_split"], ["p37_q", "p37_dq", "p37_lin", "p37_ang",
-                                             "p37_grav", "p37_goal"],
-                         axis=1, name="p37_obs_unpack"),
+        helper.make_node(
+            "Split", ["actor", "p37_obs_split"],
+            ["p37_q", "p37_dq", "p37_lin", "p37_ang", "p37_grav", "p37_goal"],
+            axis=1, name="p37_obs_unpack",
+        ),
         helper.make_node("Unsqueeze", ["p37_q", "p37_axis2"], ["p37_q3"]),
         helper.make_node("Unsqueeze", ["p37_dq", "p37_axis2"], ["p37_dq3"]),
         helper.make_node("Concat", ["p37_q3", "p37_dq3"], ["joint_state"], axis=2),
