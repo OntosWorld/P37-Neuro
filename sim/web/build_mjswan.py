@@ -204,8 +204,7 @@ def build(
         if model is None:
             raise RuntimeError("Physical source model required for motor replay")
         actual_names = [
-            mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i)
-            for i in range(model.nu)
+            mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i) for i in range(model.nu)
         ]
         for term_name, cfg in direct:
             if term_name != "motor" or cfg.mode != "direct":
@@ -221,10 +220,7 @@ def build(
                 not all(actual_names)
                 or len(set(actual_names)) != len(actual_names)
                 or matched != actual_names
-                or any(
-                    int(dyn) != int(mujoco.mjtDyn.mjDYN_NONE)
-                    for dyn in model.actuator_dyntype
-                )
+                or any(int(dyn) != int(mujoco.mjtDyn.mjDYN_NONE) for dyn in model.actuator_dyntype)
             ):
                 raise ValueError(
                     "Direct motion replay must name every nondynamic motor "
