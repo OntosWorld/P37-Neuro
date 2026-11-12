@@ -14,7 +14,10 @@ from pathlib import Path
 
 import mjswan
 import mujoco
+import onnx
 from catalog import ROBOTS, RobotScene, check_catalog
+from model_motion_library import create_library
+from mjswan.envs.mdp.actions import JointEffortActionCfg, JointPositionActionCfg
 
 ROOT = Path(__file__).resolve().parent
 
@@ -91,14 +94,16 @@ def build(
     project.set_notice(
         "Real MuJoCo Menagerie models under their original licenses.\n"
         "Lab lights and reference markers are visual only.\n"
-        "No trained P37 policy is attached in this build.\n"
-        "Passive physics and user forces are not learned skills."
+        "The Unitree G1 scene includes an experimental, unqualified P37 ONNX policy.\n"
+        "Model-derived motion datasets on all ten bodies are not learned P37 skills."
     )
 
     if p37_artifact is None:
         raise ValueError("The public build requires the verified P37 ONNX artifact")
     from p37_browser_policy import attach_g1_policy
 
+    motion_dir = ROOT / "motion_data"
+    library = create_library(menagerie, ROBOTS, motion_dir)
     built_scenes = []
     for robot in ROBOTS:
         path = menagerie / robot.model / "scene.xml"
@@ -109,13 +114,64 @@ def build(
         scene = project.add_scene(
             spec=spec,
             name=robot.name,
-            control_dt=0.02 if robot.id == "unitree_g1" else None,
+            control_dt=0.02,
         )
         if robot.id == "unitree_g1":
             attach_g1_policy(
                 scene,
                 path,
                 p37_artifact,
+            )
+        compiled = mujoco.MjModel.from_xml_path(str(path))
+        for clip in library["motions"][robot.id]:
+            clip_id = clip["id"]
+            policy_model = onnx.load(str(motion_dir / f"{robot.id}-{clip_id}.onnx"))
+            if robot.id == "crazyflie_2":
+                # Crazyflie uses four *site* motors; these commands are
+                # physical thrust/moments sourced from the official hover keyframe.
+                replay_actions = {
+                    "motor": JointEffortActionCfg(
+                        actuator_names=(".*",),
+                        scale=1.0,
+                    )
+                }
+                action_names = None
+            else:
+                replay_actions = {
+                    "joint_pos": JointPositionActionCfg(
+                        actuator_names=(".*",),
+                        scale=0.35,
+                        use_default_offset=True,
+                        stiffness=45.0,
+                        damping=2.0,
+                    )
+                }
+                action_names = [
+                    mujoco.mj_id2name(
+                        compiled, mujoco.mjtObj.mjOBJ_JOINT,
+                        int(compiled.actuator_trnid[i, 0]),
+                    )
+                    for i in range(compiled.nu)
+                ]
+            scene.add_policy(
+                name=clip["name"],
+                policy=policy_model,
+                in_keys=["time_step"],
+                out_keys=["action"],
+                actions=replay_actions,
+                observations={},
+                commands={},
+                terminations={},
+                policy_joint_names=action_names,
+                policy_num_actions=clip["actuators"],
+                default=(robot.id != "unitree_g1" and clip_id == "articulation"),
+                extras={
+                    "source": "MuJoCo model-derived actuator motion dataset",
+                    "dataset_file": clip["dataset_file"],
+                    "model_derived": True,
+                    "learned_p37_policy": False,
+                    "locomotion_qualified": False,
+                },
             )
         scene.set_viewer(
             mjswan.ViewerConfig(
@@ -166,6 +222,13 @@ def build(
     }
     if not set(built_scenes).issubset(generated_ids):
         raise RuntimeError(f"missing compiled scenes: {sorted(set(built_scenes) - generated_ids)}")
+    # Export the actual sampled joint/motor trajectories for inspection.
+    import shutil
+
+    target = output / "motion_data"
+    if target.exists():
+        shutil.rmtree(target)
+    shutil.copytree(motion_dir, target)
     return output
 
 
