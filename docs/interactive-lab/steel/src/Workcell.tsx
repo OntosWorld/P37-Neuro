@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import {
   BoxCollider, CylinderCollider, Ground, RigidBody,
-  SphereCollider, URDF, useBeforeStep, useSimStats,
+  SphereCollider, URDF, useBeforeStep, useSimStats, useWorld,
   type RigidBodyHandle, type RobotHandle, type SceneHandle, type SimStatsSample,
 } from '@skild-ai/steel-webgpu/react';
 import type { Vec3 } from '@skild-ai/steel-webgpu';
@@ -15,6 +15,7 @@ export type RobotType = 'compact' | 'extended';
 export type ObjectType = 'parcel' | 'canister' | 'ball' | 'bin';
 export type LooseItem = { id: number; type: ObjectType; position: Vec3 };
 export type ItemMotionSample = { id: number; position: Vec3; at: number };
+export type GripStateSample = { left: number; right: number; time: number };
 export const PRESETS: { id: Preset; label: string; detail: string }[] = [
   { id: 'workcell', label: 'Robotics workcell', detail: 'Table, chair, reference arm and loose objects' },
   { id: 'packing', label: 'Packing station', detail: 'Physical parcels, bins and contact' },
@@ -165,17 +166,56 @@ function ReferenceRobotControl({ refRobot, target, body, baseline, gripper }: {
   });
   return null;
 }
+function GripperTelemetry({ robotRef, onSample }: {
+  robotRef: React.RefObject<RobotHandle | null>;
+  onSample: (sample: GripStateSample) => void;
+}) {
+  const world = useWorld();
+  useEffect(() => {
+    if (!world) return;
+    let active = true;
+    let busy = false;
+    const timer = setInterval(async () => {
+      const robot = robotRef.current;
+      const left = robot?.dofs.get('left_finger_slide');
+      const right = robot?.dofs.get('right_finger_slide');
+      if (left === undefined || right === undefined || busy) return;
+      busy = true;
+      try {
+        // Read the two actual Newton joint coordinates from GPU memory;
+        // commanded gripper opening is NEVER substituted for measurement.
+        const state = await world.sim.state();
+        if (active && Number.isFinite(state.jointQ[left]) && Number.isFinite(state.jointQ[right])) {
+          onSample({
+            left: state.jointQ[left],
+            right: state.jointQ[right],
+            time: world.sim.time,
+          });
+        }
+      } catch (error) {
+        // GPU loss and transient readback failures are handled by the Scene
+        // error boundary. Keep telemetry marked unavailable until valid.
+        console.warn('Steel gripper state readback unavailable', error);
+      } finally {
+        busy = false;
+      }
+    }, 850);
+    return () => { active = false; clearInterval(timer); };
+  }, [world, robotRef, onSample]);
+  return null;
+}
 function StatsFeed({ onSample }: { onSample: (s: SimStatsSample | null) => void }) {
   const stats = useSimStats({ hz: 2 });
   useEffect(() => onSample(stats), [stats, onSample]);
   return null;
 }
 export function Workcell({ preset, robot, items, pose, baseline = true, gripper,
-  onStats, onMotion, sourceFrames, sourcePlaying }: {
+  onStats, onMotion, onGripSample, sourceFrames, sourcePlaying }: {
   preset: Preset; robot: RobotType; items: LooseItem[];
   pose: number; baseline?: boolean; gripper: number;
   onStats: (s: SimStatsSample | null) => void;
   onMotion: (sample: ItemMotionSample) => void;
+  onGripSample: (sample: GripStateSample) => void;
   sourceFrames: SourceFrame[]; sourcePlaying: boolean;
 }) {
   const robotRef = useRef<RobotHandle>(null);
@@ -185,6 +225,7 @@ export function Workcell({ preset, robot, items, pose, baseline = true, gripper,
     <URDF src={import.meta.env.BASE_URL + 'robots/' + robot + '.urdf'} ref={robotRef}
       xform={[-.63,.05,.805,0,0,0,1]}/>
     <ReferenceRobotControl refRobot={robotRef} target={pose} body={robot} baseline={baseline} gripper={gripper}/>
+    <GripperTelemetry robotRef={robotRef} onSample={onGripSample}/>
     <IndustrialSet preset={preset}/>
     {sourceFrames.length >= 2 && <SourceTrajectory frames={sourceFrames} playing={sourcePlaying}/>}
     <StatsFeed onSample={onStats}/>
