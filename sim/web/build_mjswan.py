@@ -16,8 +16,8 @@ import mjswan
 import mujoco
 import onnx
 from catalog import ROBOTS, RobotScene, check_catalog
-from model_motion_library import create_library
 from mjswan.envs.mdp.actions import JointEffortActionCfg, JointPositionActionCfg
+from model_motion_library import create_library
 
 ROOT = Path(__file__).resolve().parent
 
