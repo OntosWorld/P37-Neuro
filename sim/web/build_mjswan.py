@@ -148,7 +148,8 @@ def build(
                 }
                 action_names = [
                     mujoco.mj_id2name(
-                        compiled, mujoco.mjtObj.mjOBJ_JOINT,
+                        compiled,
+                        mujoco.mjtObj.mjOBJ_JOINT,
                         int(compiled.actuator_trnid[i, 0]),
                     )
                     for i in range(compiled.nu)
