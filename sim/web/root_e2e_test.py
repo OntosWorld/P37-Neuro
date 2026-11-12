@@ -1,4 +1,5 @@
 """Canonical P37 homepage end-to-end test: real models and ONNX scenes only."""
+
 from __future__ import annotations
 
 import argparse
@@ -35,10 +36,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     assert {item["id"] for item in catalog["robots"]} <= set(scenes)
     for body in meta["active_policy_robots"]:
         entry = scenes[body + "_p37_experimental"]
-        assert any(
-            policy["id"] == "p37_experimental_recurrent_ppo"
-            for policy in entry["policies"]
-        )
+        assert any(policy["id"] == "p37_experimental_recurrent_ppo" for policy in entry["policies"])
     assert not (site / "lab").exists()
     assert not (site / "demos").exists()
 
@@ -74,17 +72,19 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             policy_network_responses = []
             page.on(
                 "response",
-                lambda response: policy_network_responses.append(
-                    {"url": response.url, "status": response.status}
-                )
-                if "/policy/" in response.url or response.url.endswith(".onnx")
-                else None,
+                lambda response: (
+                    policy_network_responses.append(
+                        {"url": response.url, "status": response.status}
+                    )
+                    if "/policy/" in response.url or response.url.endswith(".onnx")
+                    else None
+                ),
             )
             response = page.goto(origin, wait_until="domcontentloaded", timeout=60000)
             assert response is not None and response.status == 200
-            page.get_by_role(
-                "heading", name="One intelligence. Different robot bodies."
-            ).wait_for(timeout=30000)
+            page.get_by_role("heading", name="One intelligence. Different robot bodies.").wait_for(
+                timeout=30000
+            )
             page.locator(".robot-options .robot-option").first.wait_for(timeout=20000)
             assert page.locator(".robot-options .robot-option").count() == 10
             assert page.locator("iframe.real-robot-frame").count() == 1
