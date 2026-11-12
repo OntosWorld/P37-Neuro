@@ -69,9 +69,9 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     required = {robot.id for robot in ROBOTS}
     if not required <= ids:
         raise RuntimeError(f"MuJoCo robot scenes missing: {sorted(required - ids)}")
-    motions = json.loads((output / "simulator" / "motion_data" / "index.json").read_text(
-        encoding="utf-8"
-    ))
+    motions = json.loads(
+        (output / "simulator" / "motion_data" / "index.json").read_text(encoding="utf-8")
+    )
     if motions.get("kind") != "p37_model_derived_motions":
         raise RuntimeError("Expected real model-derived per-robot motion datasets")
     for robot in ROBOTS:
@@ -79,8 +79,10 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         if {clip.get("id") for clip in clips} != {"articulation", "motion_cycle", "hold"}:
             raise RuntimeError(f"Missing movement clips for {robot.id}")
         scene = next(
-            scene for project in manifest["projects"]
-            for scene in project["scenes"] if scene["id"] == robot.id
+            scene
+            for project in manifest["projects"]
+            for scene in project["scenes"]
+            if scene["id"] == robot.id
         )
         policy_ids = {policy.get("id") for policy in scene.get("policies", [])}
         if not {"motor_articulation", "movement_cycle", "hold_position"} <= policy_ids:
