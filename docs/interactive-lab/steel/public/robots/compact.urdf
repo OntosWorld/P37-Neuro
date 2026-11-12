@@ -75,12 +75,35 @@
     <collision><origin xyz="0.025 0 0"/><geometry><box size="0.07 0.09 0.06"/></geometry></collision>
   
     <visual><origin xyz="0.031 0 0"/><geometry><box size="0.073 0.119 0.078"/></geometry><material name="ceramic"/></visual>
-    <visual><origin xyz="0.077 0.041 0"/><geometry><box size="0.105 0.016 0.031"/></geometry><material name="rubber"/></visual>
-    <visual><origin xyz="0.077 -0.041 0"/><geometry><box size="0.105 0.016 0.031"/></geometry><material name="rubber"/></visual>
-    <visual><origin xyz="0.131 0.041 0"/><geometry><box size="0.014 0.028 0.045"/></geometry><material name="powder"/></visual>
-    <visual><origin xyz="0.131 -0.041 0"/><geometry><box size="0.014 0.028 0.045"/></geometry><material name="powder"/></visual>
-    <collision><origin xyz="0.078 0.041 0"/><geometry><box size="0.108 0.018 0.031"/></geometry></collision>
-    <collision><origin xyz="0.078 -0.041 0"/><geometry><box size="0.108 0.018 0.031"/></geometry></collision>
   </link>
   <joint name="tool_mount" type="fixed"><parent link="forearm"/><child link="tool"/><origin xyz="0.28 0 0"/></joint>
+
+  <!-- Independently actuated parallel-jaw gripper. Contact occurs through
+       the finite finger collision boxes, never through a fixed attach. -->
+  <link name="left_finger">
+    <inertial><origin xyz="0.045 0 0"/><mass value="0.09"/>
+      <inertia ixx="0.00011" ixy="0" ixz="0" iyy="0.00016" iyz="0" izz="0.00014"/></inertial>
+    <visual><origin xyz="0.042 0 0"/><geometry><box size="0.100 0.019 0.035"/></geometry><material name="powder"/></visual>
+    <visual><origin xyz="0.083 -0.010 0"/><geometry><box size="0.036 0.005 0.029"/></geometry><material name="rubber"/></visual>
+    <collision><origin xyz="0.045 0 0"/><geometry><box size="0.104 0.020 0.034"/></geometry></collision>
+  </link>
+  <joint name="left_finger_slide" type="prismatic">
+    <parent link="tool"/><child link="left_finger"/>
+    <origin xyz="0.075 0.032 0"/><axis xyz="0 1 0"/>
+    <limit lower="0" upper="0.035" effort="45" velocity="0.12"/>
+    <dynamics damping="2.8"/>
+  </joint>
+  <link name="right_finger">
+    <inertial><origin xyz="0.045 0 0"/><mass value="0.09"/>
+      <inertia ixx="0.00011" ixy="0" ixz="0" iyy="0.00016" iyz="0" izz="0.00014"/></inertial>
+    <visual><origin xyz="0.042 0 0"/><geometry><box size="0.100 0.019 0.035"/></geometry><material name="powder"/></visual>
+    <visual><origin xyz="0.083 0.010 0"/><geometry><box size="0.036 0.005 0.029"/></geometry><material name="rubber"/></visual>
+    <collision><origin xyz="0.045 0 0"/><geometry><box size="0.104 0.020 0.034"/></geometry></collision>
+  </link>
+  <joint name="right_finger_slide" type="prismatic">
+    <parent link="tool"/><child link="right_finger"/>
+    <origin xyz="0.075 -0.032 0"/><axis xyz="0 -1 0"/>
+    <limit lower="0" upper="0.035" effort="45" velocity="0.12"/>
+    <dynamics damping="2.8"/>
+  </joint>
 </robot>

@@ -126,7 +126,7 @@ async function qa(){
   page=await browser.newPage({viewport:{width:1512,height:982},deviceScaleFactor:1});
   page.on('pageerror',error=>results.errors.push('P37 script: '+error.message));
   page.on('response',r=>{if(r.status()>=400)results.errors.push('P37 HTTP '+r.status()+' '+r.url())});
-  const response=await page.goto(host,{waitUntil:'domcontentloaded',timeout:45000});
+  const response=await page.goto(host+'?debugPhysics=1',{waitUntil:'domcontentloaded',timeout:45000});
   if(!response?.ok())throw new Error('P37 page did not load successfully');
   results.p37.layout=await page.evaluate(()=>{
     const stage=document.querySelector('.canvas-wrap')?.getBoundingClientRect();
@@ -187,6 +187,74 @@ async function qa(){
     !/swiftshader/i.test(JSON.stringify(results.webgpu.adapter??{}));
   results.webgpu.objectCount={before:objectCount,after:Number(await counter.innerText())};
   await capture(page,'p37-with-object-desktop.png');
+
+  // The parallel jaws must move as real solver joints, not merely update a
+  // slider or rotate a decorative mesh. Values come from Sim.state().jointQ.
+  const clearance=page.locator('.info-row').filter({hasText:'Measured jaw clearance'}).locator('strong');
+  await page.waitForFunction(()=>{
+    const row=[...document.querySelectorAll('.info-row')].find(el=>el.innerText.includes('Measured jaw clearance'));
+    return row && Number.isFinite(Number.parseFloat(row.querySelector('strong')?.textContent??''));
+  },undefined,{timeout:20000});
+  results.webgpu.jawInitial=Number.parseFloat(await clearance.innerText());
+  await page.getByRole('button',{name:'Close fingers'}).click();
+  await page.waitForFunction(()=>{
+    const row=[...document.querySelectorAll('.info-row')].find(el=>el.innerText.includes('Measured jaw clearance'));
+    return Number.parseFloat(row?.querySelector('strong')?.textContent??'NaN') < 82;
+  },undefined,{timeout:18000});
+  results.webgpu.jawClosed=Number.parseFloat(await clearance.innerText());
+  await capture(page,'p37-robot-gripper-closed.png');
+  await page.getByRole('button',{name:'Open fingers'}).click();
+  await page.waitForFunction(()=>{
+    const row=[...document.querySelectorAll('.info-row')].find(el=>el.innerText.includes('Measured jaw clearance'));
+    return Number.parseFloat(row?.querySelector('strong')?.textContent??'NaN') > 95;
+  },undefined,{timeout:18000});
+  results.webgpu.jawOpened=Number.parseFloat(await clearance.innerText());
+
+  // A mass-carrying parcel must fall under gravity, contact the worktop and
+  // settle above its collider. This is a physics result, not a CSS animation.
+  await page.getByRole('button',{name:'Run gravity & contact test'}).click();
+  await page.waitForFunction(() => {
+    const read = label => {
+      const row=[...document.querySelectorAll('.info-row')].find(
+        el => el.querySelector('span')?.textContent?.trim() === label);
+      return Number.parseFloat(row?.querySelector('strong')?.textContent ?? 'NaN');
+    };
+    return Number.isFinite(read('Simulation time')) &&
+      Number.isFinite(read('Object height')) &&
+      read('Object height') > 0.1 &&
+      Number.isFinite(read('Object travel'));
+  }, undefined, { timeout: 30000 });
+  const sampleDrop=async () => ({
+    time: Number.parseFloat(await page.locator('.info-row')
+      .filter({hasText:'Simulation time'}).locator('strong').innerText()),
+    heightM: Number.parseFloat(await page.locator('.info-row')
+      .filter({hasText:'Object height'}).locator('strong').innerText()),
+    travelMm: Number.parseFloat(await page.locator('.info-row')
+      .filter({hasText:'Object travel'}).locator('strong').innerText()),
+    contacts: Number.parseInt(await page.locator('.info-row')
+      .filter({hasText:'Solver contacts'}).locator('strong').innerText(),10),
+  });
+  const dropSamples=[];
+  for (const delay of [550,600,750,900,900,900]) {
+    await page.waitForTimeout(delay);
+    dropSamples.push(await sampleDrop());
+  }
+  const settled=dropSamples.slice(-3);
+  results.webgpu.drop={samples:dropSamples, heightM:settled.at(-1).heightM,
+    travelMm:settled.at(-1).travelMm};
+  // Require an actual gravitational fall, a persistent tabletop resting
+  // position (including half the box height), and little late-stage motion.
+  // Never clamp an object pose, substitute a decorative mesh, or make this
+  // gate succeed by moving the collision floor under the falling parcel.
+  const bodyHeight=settled.at(-1).heightM;
+  const bodyTravel=settled.at(-1).travelMm;
+  const heightDrift=Math.max(...settled.map(s=>s.heightM))-
+    Math.min(...settled.map(s=>s.heightM));
+  if(!(bodyHeight>.84 && bodyHeight<1.04 &&
+       bodyTravel>250 && heightDrift<.045 &&
+       settled.every(s=>Number.isFinite(s.heightM))))
+    throw new Error('Physical parcel did not settle on tabletop: '+JSON.stringify(results.webgpu.drop));
+  await capture(page,'p37-parcel-physical-contact.png');
   await page.setViewportSize({width:390,height:844});
   await page.waitForTimeout(700);
   results.p37.mobile=await page.evaluate(()=>({
@@ -202,12 +270,45 @@ async function qa(){
   await page.evaluate(()=>window.scrollTo(0,0));
   await wait(180);
   await capture(page,'p37-skild-style-mobile.png');
+
+  // Qualify the separately sourced real Panda geometry on the hardware GPU.
+  // The ~34MB source is cached in our built site; no third-party browser load.
+  if (process.platform === 'darwin') {
+    await page.setViewportSize({width:1512,height:982});
+    let manufacturerMeshes = 0;
+    const onAsset = response => {
+      if (response.ok() && response.url().includes('/vendor/panda/assets/')) manufacturerMeshes++;
+    };
+    page.on('response',onAsset);
+    await page.getByRole('button',{name:/Franka Panda \(full mesh\)/}).click();
+    await page.waitForFunction(()=>{
+      const title=document.querySelector('.status-line')?.textContent??'';
+      return title.includes('Steel physics active');
+    },undefined,{timeout:180000});
+    await page.waitForTimeout(2500);
+    const manufacturer=await page.locator('.info-row').filter({hasText:'Robot geometry'})
+      .locator('strong').innerText();
+    const timeBefore=await page.locator('.info-row').filter({hasText:'Simulation time'})
+      .locator('strong').innerText();
+    await page.waitForTimeout(1400);
+    const timeAfter=await page.locator('.info-row').filter({hasText:'Simulation time'})
+      .locator('strong').innerText();
+    if(!manufacturer.includes('Franka Panda')||timeBefore===timeAfter||manufacturerMeshes<35)
+      throw new Error('Full-mesh Panda did not run: '+JSON.stringify({manufacturer,timeBefore,timeAfter,manufacturerMeshes}));
+    results.webgpu.manufacturer={model:manufacturer,meshFiles:manufacturerMeshes,
+      modelLicense:'Apache-2.0',sourceCommit:'370c43965323c0944b433b202aac5058b5f907a9'};
+    await capture(page,'p37-full-mesh-franka-panda.png');
+    page.off('response',onAsset);
+  }
 }
 try{
   await qa();
-}catch(error){
+ }catch(error){
   results.failure=String(error);
-  if(page)try{await capture(page,'p37-qa-failure.png')}catch{}
+  if(page) {
+    try{results.webgpu.debug=await page.evaluate(()=>window.__p37PhysicsDebug??null)}catch{}
+    try{await capture(page,'p37-qa-failure.png')}catch{}
+  }
   process.exitCode=1;
 }finally{
   results.finishedAt=new Date().toISOString();

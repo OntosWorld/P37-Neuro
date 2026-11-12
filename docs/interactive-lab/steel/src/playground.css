@@ -200,3 +200,13 @@ button[disabled]{opacity:.55;cursor:not-allowed}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
 }
+
+
+/* Active physical interaction controls. The gripper and test buttons are
+   regular accessible controls; they do not substitute animated contact. */
+.jaw-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:6px 0 13px}
+.jaw-actions button,.side-panel .contact-demo{
+  min-height:38px;padding:10px 12px;background:#fff;color:#244134;
+  border:1px solid #bccabd;border-radius:999px;font-size:12px;font-weight:500}
+.jaw-actions button:hover,.side-panel .contact-demo:hover{background:#ecf2ed;border-color:#809c86}
+.side-panel .contact-demo{display:block;width:100%;text-align:center;margin-top:10px}
