@@ -31,6 +31,12 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     metadata = json.loads((site / "build-info.json").read_text(encoding="utf-8"))
     assert metadata["site_entry"] == "/P37-Neuro/"
     assert metadata["trained_p37_policy_attached"] is False
+    cross = json.loads((site / "p37-cross-body-evidence.json").read_text(encoding="utf-8"))
+    g1 = json.loads((site / "p37-evidence.json").read_text(encoding="utf-8"))
+    assert cross["same_checkpoint_used_for_all_bodies"] is True
+    assert cross["qualified_for_cross_body_task_transfer"] is False
+    assert cross["browser_policy_attached"] is False
+    assert g1["qualified_for_walking"] is False
     for old_route in ("lab", "demos", "test"):
         assert not (site / old_route).exists(), f"obsolete public navigation directory: {old_route}"
     assert (site / "simulator/manifest.json").is_file(), "MuJoCo runtime bundle missing"
@@ -84,6 +90,13 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert page.locator(".playground-embodiment button").count() == 2
             page.locator(".catalog-choices button").first.wait_for(timeout=15000)
             assert page.locator(".catalog-choices button").count() == 10
+            page.locator(".policy-evidence-grid .policy-evidence-card").first.wait_for(
+                state="visible", timeout=15000
+            )
+            assert page.locator(".policy-evidence-card").count() == 2
+            assert "Unitree G1" in page.locator(".policy-evidence-grid").inner_text()
+            assert "Unitree Go2" in page.locator(".policy-evidence-grid").inner_text()
+            assert "Research smoke test only" in page.locator(".policy-evidence").inner_text()
             assert page.locator('a[href^="../"]').count() == 0, "old route still linked"
             stage = page.locator(".canvas-wrap").bounding_box()
             assert stage is not None and stage["height"] >= 450
