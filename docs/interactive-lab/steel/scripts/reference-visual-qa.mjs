@@ -213,6 +213,17 @@ async function qa(){
   // A mass-carrying parcel must fall under gravity, contact the worktop and
   // settle above its collider. This is a physics result, not a CSS animation.
   await page.getByRole('button',{name:'Run gravity & contact test'}).click();
+  await page.waitForFunction(() => {
+    const read = label => {
+      const row=[...document.querySelectorAll('.info-row')].find(
+        el => el.querySelector('span')?.textContent?.trim() === label);
+      return Number.parseFloat(row?.querySelector('strong')?.textContent ?? 'NaN');
+    };
+    return Number.isFinite(read('Simulation time')) &&
+      Number.isFinite(read('Object height')) &&
+      read('Object height') > 0.1 &&
+      Number.isFinite(read('Object travel'));
+  }, undefined, { timeout: 30000 });
   const sampleDrop=async () => ({
     time: Number.parseFloat(await page.locator('.info-row')
       .filter({hasText:'Simulation time'}).locator('strong').innerText()),
