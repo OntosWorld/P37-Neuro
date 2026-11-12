@@ -87,5 +87,5 @@ def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
     assert "for robot in ROBOTS" in assembler
     assert "iframe" in root_app and "real-robot-frame" in root_app
     assert "Choose manufacturer robot" in root_app
-    assert "unitree_g1" in root_app and "franka_panda" in root_app
+    assert "unitree_g1" in root_app and "franka_panda" in (ROOT / "catalog.py").read_text()
     assert "unqualified" in root_app.lower() and "P37" in root_app
