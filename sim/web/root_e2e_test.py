@@ -97,10 +97,27 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert src and "scene=franka_panda" in src
             assert page.url == origin, "robot selection must not create new public URL"
             assert page.request.get(origin + "simulator/manifest.json").status == 200
+            model_canvas = page.frame_locator("iframe.menagerie-viewer").locator("canvas").first
+            model_canvas.wait_for(state="visible", timeout=120000)
+            page.wait_for_function(
+                "() => document.querySelector('iframe.menagerie-viewer')"
+                "?.contentWindow?.__mjswanReady === true",
+                timeout=120000,
+            )
+            page.screenshot(path=str(screenshots / "panda-native-physics.png"), timeout=90000)
             page.get_by_role("combobox", name="Robot embodiment").select_option("unitree_g1")
             assert "scene=unitree_g1" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
+            page.frame_locator("iframe.menagerie-viewer").locator("canvas").first.wait_for(
+                state="visible", timeout=120000
+            )
+            page.wait_for_function(
+                "() => document.querySelector('iframe.menagerie-viewer')"
+                "?.contentWindow?.__mjswanReady === true",
+                timeout=120000,
+            )
+            page.screenshot(path=str(screenshots / "unitree-g1-native-physics.png"), timeout=90000)
             page.get_by_role("combobox", name="Robot embodiment").select_option("compact")
             assert page.locator("iframe.menagerie-viewer").count() == 0
             page.get_by_role("button", name="Pause robot task").click()
