@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Physics, Scene, type SceneHandle, type SimStatsSample } from '@skild-ai/steel-webgpu/react';
 import { Workcell, PRESETS, initialItems, nextItemId } from './Workcell';
-import type { ItemMotionSample, LooseItem, ObjectType, Preset, RobotType } from './Workcell';
+import type { GripStateSample, ItemMotionSample, LooseItem, ObjectType, Preset, RobotType } from './Workcell';
 import type { SourceFrame } from './SourceTrajectory';
 
 type SourceData = { publication: { source: string; learned_policy_attached: boolean }; traces: { frames: SourceFrame[] }[] };
@@ -18,10 +18,11 @@ const CAMERA_MOBILE = {
   fov: 46,
 };
 function LiveScene({ preset, robot, items, paused, collision, pose, gripper,
-  sceneRef, onSample, onMotion, onReady, onError, sourceFrames, sourcePlaying }: {
+  sceneRef, onSample, onMotion, onGripSample, onReady, onError, sourceFrames, sourcePlaying }: {
   preset: Preset; robot: RobotType; items: LooseItem[]; paused: boolean; collision: boolean;
   pose: number; gripper: number; sceneRef: React.RefObject<SceneHandle | null>;
   onMotion: (sample: ItemMotionSample) => void;
+  onGripSample: (sample: GripStateSample) => void;
   onSample: (s: SimStatsSample | null) => void; onReady: () => void; onError: (s: string) => void;
   sourceFrames: SourceFrame[]; sourcePlaying: boolean;
 }) {
@@ -43,7 +44,7 @@ function LiveScene({ preset, robot, items, paused, collision, pose, gripper,
   >
     <Scene ref={sceneRef} gravity={[0,0,-9.81]} fps={60} paused={paused} collision={collision}
       pickable controls camera={mobile ? CAMERA_MOBILE : CAMERA_DESKTOP} onLoaded={onReady} onError={e=>onError(String(e))}>
-      <Workcell preset={preset} robot={robot} items={items} pose={pose} gripper={gripper} onStats={onSample} onMotion={onMotion} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
+      <Workcell preset={preset} robot={robot} items={items} pose={pose} gripper={gripper} onStats={onSample} onMotion={onMotion} onGripSample={onGripSample} sourceFrames={sourceFrames} sourcePlaying={sourcePlaying}/>
     </Scene>
   </Physics>;
 }
@@ -54,6 +55,7 @@ export function App() {
   const [selectedObject, setSelectedObject] = useState<ObjectType>('parcel');
   const [pose, setPose] = useState(.18);
   const [gripper, setGripper] = useState(.035);
+  const [gripState, setGripState] = useState<GripStateSample | null>(null);
   const [trackedId, setTrackedId] = useState<number | null>(null);
   const [itemMotion, setItemMotion] = useState<Record<number, ItemMotionSample>>({});
   const [paused, setPaused] = useState(false);
@@ -111,12 +113,12 @@ export function App() {
     return () => abort.abort();
   }, [showSource, sourceData]);
   const changePreset = (next: Preset) => {
-    setPreset(next); setItems(initialItems(next)); setItemMotion({}); setTrackedId(null);
+    setPreset(next); setItems(initialItems(next)); setItemMotion({}); setTrackedId(null); setGripState(null);
     setStatus('Loading physics environment');
   };
   const reset = () => {
     setItems(initialItems(preset));
-    setItemMotion({}); setTrackedId(null);
+    setItemMotion({}); setTrackedId(null); setGripState(null);
     scene.current?.reset();
     setStatus('Resetting scene');
   };
@@ -184,7 +186,7 @@ export function App() {
           <div className="canvas-wrap">
             <LiveScene key={preset + '-' + robot} preset={preset} robot={robot} items={items}
               paused={paused} collision={collision} pose={pose} gripper={gripper} sceneRef={scene}
-              onMotion={onMotion}
+              onMotion={onMotion} onGripSample={setGripState}
               onSample={setStats} onReady={()=>setStatus('Steel physics active')}
               onError={setStatus} sourceFrames={showSource ? (sourceData?.traces[sourceEpisode]?.frames ?? []) : []}
               sourcePlaying={showSource && sourcePlaying && !paused}/>
@@ -192,8 +194,8 @@ export function App() {
           </div>
           <div className="playground-embodiment" role="group" aria-label="Choose reference robot">
             <span>Reference robot</span>
-            <button type="button" aria-pressed={robot==='compact'} onClick={()=>setRobot('compact')}>Compact arm</button>
-            <button type="button" aria-pressed={robot==='extended'} onClick={()=>setRobot('extended')}>Extended arm</button>
+            <button type="button" aria-pressed={robot==='compact'} onClick={()=>{setRobot('compact');setGripState(null);}}>Compact arm</button>
+            <button type="button" aria-pressed={robot==='extended'} onClick={()=>{setRobot('extended');setGripState(null);}}>Extended arm</button>
             <span className="playground-disclaimer">Procedural geometry · no learned P37 policy</span>
           </div>
           <div className="viewport-controls">
@@ -217,7 +219,7 @@ export function App() {
           <p className="helper">{PRESETS.find(p=>p.id===preset)?.detail}</p>
           <div className="rule"/>
           <label htmlFor="robot">Reference embodiment</label>
-          <select id="robot" value={robot} onChange={e=>{setRobot(e.target.value as RobotType);setStatus('Switching robot morphology');}}>
+          <select id="robot" value={robot} onChange={e=>{setRobot(e.target.value as RobotType);setGripState(null);setStatus('Switching robot morphology');}}>
             <option value="compact">P37 reference / compact</option>
             <option value="extended">P37 reference / extended</option>
           </select>
@@ -274,7 +276,10 @@ export function App() {
           <div className="info-row"><span>Tracked object</span><strong>{tracked ? tracked.type + ' #' + tracked.id : '—'}</strong></div>
           <div className="info-row"><span>Object height</span><strong>{livePosition ? livePosition[2].toFixed(3) + ' m' : '—'}</strong></div>
           <div className="info-row"><span>Object travel</span><strong>{travel !== undefined ? (1000 * travel).toFixed(0) + ' mm' : '—'}</strong></div>
-          <div className="info-row"><span>Jaw clearance</span><strong>{(44+gripper*2000).toFixed(0)} mm</strong></div>
+          <div className="info-row"><span>Jaw target</span><strong>{(44+gripper*2000).toFixed(0)} mm</strong></div>
+          <div className="info-row"><span>Measured jaw clearance</span>
+            <strong>{gripState ? (44+1000*(gripState.left+gripState.right)).toFixed(0)+' mm' : '—'}</strong>
+          </div>
           <div className="info-row"><span>Movable objects</span><strong>{items.length}</strong></div>
           <div className="info-row"><span>Robot geometry</span><strong>{robot}</strong></div>
           <div className="info-row"><span>Recorded dataset</span><strong>{showSource ? "MimicGen Panda source" : "None"}</strong></div>
