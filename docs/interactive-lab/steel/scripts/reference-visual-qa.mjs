@@ -213,14 +213,38 @@ async function qa(){
   // A mass-carrying parcel must fall under gravity, contact the worktop and
   // settle above its collider. This is a physics result, not a CSS animation.
   await page.getByRole('button',{name:'Run gravity & contact test'}).click();
-  await page.waitForTimeout(3500);
-  const bodyHeight=Number.parseFloat(await page.locator('.info-row')
-    .filter({hasText:'Object height'}).locator('strong').innerText());
-  const bodyTravel=Number.parseFloat(await page.locator('.info-row')
-    .filter({hasText:'Object travel'}).locator('strong').innerText());
-  results.webgpu.drop={heightM:bodyHeight,travelMm:bodyTravel};
-  if(!(bodyHeight>.78&&bodyHeight<1.09&&bodyTravel>250))
-    throw new Error('Physical parcel did not visibly settle on table: '+JSON.stringify(results.webgpu.drop));
+  const sampleDrop=async () => ({
+    time: Number.parseFloat(await page.locator('.info-row')
+      .filter({hasText:'Simulation time'}).locator('strong').innerText()),
+    heightM: Number.parseFloat(await page.locator('.info-row')
+      .filter({hasText:'Object height'}).locator('strong').innerText()),
+    travelMm: Number.parseFloat(await page.locator('.info-row')
+      .filter({hasText:'Object travel'}).locator('strong').innerText()),
+    contacts: Number.parseInt(await page.locator('.info-row')
+      .filter({hasText:'Solver contacts'}).locator('strong').innerText(),10),
+  });
+  const dropSamples=[];
+  for (const delay of [550,600,750,900,900,900]) {
+    await page.waitForTimeout(delay);
+    dropSamples.push(await sampleDrop());
+  }
+  const settled=dropSamples.slice(-3);
+  results.webgpu.drop={samples:dropSamples, heightM:settled.at(-1).heightM,
+    travelMm:settled.at(-1).travelMm};
+  // Require an actual gravitational fall, a persistent tabletop resting
+  // position (including half the box height), and little late-stage motion.
+  // Never clamp an object pose, substitute a decorative mesh, or make this
+  // gate succeed by moving the collision floor under the falling parcel.
+  const sampleStart=dropSamples[0];
+  const bodyHeight=settled.at(-1).heightM;
+  const bodyTravel=settled.at(-1).travelMm;
+  const heightDrift=Math.max(...settled.map(s=>s.heightM))-
+    Math.min(...settled.map(s=>s.heightM));
+  if(!(sampleStart.heightM>bodyHeight+.10 &&
+       bodyHeight>.84 && bodyHeight<1.04 &&
+       bodyTravel>250 && heightDrift<.045 &&
+       settled.every(s=>Number.isFinite(s.heightM))))
+    throw new Error('Physical parcel did not settle on tabletop: '+JSON.stringify(results.webgpu.drop));
   await capture(page,'p37-parcel-physical-contact.png');
   await page.setViewportSize({width:390,height:844});
   await page.waitForTimeout(700);
