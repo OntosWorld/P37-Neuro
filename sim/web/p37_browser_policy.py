@@ -4,6 +4,7 @@ The adapter makes the checkpoint's explicit observation and recurrent-memory
 contract consumable by mjswan's browser ONNX Runtime. It does not change
 weights, fabricate motor actions, or qualify locomotion.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -67,31 +68,38 @@ def make_mjswan_recurrent_actor(original: onnx.ModelProto) -> onnx.ModelProto:
     model.CopyFrom(original)
     graph = model.graph
     del graph.input[:]
-    graph.input.extend([
-        helper.make_tensor_value_info("actor", TensorProto.FLOAT, [1, 66]),
-        helper.make_tensor_value_info("adapt_hx", TensorProto.FLOAT, [1, 1, 32]),
-    ])
+    graph.input.extend(
+        [
+            helper.make_tensor_value_info("actor", TensorProto.FLOAT, [1, 66]),
+            helper.make_tensor_value_info("adapt_hx", TensorProto.FLOAT, [1, 1, 32]),
+        ]
+    )
     # Torch exported joint_state was position residual and velocity
     # interleaved per joint. Reconstruct that original ordering exactly.
     adapter = [
         helper.make_node(
-            "Split", ["actor", "p37_obs_split"],
+            "Split",
+            ["actor", "p37_obs_split"],
             ["p37_q", "p37_dq", "p37_lin", "p37_ang", "p37_grav", "p37_goal"],
-            axis=1, name="p37_obs_unpack",
+            axis=1,
+            name="p37_obs_unpack",
         ),
         helper.make_node("Unsqueeze", ["p37_q", "p37_axis2"], ["p37_q3"]),
         helper.make_node("Unsqueeze", ["p37_dq", "p37_axis2"], ["p37_dq3"]),
         helper.make_node("Concat", ["p37_q3", "p37_dq3"], ["joint_state"], axis=2),
-        helper.make_node("Concat", ["p37_lin", "p37_ang", "p37_grav", "p37_goal"],
-                         ["p37_task_flat"], axis=1),
+        helper.make_node(
+            "Concat", ["p37_lin", "p37_ang", "p37_grav", "p37_goal"], ["p37_task_flat"], axis=1
+        ),
         helper.make_node("Unsqueeze", ["p37_task_flat", "p37_axis1"], ["task_context"]),
         helper.make_node("Identity", ["adapt_hx"], ["memory"]),
     ]
-    graph.initializer.extend([
-        helper.make_tensor("p37_axis1", TensorProto.INT64, [1], [1]),
-        helper.make_tensor("p37_axis2", TensorProto.INT64, [1], [2]),
-        helper.make_tensor("p37_obs_split", TensorProto.INT64, [6], [29, 29, 3, 3, 1, 1]),
-    ])
+    graph.initializer.extend(
+        [
+            helper.make_tensor("p37_axis1", TensorProto.INT64, [1], [1]),
+            helper.make_tensor("p37_axis2", TensorProto.INT64, [1], [2]),
+            helper.make_tensor("p37_obs_split", TensorProto.INT64, [6], [29, 29, 3, 3, 1, 1]),
+        ]
+    )
     nodes = list(graph.node)
     del graph.node[:]
     graph.node.extend(adapter + nodes)
@@ -123,21 +131,25 @@ def attach_g1_policy(scene, model_path: Path, artifact: Path):
         raise ValueError("Native G1 actuators do not match checkpoint joint order")
     if len(actuator_joint_names) != 29:
         raise ValueError("P37 G1 policy must drive 29 actuators")
-    scene.set_trace_env(build_single_entity_trace_env(
-        lambda: mujoco.MjSpec.from_file(str(model_path)),
-    ))
+    scene.set_trace_env(
+        build_single_entity_trace_env(
+            lambda: mujoco.MjSpec.from_file(str(model_path)),
+        )
+    )
     actor = make_mjswan_recurrent_actor(onnx.load(str(onnx_file)))
     # 29 joint-position residuals, 29 joint velocities, six root velocities,
     # body-local gravity Z and fixed forward goal = 66 features. The recurrent
     # carry is distinct and maintained by the browser engine.
-    observations = ObservationGroupCfg(terms={
-        "joint_position_residual": ObservationTermCfg(func=obs_fns.joint_pos_rel),
-        "joint_velocity": ObservationTermCfg(func=obs_fns.joint_vel_rel),
-        "base_linear_velocity": ObservationTermCfg(func=obs_fns.base_lin_vel),
-        "base_angular_velocity": ObservationTermCfg(func=obs_fns.base_ang_vel),
-        "gravity_z": ObservationTermCfg(func=_gravity_z),
-        "forward_goal": ObservationTermCfg(func=_forward_command),
-    })
+    observations = ObservationGroupCfg(
+        terms={
+            "joint_position_residual": ObservationTermCfg(func=obs_fns.joint_pos_rel),
+            "joint_velocity": ObservationTermCfg(func=obs_fns.joint_vel_rel),
+            "base_linear_velocity": ObservationTermCfg(func=obs_fns.base_lin_vel),
+            "base_angular_velocity": ObservationTermCfg(func=obs_fns.base_ang_vel),
+            "gravity_z": ObservationTermCfg(func=_gravity_z),
+            "forward_goal": ObservationTermCfg(func=_forward_command),
+        }
+    )
     result = scene.add_policy(
         name="P37 G1 experimental recurrent PPO",
         policy=actor,
@@ -147,13 +159,15 @@ def attach_g1_policy(scene, model_path: Path, artifact: Path):
         in_keys=["actor", "adapt_hx"],
         out_keys=["action", ["next", "adapt_hx"]],
         observations=observations,
-        actions={"joint_pos": JointPositionActionCfg(
-            actuator_names=(".*",),
-            scale=0.35,
-            use_default_offset=True,
-            stiffness=45.0,
-            damping=2.0,
-        )},
+        actions={
+            "joint_pos": JointPositionActionCfg(
+                actuator_names=(".*",),
+                scale=0.35,
+                use_default_offset=True,
+                stiffness=45.0,
+                damping=2.0,
+            )
+        },
         extras={
             "experimental": True,
             "qualified_for_walking": False,
