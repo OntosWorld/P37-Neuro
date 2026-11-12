@@ -48,7 +48,7 @@ function FurnitureColliders({ preset }: { preset: Preset }) {
   return <>
     <Ground />
     <RigidBody name="fixed-workbench" position={[0,0,.76]} kinematic>
-      <BoxCollider hx={.91} hy={.48} hz={.054} color={top} />
+      <BoxCollider hx={.91} hy={.48} hz={.054} mu={.90} restitution={.01} gap={.012} color={top} />
       {[-.78,.78].flatMap(x => [-.34,.34].map(y =>
         <BoxCollider key={String(x)+String(y)} hx={.036} hy={.036} hz={.36}
           position={[x,y,-.37]} color={[.24,.27,.29]}/>,
@@ -247,12 +247,12 @@ function ReferenceRobotControl({ refRobot, target, body, baseline, gripper, onGr
       phase < 3.2 ? smooth((phase - .5) / 2.7) :
       phase < 5 ? 1 :
       phase < 7.8 ? 1 - smooth((phase - 5) / 2.8) : 0;
-    drive('shoulder', target * (1 - fraction) + goal[0] * fraction, 155, 18, 100);
-    drive('elbow', -.64 * (1 - fraction) + goal[1] * fraction, 180, 18, 75);
-    drive('wrist', .52 * (1 - fraction) + goal[2] * fraction, 100, 12, 42);
+    drive('shoulder', target * (1 - fraction) + goal[0] * fraction, 24, 8, 21);
+    drive('elbow', -.64 * (1 - fraction) + goal[1] * fraction, 20, 7, 17);
+    drive('wrist', .52 * (1 - fraction) + goal[2] * fraction, 15, 6, 11);
     const opening = Math.max(0, Math.min(.035, gripper));
-    drive('left_finger_slide', opening, 440, 24, 40);
-    drive('right_finger_slide', opening, 440, 24, 40);
+    drive('left_finger_slide', opening, 150, 10, 15);
+    drive('right_finger_slide', opening, 150, 10, 15);
   });
   return null;
 }
