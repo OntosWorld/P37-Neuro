@@ -154,6 +154,10 @@ export function App() {
     return () => abort.abort();
   }, [showSource, sourceData]);
   const changePreset = (next: Preset) => {
+    // Workcell presets belong to the motor-driven Steel reference arm.
+    // Selecting one from a native MuJoCo model loads the associated task
+    // rather than leaving an inert scene button.
+    if (isMuJoCo) selectModel('compact');
     setPreset(next); setItems(initialItems(next)); setItemMotion({}); setTrackedId(null); setGripState(null);
     setStatus('Loading physics environment');
   };
@@ -207,7 +211,7 @@ export function App() {
         <div>
           <span className="overline">P37 / LIVE PHYSICS DEMONSTRATION</span>
           <h1>Robots, interacting with the world.</h1>
-          <p className="intro">An interactive robotics workcell running on your GPU. Watch a robot reach, move its physical gripper, and explore collisions, gravity and task environments. Deterministic reference control; P37 trained-policy transfer is still under evaluation.</p>
+          <p className="intro">Explore real robot models and physical interactions in your browser. The reference arm performs a motor-driven reach sequence; manufacturer-derived robots can be inspected in native MuJoCo physics. Qualified P37 learned-policy inference is not yet attached.</p>
         </div>
         <div className="hero-note"><strong>About this demonstration</strong>
           <p>Live Steel physics and a deterministic joint controller. No trained P37-Neuro checkpoint is attached. MimicGen demonstrations are imported separately and never presented as this robot’s learned behavior.</p>
@@ -222,7 +226,7 @@ export function App() {
               onClick={()=>changePreset(p.id)}>{p.label}</button>)}
           </div>
           <div className="viewport-top">
-            <div><span className="live-dot"/> LIVE GPU PHYSICS <span className="muted">/ Steel WebGPU</span></div>
+            <div><span className="live-dot"/> LIVE PHYSICS <span className="muted">/ {isMuJoCo ? 'MuJoCo · WebAssembly' : 'Steel · WebGPU'}</span></div>
             <div className="stage-tools-head">
               <span>{isMuJoCo ? 'REAL MANUFACTURER MODEL · NO TRAINED POLICY' : 'REFERENCE TASK · REAL JOINT CONTROL'}</span>
               <button type="button" className="stage-expand" title="Expand simulation"
@@ -340,7 +344,7 @@ export function App() {
           </fieldset>
           <div className="rule"/>
           <label>Source-data replay</label>
-          <button className="primary" onClick={() => setShowSource(!showSource)}>
+          <button className="primary" disabled={isMuJoCo} onClick={() => setShowSource(!showSource)}>
             {showSource ? 'Hide recorded path' : 'Show real MimicGen motion'}
           </button>
           {showSource && sourceData && <>
@@ -353,7 +357,9 @@ export function App() {
               {sourcePlaying ? 'Pause recorded motion' : 'Play recorded motion'}
             </button>
           </>}
-          <p className="helper">The green line and moving marker follow original source end-effector coordinates, independent of the reference arm. This is P37 data playback, not trained policy inference or verified contact replay.</p>
+          <p className="helper">{isMuJoCo
+            ? 'MimicGen trajectory replay is available with the reference workcell, not inside the native MuJoCo model viewer.'
+            : 'The green line and marker follow original source end-effector coordinates independently of the reference arm. This is recorded-data playback, not learned policy inference.'}</p>
           <div className="rule"/>
           <a className="small-link" href="https://huggingface.co/datasets/amandlek/mimicgen_datasets" target="_blank" rel="noreferrer">MimicGen source dataset ↗</a>
           <a className="small-link" href="#research">Read the evidence boundary ↓</a>
@@ -385,7 +391,7 @@ export function App() {
         </div>
       </section>
       <section className="bottom-grid" id="research">
-        <div><span className="overline">01 / Physics</span><h2>Interact with the scene.</h2><p>A table, chair, monitor and loose objects have physical collision geometry. Test a drop, inspect object travel and change the contact-ready gripper clearance.</p></div>
+        <div><span className="overline">01 / Physics</span><h2>Interact with the scene.</h2><p>Ten manufacturer-derived MuJoCo bodies and two motor-driven reference arms. Test contact, inspect actual robot geometry and use the workcell's physical gripper controls.</p></div>
         <div><span className="overline">02 / Training data</span><h2>Work with published demonstrations.</h2><p>MimicGen supplies HDF5 manipulation data from Panda, Sawyer, IIWA and UR5e. The P37 adapter imports recorded observations and controller-native actions for inspection.</p></div>
         <div><span className="overline">03 / Qualification</span><h2>Measure before claiming.</h2><p>Actual P37 checkpoints and held-out task evaluation are required for learned transfer claims. An interactive physics workcell is a separate engineering milestone.</p></div>
       </section>
