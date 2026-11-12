@@ -128,6 +128,25 @@ def build(
         )
         built_scenes.append(robot.id)
 
+    # Compatibility with a newer mjlab Scene GUI API: the optional GUI
+    # recorder in mjswan currently builds a metadata-only fake model lacking
+    # ncam. That recorder is not part of the physics or policy runtime. Keep
+    # the real native model/ONNX build intact and skip only that optional GUI
+    # snapshot if the known incompatibility is encountered.
+    from mjswan.build import manifest as manifest_module
+
+    original_gui = manifest_module.record_scene_gui
+
+    def compatible_gui():
+        try:
+            return original_gui()
+        except AttributeError as exc:
+            if "ncam" not in str(exc):
+                raise
+            print("Skipping incompatible optional mjlab Scene GUI metadata")
+            return None
+
+    manifest_module.record_scene_gui = compatible_gui
     old_cwd = Path.cwd()
     try:
         os.chdir(ROOT)
