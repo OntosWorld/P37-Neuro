@@ -11,6 +11,7 @@ import argparse
 import json
 import shutil
 from pathlib import Path
+
 from catalog import ROBOTS
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -55,7 +56,10 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         "panda_loader": "native-MuJoCo-Menagerie-scene",
         "trained_p37_policy_attached": False,
         "qualified_cross_body_transfer": False,
-        "notes": "MuJoCo bodies are physics models; no learned policy controls them; Steel reference actions are deterministic",
+        "notes": (
+            "MuJoCo bodies are physics models with no learned policy. "
+            "Steel reference actions are deterministic."
+        ),
     }
     (output / "build-info.json").write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     # demo_evidence remains an accepted CLI argument for older build callers.
