@@ -4,6 +4,13 @@ import { Workcell, PRESETS, initialItems, nextItemId } from './Workcell';
 import type { GripStateSample, ItemMotionSample, LooseItem, ObjectType, Preset, RobotType } from './Workcell';
 import type { SourceFrame } from './SourceTrajectory';
 
+type RealRobot = { id: string; name: string; kind: string; short: string; task: string; model: string };
+type RobotCatalog = { robots: RealRobot[] };
+const MODEL_IDS = new Set([
+  'unitree_g1', 'unitree_h1', 'booster_t1', 'unitree_go2',
+  'boston_dynamics_spot', 'anymal_c', 'franka_panda',
+  'universal_robots_ur5e', 'hello_robot_stretch', 'crazyflie_2',
+]);
 type SourceData = { publication: { source: string; learned_policy_attached: boolean }; traces: { frames: SourceFrame[] }[] };
 
 
@@ -51,6 +58,21 @@ function LiveScene({ preset, robot, items, paused, collision, pose, gripper, bas
 export function App() {
   const [preset, setPreset] = useState<Preset>('workcell');
   const [robot, setRobot] = useState<RobotType>('compact');
+  const [activeModel, setActiveModel] = useState('compact');
+  const [robotCatalog, setRobotCatalog] = useState<RealRobot[]>([]);
+  const [catalogError, setCatalogError] = useState('');
+  const isMuJoCo = MODEL_IDS.has(activeModel);
+  const activeRealRobot = robotCatalog.find(item => item.id === activeModel);
+  const selectModel = (id: string) => {
+    if (!MODEL_IDS.has(id) && id !== 'compact' && id !== 'extended') return;
+    setActiveModel(id);
+    if (id === 'compact' || id === 'extended') setRobot(id);
+    setGripState(null);
+    setItemMotion({});
+    setStatus(MODEL_IDS.has(id)
+      ? 'Loading official MuJoCo Menagerie model'
+      : 'Loading Steel articulated reference robot');
+  };
   const [items, setItems] = useState<LooseItem[]>(() => initialItems('workcell'));
   const [selectedObject, setSelectedObject] = useState<ObjectType>('parcel');
   const [pose, setPose] = useState(.18);
@@ -91,6 +113,22 @@ export function App() {
       livePosition[1] - tracked.position[1],
       livePosition[2] - tracked.position[2],
     ) : undefined;
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(import.meta.env.BASE_URL + 'catalog.json', { signal: controller.signal })
+      .then(async response => {
+        if (!response.ok) throw new Error('Robot catalog missing from website bundle');
+        const data = await response.json() as RobotCatalog;
+        if (!Array.isArray(data.robots) ||
+            data.robots.length !== MODEL_IDS.size ||
+            data.robots.some(item => !MODEL_IDS.has(item.id)))
+          throw new Error('Real robot catalog does not match the physics bundle');
+        setRobotCatalog(data.robots);
+      }).catch(error => {
+        if (!controller.signal.aborted) setCatalogError(String(error));
+      });
+    return () => controller.abort();
+  }, []);
   useEffect(() => {
     if (!showSource || sourceData) return;
     const abort = new AbortController();
@@ -186,7 +224,7 @@ export function App() {
           <div className="viewport-top">
             <div><span className="live-dot"/> LIVE GPU PHYSICS <span className="muted">/ Steel WebGPU</span></div>
             <div className="stage-tools-head">
-              <span>REFERENCE TASK · REAL JOINT CONTROL</span>
+              <span>{isMuJoCo ? 'REAL MANUFACTURER MODEL · NO TRAINED POLICY' : 'REFERENCE TASK · REAL JOINT CONTROL'}</span>
               <button type="button" className="stage-expand" title="Expand simulation"
                 aria-label="Expand simulation" onClick={event=>{
                   const viewport=event.currentTarget.closest('.viewport');
@@ -196,23 +234,36 @@ export function App() {
             </div>
           </div>
           <div className="canvas-wrap">
-            <LiveScene key={preset + '-' + robot} preset={preset} robot={robot} items={items}
-              paused={paused} collision={collision} pose={pose} gripper={gripper} baseline={reachCycle} sceneRef={scene}
-              onMotion={onMotion} onGripSample={setGripState}
-              onSample={setStats} onReady={()=>setStatus('Steel physics active')}
-              onError={setStatus} sourceFrames={showSource ? (sourceData?.traces[sourceEpisode]?.frames ?? []) : []}
-              sourcePlaying={showSource && sourcePlaying && !paused}/>
-            <div className="camera-tip">DRAG OBJECTS TO PULL · DRAG EMPTY SPACE TO ORBIT</div>
+            {isMuJoCo ?
+              <iframe
+                className="menagerie-viewer"
+                key={activeModel}
+                title={activeRealRobot ? activeRealRobot.name + ' — MuJoCo physical robot model' : 'MuJoCo real robot'}
+                src={import.meta.env.BASE_URL + 'simulator/?project=p37_robot_models&scene=' + encodeURIComponent(activeModel) + '&panel=0'}
+                allow="fullscreen"
+                loading="eager"
+              /> :
+              <LiveScene key={preset + '-' + robot} preset={preset} robot={robot} items={items}
+                paused={paused} collision={collision} pose={pose} gripper={gripper} baseline={reachCycle} sceneRef={scene}
+                onMotion={onMotion} onGripSample={setGripState}
+                onSample={setStats} onReady={()=>setStatus('Steel physics active')}
+                onError={setStatus} sourceFrames={showSource ? (sourceData?.traces[sourceEpisode]?.frames ?? []) : []}
+                sourcePlaying={showSource && sourcePlaying && !paused}/>
+            }
+            <div className="camera-tip">{isMuJoCo ? 'M U J O C O · MODEL-ONLY PHYSICS · DRAG TO ORBIT / APPLY FORCE' :
+              'DRAG OBJECTS TO PULL · DRAG EMPTY SPACE TO ORBIT'}</div>
           </div>
           <div className="playground-embodiment" role="group" aria-label="Choose reference robot">
             <span>Robot model</span>
-            <button type="button" aria-pressed={robot==='compact'} onClick={()=>{setRobot('compact');setGripState(null);}}>Compact arm</button>
-            <button type="button" aria-pressed={robot==='extended'} onClick={()=>{setRobot('extended');setGripState(null);}}>Extended arm</button>
-            <button type="button" aria-pressed={robot==='panda'} onClick={()=>{setRobot('panda');setGripState(null);setStatus('Loading full-mesh Panda MJCF');}}>Franka Panda (full mesh)</button>
-            <span className="playground-disclaimer">{robot==='panda' ? 'MuJoCo Menagerie / Apache-2.0 · deterministic joints' : 'Original reference geometry'} · no trained P37 policy</span>
+            <button type="button" aria-pressed={activeModel==='compact'} onClick={()=>selectModel('compact')}>Reference arm</button>
+            <button type="button" aria-pressed={activeModel==='extended'} onClick={()=>selectModel('extended')}>Extended arm</button>
+            <span className="playground-disclaimer">{isMuJoCo ? 'Manufacturer-derived MuJoCo geometry · passive physics' :
+              'Articulated deterministic reference controller'} · no qualified P37 browser policy</span>
           </div>
           <div className="viewport-controls">
             <div className="action-row">
+              {isMuJoCo && <span className="model-mode-label">Model-only physics. Use the embedded MuJoCo controls.</span>}
+              <fieldset disabled={isMuJoCo} className="stage-robot-actions">
               <button onClick={()=>setReachCycle(active=>!active)} aria-pressed={reachCycle}>
                 {reachCycle ? 'Pause robot task' : 'Run robot task'}
               </button>
@@ -221,8 +272,9 @@ export function App() {
               <button aria-pressed={collision} onClick={()=>setCollision(!collision)}>
                 {collision ? 'Hide collision geometry' : 'Show collision geometry'}
               </button>
+              </fieldset>
             </div>
-            <div className="status-line" role="status">{status}</div>
+            <div className="status-line" role="status">{isMuJoCo ? 'Passive model physics · no trained P37 controller' : status}</div>
           </div>
         </div>
         <div className="playground-panel">
@@ -235,15 +287,32 @@ export function App() {
           <p className="helper">{PRESETS.find(p=>p.id===preset)?.detail}</p>
           <div className="rule"/>
           <label htmlFor="robot">Robot embodiment</label>
-          <select id="robot" value={robot} onChange={e=>{setRobot(e.target.value as RobotType);setGripState(null);setStatus('Switching robot morphology');}}>
-            <option value="compact">P37 reference / compact</option>
-            <option value="extended">P37 reference / extended</option>
-            <option value="panda">Franka Panda / full manufacturer-derived mesh</option>
+          <select id="robot" value={activeModel} onChange={e=>selectModel(e.target.value)}>
+            <optgroup label="Motor-driven reference arms">
+              <option value="compact">Reference arm / compact</option>
+              <option value="extended">Reference arm / extended</option>
+            </optgroup>
+            <optgroup label="Real manufacturer-derived robots">
+              {robotCatalog.map(item => <option key={item.id} value={item.id}>{item.name} / {item.kind}</option>)}
+            </optgroup>
           </select>
-          <p className="helper">{robot === 'panda' ?
-            <>Apache-2.0 Panda meshes and 7-joint model from <a href="https://github.com/google-deepmind/mujoco_menagerie/tree/main/franka_emika_panda" target="_blank" rel="noreferrer">MuJoCo Menagerie</a>. This high-detail model adds about 33 MB to the scene and uses deterministic position control. No learned P37 policy.</> :
-            <>Original compact/extended reference arms with motor-driven colliding gripper fingers. They are not manufacturer models, and grasp success is not assumed.</>}
+          <p className="helper">{catalogError || (isMuJoCo
+            ? activeRealRobot?.name + ' — ' + activeRealRobot?.short + '. Real MuJoCo model, physical joints and contacts. Passive model exploration: no P37 learned controller.'
+            : 'Motor-driven reference arm, deterministic reach cycle and measured gripper movement. No trained checkpoint attached.')}
           </p>
+          <div className="robot-catalog" role="group" aria-label="Select real robot body">
+            <div className="catalog-heading">REAL ROBOT LIBRARY <span>{robotCatalog.length} MODELS</span></div>
+            <div className="catalog-choices">
+              {robotCatalog.map(item =>
+                <button type="button" className={activeModel===item.id?'selected':''}
+                  key={item.id} aria-pressed={activeModel===item.id}
+                  onClick={()=>selectModel(item.id)}>
+                  <strong>{item.name}</strong><small>{item.short}</small>
+                </button>)}
+            </div>
+          </div>
+          <fieldset className="reference-controls" disabled={isMuJoCo} aria-label="Reference arm motor controls">
+          <legend>{isMuJoCo ? 'Reference-arm controls unavailable for this model' : 'Reference arm motor controls'}</legend>
           <label htmlFor="jaw-aperture">Gripper target <output>{(gripBaseMm + gripper * 2000).toFixed(0)} mm</output></label>
           <input id="jaw-aperture" type="range" min="0" max=".035" step=".001"
             value={gripper} onChange={e=>setGripper(Number(e.target.value))}/>
@@ -268,6 +337,7 @@ export function App() {
             {items.map(item=><option key={item.id} value={item.id}>{item.type} #{item.id}</option>)}
           </select>
           <p className="helper">Objects have mass and contact geometry. Run the isolated drop test to measure worktop contact without other loose objects interfering.</p>
+          </fieldset>
           <div className="rule"/>
           <label>Source-data replay</label>
           <button className="primary" onClick={() => setShowSource(!showSource)}>
@@ -290,9 +360,9 @@ export function App() {
         </aside>
         <aside className="evidence-panel">
           <div className="section-heading"><span>EXPERIMENT STATUS</span><span>02 / 04</span></div>
-          <div className="info-row"><span>Physics backend</span><strong>Steel / WebGPU</strong></div>
-          <div className="info-row"><span>Simulation time</span><strong>{stats ? stats.time.toFixed(1) + ' s' : '—'}</strong></div>
-          <div className="info-row"><span>Solver contacts</span><strong>{stats?.contacts ?? '—'}</strong></div>
+          <div className="info-row"><span>Physics backend</span><strong>{isMuJoCo ? 'MuJoCo / WebAssembly' : 'Steel / WebGPU'}</strong></div>
+          <div className="info-row"><span>Simulation time</span><strong>{!isMuJoCo && stats ? stats.time.toFixed(1) + ' s' : '—'}</strong></div>
+          <div className="info-row"><span>Solver contacts</span><strong>{isMuJoCo ? 'See MuJoCo controls' : (stats?.contacts ?? '—')}</strong></div>
           <div className="info-row"><span>Tracked object</span><strong>{tracked ? tracked.type + ' #' + tracked.id : '—'}</strong></div>
           <div className="info-row"><span>Object height</span><strong>{livePosition ? livePosition[2].toFixed(3) + ' m' : '—'}</strong></div>
           <div className="info-row"><span>Object travel</span><strong>{travel !== undefined ? (1000 * travel).toFixed(0) + ' mm' : '—'}</strong></div>
@@ -301,11 +371,13 @@ export function App() {
             <strong>{measuredGripMm !== undefined ? measuredGripMm.toFixed(0)+' mm' : '—'}</strong>
           </div>
           <div className="info-row"><span>Movable objects</span><strong>{items.length}</strong></div>
-          <div className="info-row"><span>Robot geometry</span><strong>{robot==='panda' ? 'Franka Panda / Menagerie' : robot+' / P37 reference'}</strong></div>
+          <div className="info-row"><span>Robot geometry</span><strong>{isMuJoCo ? (activeRealRobot?.name || activeModel) + ' / Menagerie' : robot + ' / P37 reference'}</strong></div>
           <div className="info-row"><span>Recorded dataset</span><strong>{showSource ? "MimicGen Panda source" : "None"}</strong></div>
           <div className="rule"/>
           <div className="section-cap">What is running</div>
-          <p className="evidence-copy">Steel simulates articulated robot joints, actuated gripper fingers and finite-mass objects. Object positions and finger clearance are read from physics state. The Panda model is externally sourced; all controls here are deterministic.</p>
+          <p className="evidence-copy">{isMuJoCo
+            ? 'These 10 manufacturer-derived bodies run MuJoCo physics in a built-in viewer. Drag the robot to apply forces and inspect passive contacts. No learned walking, recovery, or manipulation success is claimed.'
+            : 'Steel simulates articulated reference arms, actuated fingers and finite-mass objects. Solver positions and contacts are measured; reference actions use a deterministic controller.'}</p>
           <div className="flag">Policy checkpoint: <b>None</b><br/>MimicGen model training: <b>Not executed</b><br/>Recorded source playback: <b>{showSource ? "Active" : "Off"}</b><br/>Learned cross-body transfer: <b>Unverified</b></div>
           <div className="section-cap">P37 integration</div>
           <p className="evidence-copy">The recorded MimicGen source motion can be enabled above for side-by-side inspection. The visible reference arm uses an explicit deterministic controller; a trained P37 checkpoint is not driving these actions.</p>
