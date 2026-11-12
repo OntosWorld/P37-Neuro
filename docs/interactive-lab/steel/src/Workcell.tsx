@@ -47,12 +47,16 @@ function FurnitureColliders({ preset }: { preset: Preset }) {
   const top: Vec3 = preset === 'inspection' ? [.36,.39,.41] : [.53,.38,.26];
   return <>
     <Ground />
-    <RigidBody name="fixed-workbench" position={[0,0,.76]}>
-      <FixedJoint parent={null} parentFrame={[0,0,.76,0,0,0,1]}/>
-      <BoxCollider hx={.91} hy={.48} hz={.054} mu={.90} restitution={.01} gap={.012} color={top} />
+    {/* Use a world-anchored static base at the origin. The tabletop and legs
+        have explicit world-space offsets, matching the rendered bench. This
+        avoids an extra body translation in the fixed-joint contact path. */}
+    <RigidBody name="fixed-workbench" position={[0,0,0]}>
+      <FixedJoint parent={null} parentFrame={[0,0,0,0,0,0,1]}/>
+      <BoxCollider hx={.91} hy={.48} hz={.054} position={[0,0,.76]}
+        mu={.90} restitution={.01} gap={.012} color={top} />
       {[-.78,.78].flatMap(x => [-.34,.34].map(y =>
         <BoxCollider key={String(x)+String(y)} hx={.036} hy={.036} hz={.36}
-          position={[x,y,-.37]} color={[.24,.27,.29]}/>,
+          position={[x,y,.39]} color={[.24,.27,.29]}/>,
       ))}
     </RigidBody>
     <RigidBody name="fixed-chair" position={[-1.18,.68,.46]}>
