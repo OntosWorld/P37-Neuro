@@ -55,7 +55,7 @@ export function App() {
   const [selectedObject, setSelectedObject] = useState<ObjectType>('parcel');
   const [pose, setPose] = useState(.18);
   const [gripper, setGripper] = useState(.035);
-  const [reachCycle, setReachCycle] = useState(false);
+  const [reachCycle, setReachCycle] = useState(true);
   const [gripState, setGripState] = useState<GripStateSample | null>(null);
   const [trackedId, setTrackedId] = useState<number | null>(null);
   const [itemMotion, setItemMotion] = useState<Record<number, ItemMotionSample>>({});
@@ -150,32 +150,32 @@ export function App() {
     setItemMotion({});
     setTrackedId(item.id);
     setGripState(null);
-    setReachCycle(false);
+    setReachCycle(true);
     setPaused(false);
     setStatus('Isolated tabletop drop: waiting for physics readback');
   };
   return <div className="app-shell">
     <header className="site-header">
-      <a className="brand" href="../index.html">ONTOS <span>/ P37 NEURO</span></a>
+      <a className="brand" href="./">ONTOS <span>/ P37 NEURO</span></a>
       <nav aria-label="Research navigation">
-        <a href="../index.html">Architecture</a>
-        <a href="../compare/index.html?sample=mimicgen">Recorded evidence</a>
-        <a href="https://ontosrobotics.github.io/P37-Neuro/">Existing Brain Lab ↗</a>
+        <a href="#simulation">Live simulation</a>
+        <a href="#research">Research evidence</a>
+        <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noreferrer">Source ↗</a>
       </nav>
       <span className="build-tag">EXPERIMENT / 01</span>
     </header>
     <main>
       <div className="title-row">
         <div>
-          <span className="overline">LIVE DEMO</span>
-          <h1>P37-Neuro, running in your browser</h1>
-          <p className="intro">Every scene runs live on your GPU through Steel WebGPU. Choose a robot configuration, move objects around and inspect the physics as it runs.</p>
+          <span className="overline">P37 / LIVE PHYSICS DEMONSTRATION</span>
+          <h1>Robots, interacting with the world.</h1>
+          <p className="intro">An interactive robotics workcell running on your GPU. Watch a robot reach, move its physical gripper, and explore collisions, gravity and task environments. Deterministic reference control; P37 trained-policy transfer is still under evaluation.</p>
         </div>
         <div className="hero-note"><strong>About this demonstration</strong>
           <p>Live Steel physics and a deterministic joint controller. No trained P37-Neuro checkpoint is attached. MimicGen demonstrations are imported separately and never presented as this robot’s learned behavior.</p>
         </div>
       </div>
-      <section className="lab-grid" aria-label="Interactive Steel research workcell">
+      <section className="lab-grid" id="simulation" aria-label="Interactive Steel research workcell">
         <div className="viewport">
           <div className="playground-scenes" role="group" aria-label="Choose physics environment">
             <span className="playground-scenes-label">Scenes</span>
@@ -186,7 +186,7 @@ export function App() {
           <div className="viewport-top">
             <div><span className="live-dot"/> LIVE GPU PHYSICS <span className="muted">/ Steel WebGPU</span></div>
             <div className="stage-tools-head">
-              <span>REFERENCE ROBOT · NO TRAINED POLICY</span>
+              <span>REFERENCE TASK · REAL JOINT CONTROL</span>
               <button type="button" className="stage-expand" title="Expand simulation"
                 aria-label="Expand simulation" onClick={event=>{
                   const viewport=event.currentTarget.closest('.viewport');
@@ -214,7 +214,7 @@ export function App() {
           <div className="viewport-controls">
             <div className="action-row">
               <button onClick={()=>setReachCycle(active=>!active)} aria-pressed={reachCycle}>
-                {reachCycle ? 'Stop reach cycle' : 'Run reach cycle'}
+                {reachCycle ? 'Pause robot task' : 'Run robot task'}
               </button>
               <button onClick={()=>setPaused(!paused)}>{paused ? '▶ Resume' : 'Ⅱ Pause'}</button>
               <button onClick={reset}>↻ Reset</button>
@@ -267,7 +267,7 @@ export function App() {
           <select id="tracked-body" value={tracked?.id ?? ''} onChange={e=>setTrackedId(Number(e.target.value))}>
             {items.map(item=><option key={item.id} value={item.id}>{item.type} #{item.id}</option>)}
           </select>
-          <p className="helper">Objects have mass and contact geometry. Run the isolated drop test to measure table contact without other loose objects interfering.</p>
+          <p className="helper">Objects have mass and contact geometry. Run the isolated drop test to measure worktop contact without other loose objects interfering.</p>
           <div className="rule"/>
           <label>Source-data replay</label>
           <button className="primary" onClick={() => setShowSource(!showSource)}>
@@ -286,7 +286,7 @@ export function App() {
           <p className="helper">The green line and moving marker follow original source end-effector coordinates, independent of the reference arm. This is P37 data playback, not trained policy inference or verified contact replay.</p>
           <div className="rule"/>
           <a className="small-link" href="https://huggingface.co/datasets/amandlek/mimicgen_datasets" target="_blank" rel="noreferrer">MimicGen source dataset ↗</a>
-          <a className="small-link" href="../compare/index.html?sample=mimicgen">Watch official source motion in P37 ↗</a>
+          <a className="small-link" href="#research">Read the evidence boundary ↓</a>
         </aside>
         <aside className="evidence-panel">
           <div className="section-heading"><span>EXPERIMENT STATUS</span><span>02 / 04</span></div>
@@ -308,11 +308,11 @@ export function App() {
           <p className="evidence-copy">Steel simulates articulated robot joints, actuated gripper fingers and finite-mass objects. Object positions and finger clearance are read from physics state. The Panda model is externally sourced; all controls here are deterministic.</p>
           <div className="flag">Policy checkpoint: <b>None</b><br/>MimicGen model training: <b>Not executed</b><br/>Recorded source playback: <b>{showSource ? "Active" : "Off"}</b><br/>Learned cross-body transfer: <b>Unverified</b></div>
           <div className="section-cap">P37 integration</div>
-          <p className="evidence-copy">The <a href="../compare/index.html">recorded experiment viewer</a> accepts canonical P37 episodes. The MimicGen HDF5 adapter preserves dataset-native actions without claiming they are joint commands.</p>
+          <p className="evidence-copy">The recorded MimicGen source motion can be enabled above for side-by-side inspection. The visible reference arm uses an explicit deterministic controller; a trained P37 checkpoint is not driving these actions.</p>
         </aside>
         </div>
       </section>
-      <section className="bottom-grid">
+      <section className="bottom-grid" id="research">
         <div><span className="overline">01 / Physics</span><h2>Interact with the scene.</h2><p>A table, chair, monitor and loose objects have physical collision geometry. Test a drop, inspect object travel and change the contact-ready gripper clearance.</p></div>
         <div><span className="overline">02 / Training data</span><h2>Work with published demonstrations.</h2><p>MimicGen supplies HDF5 manipulation data from Panda, Sawyer, IIWA and UR5e. The P37 adapter imports recorded observations and controller-native actions for inspection.</p></div>
         <div><span className="overline">03 / Qualification</span><h2>Measure before claiming.</h2><p>Actual P37 checkpoints and held-out task evaluation are required for learned transfer claims. An interactive physics workcell is a separate engineering milestone.</p></div>
