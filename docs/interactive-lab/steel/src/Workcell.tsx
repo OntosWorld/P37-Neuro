@@ -163,6 +163,17 @@ function ReferenceRobotControl({ refRobot, target, body, baseline, gripper, onGr
         // below needs this observation to apply *physical joint forces*.
         const state = await world.sim.state();
         if (!active) return;
+        if (window.location.search.includes('debugPhysics=1')) {
+          (window as Window & { __p37PhysicsDebug?: unknown }).__p37PhysicsDebug = {
+            time: world.sim.time,
+            robot: body,
+            joints: [...robot.dofs.entries()].map(([name,index]) => ({
+              name, index,
+              q: state.jointQ[index], qd: state.jointQd[index],
+            })),
+            actions: [...readings.current.entries()],
+          };
+        }
         for (const [name, index] of robot.dofs) {
           if (Number.isFinite(state.jointQ[index]) && Number.isFinite(state.jointQd[index]))
             readings.current.set(name, { q: state.jointQ[index], qd: state.jointQd[index] });
