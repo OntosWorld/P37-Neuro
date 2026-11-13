@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TASK_EXPERIMENTS, taskProgress } from './taskExperiments';
+import { TaskGallery } from './TaskGallery';
+import { GALLERY_TASKS, type GalleryTask } from './taskGallery';
 
 type Robot = {
   id: string; name: string; model: string; kind: string;
@@ -27,6 +29,7 @@ type SteeringTelemetry = {
   objectDistance?: number; stackHeight?: number; stackStable?: boolean;
   objectDelivered?: boolean; observedObjects?: number;
   scriptedTaskRunning?: boolean; scriptedTaskElapsed?: number;
+  taskTime?: number;
 };
 type BuildInfo = {
   trained_p37_policy_attached: boolean;
@@ -58,13 +61,22 @@ type Evidence = {
 type G1Evidence = { evaluation: { seeds: { fallen: boolean }[] }; qualification: string };
 
 const CATEGORIES = ['All', 'Humanoids', 'Quadrupeds', 'Manipulators', 'Mobile', 'Aerial'];
+const PANDA_STAGES = [
+  { name:'Approach', start:0, end:5.0 },
+  { name:'Grasp', start:5.0, end:6.5 },
+  { name:'Lift', start:6.5, end:8.9 },
+  { name:'Carry', start:8.9, end:11.5 },
+  { name:'Place', start:11.5, end:15.0 },
+  { name:'Verify', start:15.0, end:18.2 },
+];
 
 export function App() {
   const [catalog, setCatalog] = useState<Robot[]>([]);
-  const [selected, setSelected] = useState('unitree_g1');
+  const [selected, setSelected] = useState('franka_panda');
+  const [activeTaskId, setActiveTaskId] = useState('panda-stack');
   const [experience, setExperience] = useState<Experience>('simulation');
-  const [motion, setMotion] = useState<MotionMode>('motion_cycle');
-  const [lastMotion, setLastMotion] = useState<MotionMode>('motion_cycle');
+  const [motion, setMotion] = useState<MotionMode>('panda_scripted_stack');
+  const [lastMotion, setLastMotion] = useState<MotionMode>('panda_scripted_stack');
   const [category, setCategory] = useState('All');
   const [panel, setPanel] = useState(false);
   const [reload, setReload] = useState(0);
@@ -115,6 +127,8 @@ export function App() {
     return () => abort.abort();
   }, []);
   const current = catalog.find(r => r.id === selected);
+  const activeTask = GALLERY_TASKS.find(task => task.id === activeTaskId);
+  const pandaTime = telemetry.taskTime ?? 0;
   const experiment = TASK_EXPERIMENTS[selected];
   const result = experiment ? taskProgress(experiment, telemetry) : null;
   const selection = useMemo(() => catalog.filter(robot =>
@@ -196,6 +210,7 @@ export function App() {
         observedObjects: Number.isInteger(msg.observedObjects)?msg.observedObjects:undefined,
         scriptedTaskRunning: msg.scriptedTaskRunning === true,
         scriptedTaskElapsed: Number.isFinite(msg.scriptedTaskElapsed)?msg.scriptedTaskElapsed:undefined,
+        taskTime: Number.isFinite(msg.taskTime)?msg.taskTime:undefined,
       });
     };
     window.addEventListener('message',receive);
@@ -222,6 +237,8 @@ export function App() {
   const selectRobot = (robot: Robot) => {
     releaseSteer();
     setSelected(robot.id);
+    setActiveTaskId(GALLERY_TASKS.find(task =>
+      task.robotId === robot.id && task.route !== 'recorded')?.id ?? '');
     setExperience('simulation');
     setTelemetry({status:'waiting'});
     setMotion(robot.id === 'franka_panda' ? 'panda_scripted_stack' : 'motion_cycle');
@@ -245,6 +262,23 @@ export function App() {
     setExperience(next);
     setReload(n => n + 1);
   };
+  const openTask = (task: GalleryTask) => {
+    releaseSteer();
+    setActiveTaskId(task.id);
+    setSelected(task.robotId);
+    const mode: MotionMode = task.route === 'panda' || task.route === 'recorded'
+      ? 'panda_scripted_stack'
+      : task.route === 'p37' ? 'p37_experimental' : 'motion_cycle';
+    setMotion(mode);
+    setLastMotion(mode);
+    setExperience(task.route === 'recorded' ? 'recorded'
+      : task.route === 'p37' ? 'policy' : 'simulation');
+    setTelemetry({status:'waiting'});
+    setStageLoaded(false);
+    setReload(value => value + 1);
+    window.requestAnimationFrame(() => document.getElementById('simulator')
+      ?.scrollIntoView({ behavior:'smooth', block:'start' }));
+  };
   const toggleReferenceTask = () => {
     if (experiment?.kind !== 'terrain') return;
     iframeRef.current?.contentWindow?.postMessage({
@@ -260,23 +294,29 @@ export function App() {
     <header className="site-header">
       <a className="brand" href="./">ONTOS <span>/ P37 NEURO</span></a>
       <nav aria-label="P37 navigation">
-        <a href="#simulator">Simulation</a>
+        <a href="#tasks">Experiments</a>
+        <a href="#simulator">Live simulation</a>
         <a href="#evidence">Research evidence</a>
         <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noreferrer">GitHub ↗</a>
       </nav>
       <span className="build-tag">POWERED BY P37-NEURO</span>
     </header>
     <main>
-      <section className="title-row">
-        <span className="overline">P37 / CROSS-EMBODIMENT ROBOTICS</span>
-        <h1>One brain. Different bodies.</h1>
-        <p className="intro">
-          Watch a source-attributed robot recording, explore live MuJoCo tasks or test
-          the experimental P37 controller on Unitree G1. Panda cube stacking,
-          quadruped obstacle courses and Stretch delivery use real simulated
-          objects and contacts. Panda runs a contact-verified deterministic motor
-          reference; qualified cross-body policies remain separate research work.
-        </p>
+      <TaskGallery activeId={activeTaskId} onSelect={openTask} baseUrl={import.meta.env.BASE_URL}/>
+      <section className="title-row p37-experiment-heading">
+        <span className="overline">OPEN EXPERIMENT / {activeTask?.kicker ?? 'MANUFACTURER ROBOT'}</span>
+        <div className="p37-experiment-heading-row">
+          <div>
+            <h2>{activeTask?.title ?? current?.name ?? 'Inspect a robot'}</h2>
+            <p className="intro">{activeTask?.description ??
+              'Explore manufacturer-derived articulated robots in live MuJoCo physics.'}</p>
+          </div>
+          <div className="p37-task-definition">
+            <small>EXECUTION STATUS</small>
+            <strong>{activeTask?.status ?? 'Model-derived physics'}</strong>
+            <span>{activeTask?.limits ?? 'No qualified task controller attached.'}</span>
+          </div>
+        </div>
       </section>
       <section className="lab-grid" id="simulator" aria-label="Live manufacturer robot simulation">
         <div className="viewport">
