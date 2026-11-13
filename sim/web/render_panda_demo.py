@@ -25,9 +25,7 @@ WIDTH = 960
 HEIGHT = 540
 
 
-def render(
-    menagerie: Path, controls: Path, qualification: Path, video: Path, poster: Path
-) -> dict:
+def render(menagerie: Path, controls: Path, qualification: Path, video: Path, poster: Path) -> dict:
     evidence = json.loads(qualification.read_text(encoding="utf-8"))
     for key in (
         "native_physics_verified",
@@ -68,12 +66,32 @@ def render(
     ffmpeg = subprocess.Popen(
         [
             "ffmpeg",
-            "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
-            "-f", "rawvideo", "-pixel_format", "rgb24",
-            "-video_size", f"{WIDTH}x{HEIGHT}", "-framerate", str(FPS),
-            "-i", "-", "-an",
-            "-c:v", "libx264", "-preset", "veryfast", "-crf", "22",
-            "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "rawvideo",
+            "-pixel_format",
+            "rgb24",
+            "-video_size",
+            f"{WIDTH}x{HEIGHT}",
+            "-framerate",
+            str(FPS),
+            "-i",
+            "-",
+            "-an",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "veryfast",
+            "-crf",
+            "22",
+            "-pix_fmt",
+            "yuv420p",
+            "-movflags",
+            "+faststart",
             str(video),
         ],
         stdin=subprocess.PIPE,
@@ -107,9 +125,20 @@ def render(
 
     subprocess.run(
         [
-            "ffmpeg", "-nostdin", "-hide_banner", "-loglevel", "error", "-y",
-            "-ss", "10", "-i", str(video),
-            "-frames:v", "1", "-vf", "scale=960:540",
+            "ffmpeg",
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-ss",
+            "10",
+            "-i",
+            str(video),
+            "-frames:v",
+            "1",
+            "-vf",
+            "scale=960:540",
             str(poster),
         ],
         check=True,
