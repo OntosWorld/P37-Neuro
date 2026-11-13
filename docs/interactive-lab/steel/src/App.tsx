@@ -47,7 +47,6 @@ export function App() {
   const [selected, setSelected] = useState('unitree_g1');
   const [motion, setMotion] = useState<MotionMode>('motion_cycle');
   const [lastMotion, setLastMotion] = useState<MotionMode>('motion_cycle');
-  const [motionLibrary, setMotionLibrary] = useState<MotionLibrary | null>(null);
   const [category, setCategory] = useState('All');
   const [panel, setPanel] = useState(false);
   const [reload, setReload] = useState(0);
@@ -92,7 +91,6 @@ export function App() {
       setBuild(info);
       setEvidence(trials);
       setG1Evidence(evaluation);
-      setMotionLibrary(motions);
     }).catch(reason => {
       if (!abort.signal.aborted) setError(String(reason));
     });
