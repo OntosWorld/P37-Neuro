@@ -412,7 +412,9 @@ export function App() {
                   This is not a qualified learned walking controller.</p>
               </>}
             </div>
-            <div className="status-line" role="status">{p37Active ?
+            <div className="status-line" role="status">{pandaActive ?
+              'Panda verified contact-based grasp / lift / release / stack · scripted reference, not learned P37' :
+              p37Active ?
               'Experimental P37 inference plus user-assisted steering · walking not qualified' :
               'Physical motion replay with user-assisted steering · no learned walking claim'}</div>
           </div>}
