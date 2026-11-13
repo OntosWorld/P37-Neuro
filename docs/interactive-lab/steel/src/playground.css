@@ -517,3 +517,12 @@ body,.app-shell{color:#242827!important}
 @media(max-width:680px){.p37-experience-tabs{padding:11px;gap:7px}
   .p37-experience-tabs button{padding:9px 11px;font-size:11px}
   .p37-recorded-viewer{height:67vh;min-height:420px}}
+
+/* Real-source task evidence remains separate from the live replay outcome. */
+.p37-scripted-evidence{display:flex;flex-direction:column;gap:5px;
+  margin:14px 0 8px;padding:14px 16px;background:#eef3ee;
+  border:1px solid #d1dfd4;border-radius:8px}
+.p37-scripted-evidence strong{font-size:12px;color:#233c2e;font-weight:650}
+.p37-scripted-evidence span{font-size:12px;font-variant-numeric:tabular-nums;
+  line-height:1.5;color:#375743}
+.p37-scripted-evidence small{font-size:11px;color:#68766a;line-height:1.5}
