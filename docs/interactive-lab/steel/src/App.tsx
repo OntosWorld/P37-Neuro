@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TASK_EXPERIMENTS, taskProgress } from './taskExperiments';
-import { TaskGallery } from './TaskGallery';
+import { TaskGallery } from './SimulationGallery';
 import { GALLERY_TASKS, getGalleryTask, type GalleryTask } from './taskGallery';
 
 type Robot = {
