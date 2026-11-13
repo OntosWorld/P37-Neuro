@@ -14,7 +14,11 @@ import mujoco
 import numpy as np
 
 from panda_physical_stack import (
-    CONTROL_DT, RATE, initial_data, panda_coords, solve_ik,
+    CONTROL_DT,
+    RATE,
+    initial_data,
+    panda_coords,
+    solve_ik,
 )
 from physical_task_scenes import add_physical_task_scene
 
