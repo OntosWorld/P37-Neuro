@@ -18,14 +18,38 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
-from build_mjswan import _light_scene
-from catalog import ROBOTS
 from panda_physical_stack import CONTROL_DT, RATE, initial_data, simulate
 from physical_task_scenes import add_physical_task_scene
 
 FPS = 25
 WIDTH = 960
 HEIGHT = 540
+
+
+def _style_only(spec: mujoco.MjSpec) -> None:
+    """Keep robot/task physics intact; change only environment appearance."""
+    for texture in spec.textures:
+        if getattr(texture, "name", "") == "groundplane":
+            texture.rgb1 = [0.24, 0.25, 0.26]
+            texture.rgb2 = [0.20, 0.21, 0.22]
+            texture.markrgb = [0.26, 0.27, 0.28]
+        elif texture.type == mujoco.mjtTexture.mjTEXTURE_SKYBOX:
+            texture.rgb1 = [0.23, 0.24, 0.25]
+            texture.rgb2 = [0.10, 0.11, 0.12]
+    spec.worldbody.add_light(
+        name="film_key",
+        pos=[-3.2, -3.4, 5.0],
+        dir=[0.65, 0.62, -1.0],
+        diffuse=[0.73, 0.75, 0.76],
+        specular=[0.18, 0.20, 0.21],
+    )
+    spec.worldbody.add_light(
+        name="film_fill",
+        pos=[2.7, 2.5, 4.2],
+        dir=[-0.6, -0.6, -1.0],
+        diffuse=[0.31, 0.34, 0.36],
+        specular=[0.08, 0.09, 0.10],
+    )
 
 
 def render(menagerie: Path, controls: Path, qualification: Path, video: Path, poster: Path) -> dict:
@@ -53,8 +77,7 @@ def render(menagerie: Path, controls: Path, qualification: Path, video: Path, po
     # Mirror the public robot viewer's graphite lighting; these light/texture
     # edits and non-colliding reference markers do NOT alter Panda dynamics.
     spec = mujoco.MjSpec.from_file(str(menagerie / "franka_emika_panda" / "scene.xml"))
-    panda = next(robot for robot in ROBOTS if robot.id == "franka_panda")
-    _light_scene(spec, panda)
+    _style_only(spec)
     add_physical_task_scene(spec, "franka_panda")
     model = spec.compile()
     # The fluorescent ring is a debug waypoint, not part of the task object.
