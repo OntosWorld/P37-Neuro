@@ -200,7 +200,11 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
             "final_blue_xyz": panda_record["final_blue_xyz"],
             "final_amber_xyz": panda_record["final_amber_xyz"],
         },
-        "task_gallery": {"version": 1, "native_robot_posters": len(entries), "source": provenance["generated_from"]},
+        "task_gallery": {
+            "version": 1,
+            "native_robot_posters": len(entries),
+            "source": provenance["generated_from"],
+        },
         "physical_task_scene_version": 2,
         "task_experiences": [
             "live_assisted_physics",
