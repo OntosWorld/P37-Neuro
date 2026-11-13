@@ -81,11 +81,19 @@ def _panda_frames(
             mujoco.mj_step(model, data)
         if frame == 385:
             snapshot = mujoco.MjData(model)
-            mujoco.mj_copyData(snapshot, model, data)
+            snapshot.qpos[:] = data.qpos
+            snapshot.qvel[:] = data.qvel
+            snapshot.ctrl[:] = data.ctrl
+            snapshot.time = data.time
+            mujoco.mj_forward(model, snapshot)
             snapshots["panda-stack"] = snapshot
         if frame == len(controls) - 1:
             snapshot = mujoco.MjData(model)
-            mujoco.mj_copyData(snapshot, model, data)
+            snapshot.qpos[:] = data.qpos
+            snapshot.qvel[:] = data.qvel
+            snapshot.ctrl[:] = data.ctrl
+            snapshot.time = data.time
+            mujoco.mj_forward(model, snapshot)
             snapshots["panda-recorded"] = snapshot
     if set(snapshots) != {"panda-stack", "panda-recorded"}:
         raise RuntimeError("Qualified Panda task did not reach capture checkpoints")
