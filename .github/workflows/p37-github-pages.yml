@@ -4,6 +4,7 @@ on:
     paths:
       - "sim/web/assemble_site.py"
       - "sim/web/build_mjswan.py"
+      - "sim/web/panda_physical_stack.py"
       - "sim/web/physical_task_scenes.py"
       - "sim/web/steering_bridge.js"
       - "sim/web/model_motion_library.py"
@@ -17,6 +18,7 @@ on:
     paths:
       - "sim/web/assemble_site.py"
       - "sim/web/build_mjswan.py"
+      - "sim/web/panda_physical_stack.py"
       - "sim/web/physical_task_scenes.py"
       - "sim/web/steering_bridge.js"
       - "sim/web/model_motion_library.py"
