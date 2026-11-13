@@ -39,6 +39,7 @@ type BuildInfo = {
   manufacturer_robots: string[];
   experimental_policy_robot?: string;
   p37_checkpoint_sha256?: string;
+  panda_pick_place?: { mode: string; qualified_native_contact_and_replay: boolean; learned_p37_policy: boolean; control_sha256: string; frames: number; control_hz: number; final_target_error_m: number; };
   panda_physical_cube_stack?: {
     mode: string;
     qualified_native_contact_and_replay: boolean;
@@ -428,6 +429,13 @@ export function App() {
               )}
               <small>Observed from MuJoCo cube poses and gripper opening.
                 Contact qualification is established separately by native simulation and replay.</small>
+            </div>}
+            {pickActive && build?.panda_pick_place && <div className="p37-scripted-evidence">
+              <strong>Build-gated native grasp / lift / transport / release / placement</strong>
+              <span>{build.panda_pick_place.frames} controls · {build.panda_pick_place.control_hz} Hz ·
+                final target error {build.panda_pick_place.final_target_error_m.toFixed(3)} m</span>
+              <small>Deterministic controller, separate from learned P37 policy.
+                Native physics and independent replay are required for publication.</small>
             </div>}
             {pandaActive && !pickActive && build?.panda_physical_cube_stack && <div
               className="p37-scripted-evidence" aria-label="Panda source experiment evidence">
