@@ -73,6 +73,54 @@ def _light_scene(spec: mujoco.MjSpec, robot: RobotScene) -> None:
         )
 
 
+def _task_checkpoint(spec: mujoco.MjSpec, robot: RobotScene) -> None:
+    """Create an inert visual waypoint in the same coordinate frame as MuJoCo.
+
+    This is a measurable target, not an actor, motion clip, or hidden controller.
+    It has no collision response and cannot advance a task on its own. The
+    runtime reports actual body displacement / hinge travel to the UI.
+    """
+    targets = {
+        "unitree_g1": 1.0,
+        "unitree_h1": 1.0,
+        "booster_t1": 0.9,
+        "unitree_go2": 1.1,
+        "boston_dynamics_spot": 1.2,
+        "anymal_c": 1.0,
+        "hello_robot_stretch": 0.8,
+    }
+    if robot.id in targets:
+        x = targets[robot.id]
+        spec.worldbody.add_geom(
+            name="p37_task_waypoint_floor",
+            type=mujoco.mjtGeom.mjGEOM_CYLINDER,
+            pos=[x, 0.0, 0.012],
+            size=[0.28, 0.012, 0.0],
+            rgba=[0.21, 0.43, 0.32, 0.72],
+            contype=0,
+            conaffinity=0,
+        )
+        spec.worldbody.add_geom(
+            name="p37_task_waypoint_center",
+            type=mujoco.mjtGeom.mjGEOM_SPHERE,
+            pos=[x, 0.0, 0.16],
+            size=[0.045, 0.045, 0.045],
+            rgba=[0.89, 0.93, 0.82, 1.0],
+            contype=0,
+            conaffinity=0,
+        )
+    elif robot.id == "crazyflie_2":
+        spec.worldbody.add_geom(
+            name="p37_task_hover_reference",
+            type=mujoco.mjtGeom.mjGEOM_SPHERE,
+            pos=[0.0, 0.0, 0.65],
+            size=[0.06, 0.06, 0.06],
+            rgba=[0.32, 0.59, 0.44, 0.55],
+            contype=0,
+            conaffinity=0,
+        )
+
+
 def build(
     menagerie: Path,
     base_path: str = "/simulator/",
@@ -112,6 +160,7 @@ def build(
             raise FileNotFoundError(f"Missing physical robot model: {path}")
         spec = mujoco.MjSpec.from_file(str(path))
         _light_scene(spec, robot)
+        _task_checkpoint(spec, robot)
         scene = project.add_scene(
             spec=spec,
             name=robot.name,

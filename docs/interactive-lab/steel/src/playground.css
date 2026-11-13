@@ -467,3 +467,29 @@ body,.app-shell{color:#242827!important}
 .p37-steering-telemetry strong{color:#25352a;font-weight:600}
 .p37-steer-help{font-size:11px;line-height:1.55;color:#6f7b72;margin:0;max-width:650px}
 @media(max-width:700px){.p37-steer-pad{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.p37-steer-pad button{min-width:0;padding:7px 4px;min-height:53px}.p37-steer-panel{padding:12px}.p37-steer-pad button small{font-size:9px}}
+
+/* Measured, task-focused laboratory workbench. */
+.p37-task-experiment{padding:25px clamp(18px,2.4vw,34px);border-top:1px solid #dce3dc;
+  border-bottom:1px solid #dce3dc;background:#f7f9f7}
+.p37-task-topline{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;
+  font-size:10px;font-weight:700;letter-spacing:.11em;color:#6b7e70}
+.p37-task-topline span:last-child{color:#26533e}
+.p37-task-experiment h2{font-size:clamp(19px,2vw,26px);font-weight:550;letter-spacing:-.035em;
+  color:#182d25;margin:10px 0 7px}
+.p37-task-experiment>p{font-size:13px;line-height:1.55;margin:0;color:#64756b;max-width:720px}
+.p37-task-progress{display:grid;gap:10px;margin-top:18px}
+.p37-task-progress progress{display:block;width:100%;height:7px;appearance:none;border:0;
+  border-radius:7px;overflow:hidden;background:#e0e6e0}
+.p37-task-progress progress::-webkit-progress-bar{background:#e0e6e0}
+.p37-task-progress progress::-webkit-progress-value{background:#213e2e;border-radius:7px}
+.p37-task-progress progress::-moz-progress-bar{background:#213e2e}
+.p37-task-progress>div{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  font-size:12px;color:#657367}
+.p37-task-progress strong{font-size:14px;font-variant-numeric:tabular-nums;color:#1a3328}
+.p37-task-experiment .p37-task-boundary{margin-top:14px;color:#65766c;font-size:11px}
+.p37-task-next{border-top:1px solid #e1e6df;margin-top:18px;padding-top:12px;
+  display:flex;justify-content:space-between;gap:14px;flex-wrap:wrap;font-size:11px;
+  color:#748077}
+.p37-task-next a{color:#254a33;text-decoration:underline;text-underline-offset:3px;
+  overflow-wrap:anywhere}
+@media(max-width:650px){.p37-task-experiment{padding:20px 16px}}
