@@ -102,8 +102,11 @@ def _panda_frames(
 def build(menagerie: Path, actions: Path, output: Path) -> dict:
     with np.load(actions, allow_pickle=False) as recorded:
         controls = np.asarray(recorded["actions"], dtype=np.float64)
-    report = {"renderer": "MuJoCo Python offscreen", "image_source": "manufacturer meshes",
-              "scenes": []}
+    report = {
+        "renderer": "MuJoCo Python offscreen",
+        "image_source": "manufacturer meshes",
+        "scenes": [],
+    }
     for robot_id in (
         "franka_panda",
         "unitree_go2",
@@ -126,14 +129,16 @@ def build(menagerie: Path, actions: Path, output: Path) -> dict:
             _render(model, capture, target, VIEWS[key])
             if target.stat().st_size < 12_000:
                 raise RuntimeError(f"Scene preview suspiciously small: {target}")
-            report["scenes"].append({
-                "task_id": key,
-                "robot_id": robot_id,
-                "file": target.name,
-                "size_bytes": target.stat().st_size,
-                "actual_mujoco_scene": True,
-                "native_panda_motor_replay": robot_id == "franka_panda",
-            })
+            report["scenes"].append(
+                {
+                    "task_id": key,
+                    "robot_id": robot_id,
+                    "file": target.name,
+                    "size_bytes": target.stat().st_size,
+                    "actual_mujoco_scene": True,
+                    "native_panda_motor_replay": robot_id == "franka_panda",
+                }
+            )
     if len(report["scenes"]) != len(VIEWS):
         raise RuntimeError("Missing rendered physical task gallery scene")
     (output / "manifest.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
