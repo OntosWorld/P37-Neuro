@@ -126,7 +126,13 @@ def simulate(model: mujoco.MjModel, reference_controls: np.ndarray | None = None
             if transported and open_jaw and not left and not right:
                 released = True
             distance = float(np.linalg.norm(cube[:2] - TARGET[:2]))
-            qvel = data.qvel[model.joint(CUBE + "_free").dofadr[0]:][:6]
+            free_joint = next(
+                j for j in range(model.njnt)
+                if int(model.jnt_bodyid[j]) == cube_body and
+                model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE
+            )
+            dof = int(model.jnt_dofadr[free_joint])
+            qvel = data.qvel[dof:dof + 6]
             settled = (released and on_bench and distance <= 0.055 and
                        0.565 <= cube[2] <= 0.605 and
                        float(np.linalg.norm(qvel)) < 0.12)
