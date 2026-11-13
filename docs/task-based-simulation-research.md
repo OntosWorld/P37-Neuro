@@ -44,7 +44,7 @@ The richer target tasks below are **integration candidates, not implemented capa
 | Unitree Go2 | Patrol checkpoint | Traverse a raised curb, turn, inspect station | ManiSkill UnitreeGo2-Reach + MuJoCo locomotion; traversed route with contact/rollover limits |
 | Boston Dynamics Spot | Inspection zone | Navigate a cluttered factory aisle and return | MuJoCo Playground; route progress, collision and intervention count |
 | ANYmal C | Survey checkpoint | Step across rough rocks / low obstacles to target | ManiSkill AnymalC-Reach; terrain contact, height and route checks |
-| Franka Panda | Measured joint excursion | Pick and stack cubes, then try towel handling | ManiSkill/robosuite/SoftMimicGen; object grasp, lift, placement and release check |
+| Franka Panda | Measured joint excursion | Pick and stack cubes, then port Franka towel folding | ManiSkill/robosuite/SoftMimicGen; object grasp, lift, placement and release check |
 | Universal Robots UR5e | Measured precision joint excursion | Peg insertion and bin sorting | robosuite/DexSuite; object and hole tolerance/contact check |
 | Hello Robot Stretch | Delivery waypoint | Collect an item, navigate to another station, place it | Stretch MuJoCo / RoboCasa; grasp, base route, release and object terminal pose |
 | Crazyflie 2 | Measured altitude change | Stabilize, fly through a gate, land | MuJoCo + tested flight controller; attitude/range/time gate predicates |
@@ -68,11 +68,15 @@ Production-quality folding needs:
 - evaluated folding objective (corner alignment, crease extent, overlap,
   cloth settling), not an animation threshold.
 
-SoftMimicGen supplies a credible research reference, but its published
-towel-fold task is for YAM. To show it on P37 in a truthful manner, add
-manufacturer-derived YAM or ALOHA as a supported robot **after** model/license
-validation, or port/retrain an equivalent policy on a verified current
-embodiment. Do not rename a YAM rollout as a Panda or G1 task.
+SoftMimicGen's published task table includes **Franka towel folding**
+(`Isaac-Fold-Towel-Franka-IK-Rel-v0`) and YAM towel folding
+(`Isaac-Fold-Towel-Yam-Joint-v0`). Because Franka Panda is already in the
+P37 catalog, it is the preferred **first folding integration candidate**.
+Port the actual Franka task assets, object state and compatible controller;
+validate the exact Panda joint ordering, deformable solver, action frame and
+license before playing a recording in our viewer. The YAM bimanual experiment
+can be evaluated later as a new embodiment. Do not label an Isaac Lab rollout
+as a physically rerun browser MuJoCo task without a real import/validation.
 
 ## Architecture contract for the full task platform
 
