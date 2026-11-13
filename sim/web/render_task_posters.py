@@ -110,15 +110,17 @@ def render(menagerie: Path, destination: Path) -> dict:
         Image.fromarray(pixels).save(poster, "WEBP", quality=86, method=5)
         if poster.stat().st_size < 7000:
             raise RuntimeError(f"Native poster suspiciously small: {robot.id}")
-        provenance["posters"].append({
-            "robot_id": robot.id,
-            "filename": poster.name,
-            "model": robot.model + "/scene.xml",
-            "width": WIDTH,
-            "height": HEIGHT,
-            "pixels_from_native_renderer": True,
-            "panda_lift_frame_from_actual_motors": robot.id == "franka_panda",
-        })
+        provenance["posters"].append(
+            {
+                "robot_id": robot.id,
+                "filename": poster.name,
+                "model": robot.model + "/scene.xml",
+                "width": WIDTH,
+                "height": HEIGHT,
+                "pixels_from_native_renderer": True,
+                "panda_lift_frame_from_actual_motors": robot.id == "franka_panda",
+            }
+        )
         print(f"POSTER {robot.id}: {poster.stat().st_size:,} bytes", flush=True)
     (destination / "provenance.json").write_text(
         json.dumps(provenance, indent=2) + "\n", encoding="utf-8"
