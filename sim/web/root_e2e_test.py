@@ -175,9 +175,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
                 "?.textContent?.includes('cube alignment')",
                 timeout=120000,
             )
-            assert "stack not confirmed" in page.locator(
-                ".p37-task-experiment"
-            ).inner_text().lower()
+            assert (
+                "stack not confirmed" in page.locator(".p37-task-experiment").inner_text().lower()
+            )
             page.screenshot(path=str(screenshots / "panda-real-model.png"), timeout=90000)
             page.locator(".p37-real-panel .info-row").filter(has_text="Controller").locator(
                 "strong"
@@ -210,9 +210,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page.get_by_role("button", name="Stop scripted attempt").wait_for(timeout=15000)
             page.screenshot(path=str(screenshots / "go2-scripted-task.png"), timeout=90000)
             page.get_by_role("button", name="Stop scripted attempt").click()
-            page.get_by_role("button", name="Run assisted terrain attempt").wait_for(
-                timeout=15000
-            )
+            page.get_by_role("button", name="Run assisted terrain attempt").wait_for(timeout=15000)
             page.locator(".p37-real-panel .info-row").filter(has_text="Controller").locator(
                 "strong"
             ).filter(has_text="Dataset motor replay").wait_for(timeout=15000)
@@ -233,9 +231,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             ).wait_for(timeout=30000)
             page.get_by_role("button", name="Live physical tasks").click()
             assert page.locator("iframe.p37-recorded-viewer").count() == 0
-            assert "scene=unitree_go2" in page.locator(
-                "iframe.menagerie-viewer"
-            ).get_attribute("src")
+            assert "scene=unitree_go2" in page.locator("iframe.menagerie-viewer").get_attribute(
+                "src"
+            )
             browser.close()
     finally:
         server.shutdown()
