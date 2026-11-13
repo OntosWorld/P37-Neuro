@@ -146,7 +146,9 @@
       readyReported = true;
     }
     frame++;
-    if (frame % 8 !== 0) return;
+    // Send an initial position immediately, and sample every rendered frame
+    // while the user is steering. Metal/headless renderers may run below 8 fps.
+    if (frame !== 1 && frame % 8 !== 0 && !accelerating && turn === 0) return;
     // A free joint's qpos address holds the actual world position [x,y,z].
     // Do not depend on derived render-body xpos buffers, which can be absent
     // or delayed on headless Metal/GPU builds.
