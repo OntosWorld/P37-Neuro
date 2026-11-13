@@ -55,8 +55,12 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         if not poster.is_file() or poster.stat().st_size < 7000:
             raise RuntimeError(f"Missing or invalid physical poster: {filename}")
     panda_cover = next(e for e in entries if e["robot_id"] == "franka_panda")
-    if panda_cover.get("panda_lift_frame_from_actual_motors") is not True:
-        raise RuntimeError("Featured Panda poster must use an actual physical lift frame")
+    if panda_cover.get("panda_motor_replay_selected") is not True:
+        raise RuntimeError("Featured Panda poster must load native motor replay")
+    # Native manipulation evidence is checked independently below; a browser
+    # preview alone does not prove that the cube was lifted in WebAssembly.
+    if not isinstance(panda_cover.get("panda_live_cube_lift_observed"), bool):
+        raise RuntimeError("Panda browser cube state evidence is missing")
     # Keep only native, manufacturer-derived robot geometry in the published
     # website. The former Steel reference URDFs / unused assets are excluded.
     for legacy in ("robots", "vendor"):
