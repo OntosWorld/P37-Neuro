@@ -118,6 +118,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             )
             assert page.get_by_role("button", name="Hold motion").is_visible()
             assert page.get_by_role("button", name="Forward").is_visible()
+            assert page.get_by_role("region", name="Measured robot task experiment").is_visible()
+            assert page.get_by_text("Move to the inspection point").is_visible()
+            assert page.get_by_role("progressbar", name="Measured task progress").is_visible()
             assert page.get_by_role("button", name="Turn left").is_visible()
             assert "Download this robot" not in page.locator("main").inner_text()
             page.get_by_role("button", name="Articulation").click()
@@ -148,6 +151,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page.screenshot(path=str(screenshots / "g1-p37-live-inference.png"), timeout=90000)
             page.get_by_role("combobox", name="Select a robot").select_option("franka_panda")
             assert "Fixed-base robot" in page.locator(".p37-steer-panel").inner_text()
+            assert page.get_by_text("Move a real arm joint to a target").is_visible()
             assert page.get_by_role("button", name="Forward").count() == 0
             assert "scene=franka_panda" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
@@ -163,6 +167,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert "scene=unitree_go2" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
+            assert page.get_by_text("Patrol to a waypoint").is_visible()
             page.frame_locator("iframe.menagerie-viewer").locator("canvas").first.wait_for(
                 state="visible", timeout=120000
             )
@@ -204,6 +209,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
         "all_robot_motion_datasets": True,
         "physical_user_steering": True,
         "download_ui_removed": True,
+        "task_objectives_and_metrics": True,
         "desktop_mobile": True,
         "panda_model_loaded": True,
         "unqualified_models_not_mislabeled": True,
