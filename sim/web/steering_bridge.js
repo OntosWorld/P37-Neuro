@@ -19,6 +19,8 @@
   let frame = 0;
   let priorPosition = null;
   let originPosition = null;
+  let measuredJoint = -1;
+  let jointOrigin = null;
   const robot = new URLSearchParams(window.location.search).get('scene') || '';
 
   function send(payload) {
@@ -102,12 +104,26 @@
       readyReported = false;
       priorPosition = null;
       originPosition = null;
+      jointOrigin = null;
+      measuredJoint = -1;
+      for (let j = 0; j < model.njnt; j++) {
+        // MuJoCo hinge joint type is 3; never substitute a free-base pose.
+        if (model.jnt_type[j] === 3) { measuredJoint = j; break; }
+      }
+      frame = 0;
       resetInputs();
     }
     if (selectedBody < 0) {
-      if (!readyReported) {
+      frame++;
+      if (!readyReported || frame % 8 === 0) {
+        const address = measuredJoint < 0 ? -1 : model.jnt_qposadr[measuredJoint];
+        const angle = address >= 0 ? Number(data.qpos[address]) : NaN;
+        if (Number.isFinite(angle) && jointOrigin === null) jointOrigin = angle;
         send({ status: 'fixed', controllable: false,
-          message: 'Fixed-base robot: joint motion only; it cannot walk or drive.' });
+          jointDelta: Number.isFinite(angle) && jointOrigin !== null
+            ? Number(Math.abs(angle - jointOrigin).toFixed(5)) : undefined,
+          jointName: 'Hinge ' + Math.max(1, measuredJoint + 1),
+          message: 'Measured native hinge motion; fixed arm cannot walk or drive.' });
         readyReported = true;
       }
       return;
@@ -190,6 +206,8 @@
     priorPosition = xyz;
     send({ status: 'running', controllable: true,
       x: xyz[0], y: xyz[1], z: xyz[2],
+      relativeX: Number(dx.toFixed(4)), relativeY: Number(dy.toFixed(4)),
+      relativeZ: Number((xyz[2] - originPosition[2]).toFixed(4)),
       distance: Number(distance.toFixed(3)), moved: Number(moved.toFixed(4)),
       steering: accelerating || turn !== 0 });
   }
