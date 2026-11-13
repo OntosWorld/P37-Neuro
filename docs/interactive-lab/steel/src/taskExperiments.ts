@@ -4,7 +4,7 @@
  * learned task execution. External benchmark references are integration leads,
  * not automatically compatible replay datasets.
  */
-export type TaskKind = 'checkpoint' | 'terrain' | 'joint-excursion' | 'altitude' | 'cube-stack' | 'delivery';
+export type TaskKind = 'checkpoint' | 'terrain' | 'joint-excursion' | 'altitude' | 'cube-stack' | 'pick-place' | 'delivery';
 export type TaskExperiment = {
   id: string;
   robotId: string;
@@ -29,6 +29,10 @@ export type TaskTelemetry = {
   objectDistance?: number;
   stackHeight?: number;
   stackStable?: boolean;
+  taskLiftObserved?: boolean;
+  taskCarryObserved?: boolean;
+  taskReleaseObserved?: boolean;
+  taskSequenceComplete?: boolean;
   objectDelivered?: boolean;
   observedObjects?: number;
   scriptedTaskRunning?: boolean;
@@ -36,6 +40,14 @@ export type TaskTelemetry = {
 };
 
 export const TASK_EXPERIMENTS: Record<string, TaskExperiment> = {
+  franka_pick_place: {
+    id:'panda-pick-place', robotId:'franka_panda', title:'Pick up and place a physical cube',
+    objective:'Grasp a cube with two fingers, lift and carry it across the bench, release at the target, and verify a stable tabletop placement.',
+    kind:'pick-place', target:0.055,
+    upstream:'MuJoCo Menagerie · Franka Panda',
+    upstreamUrl:'https://github.com/google-deepmind/mujoco_menagerie',
+    nextTask:'Held-out grasp and placement under different object poses, sizes and friction values',
+  },
   unitree_g1: {
     id:'g1-checkpoint', robotId:'unitree_g1', title:'Move to the inspection point',
     objective:'Steer G1 toward the marked checkpoint while observing its upright state.',
@@ -120,6 +132,19 @@ export const TASK_EXPERIMENTS: Record<string, TaskExperiment> = {
 
 export function taskProgress(task: TaskExperiment, t: TaskTelemetry) {
   const bounded = (n: number) => Math.max(0, Math.min(1, n));
+  if (task.kind === 'pick-place') {
+    const distance = t.objectDistance;
+    const observed = [t.taskLiftObserved, t.taskCarryObserved, t.taskReleaseObserved];
+    const milestones = observed.filter(Boolean).length;
+    return {
+      progress: t.taskSequenceComplete ? 1 : Math.min(.90, milestones / 4),
+      reached: t.taskSequenceComplete === true,
+      measure: distance === undefined ? 'Waiting for cube' :
+        distance.toFixed(3) + ' m from target · ' +
+        (t.taskSequenceComplete ? 'physically settled' : 'verifying placement'),
+      goal: 'Contact-supported grasp, carry, release and 20 stable target samples',
+    };
+  }
   if (task.kind === 'cube-stack') {
     const separation = t.objectDistance;
     return {
