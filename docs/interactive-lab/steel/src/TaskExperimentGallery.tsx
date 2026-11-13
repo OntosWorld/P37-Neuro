@@ -88,8 +88,8 @@ export function TaskGallery({ activeId, onSelect, baseUrl }: Props) {
       )}
     </div>
     <div className="task-gallery-footnote">
-      <p><strong>Task status matters.</strong> The Panda stack and pick-place reference require native
-        grasp, lift, release and placement controller. Navigation scenes use assisted
+      <p><strong>Task status matters.</strong> The Panda stack has a verified native reference; the pick-and-place task is
+        independently gated on contact, lift, transport, release and placement. Navigation scenes use assisted
         physics; the Stretch workcell and G1 learned controller are still experimental.</p>
       <span>Manufacturer-derived robots · Native contact simulation · Source-linked evidence</span>
     </div>
