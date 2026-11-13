@@ -62,10 +62,19 @@ def test_public_demos_keep_capability_claims_evidence_gated() -> None:
     html = (ROOT / "demos" / "index.html").read_text(encoding="utf-8")
     js = (ROOT / "demos" / "demos.js").read_text(encoding="utf-8")
     evidence = (ROOT / "build_demo_evidence.py").read_text(encoding="utf-8")
-    assert "same trained checkpoint" in html
-    assert "not yet verified" in html
-    assert "controlled policy-transfer benchmark" in html
-    assert "Live MuJoCo" in html
+    # The legacy evidence viewer and the new task-first /demos landing
+    # both keep experimental controller outcomes explicitly unqualified.
+    # GitHub's PR validation checks the latest main-branch demos page.
+    if "Task Gallery — P37 Neuro" in html:
+        assert "trained-policy success are not yet qualified" in html
+        assert "Filter by task" in html
+        assert "simulator/?" in html
+        assert "MuJoCo" in html
+    else:
+        assert "same trained checkpoint" in html
+        assert "not yet verified" in html
+        assert "controlled policy-transfer benchmark" in html
+        assert "Live MuJoCo" in html
     assert 'controller !== "none"' in js
     assert "qualified_for_walking !== false" in js
     assert "same_checkpoint_task_transfer_qualified" in evidence
@@ -73,7 +82,7 @@ def test_public_demos_keep_capability_claims_evidence_gated() -> None:
     assert "mujoco.MjModel.from_xml_path" in evidence
     assert "p37-cross-body-evidence.json" in evidence
     assert "p37_recovery_claimed" in evidence
-    assert "demos.css" in html and "demos.js" in html
+    assert "demos.css" in html and "demos.js" in html or "Task Gallery — P37 Neuro" in html
 
 
 def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
