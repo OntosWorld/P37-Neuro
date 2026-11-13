@@ -126,7 +126,11 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         "motion_dataset_modes_per_robot": 3,
         "all_robot_motion_playback": True,
         "physical_task_scene_version": 2,
-        "task_experiences": ["live_assisted_physics", "source_recorded_replay", "experimental_p37_policy"],
+        "task_experiences": [
+            "live_assisted_physics",
+            "source_recorded_replay",
+            "experimental_p37_policy",
+        ],
         "recorded_task_source": "amandlek/mimicgen_datasets; CC BY 4.0",
         "panda_loader": "native-MuJoCo-Menagerie-scene",
         "trained_p37_policy_attached": True,
