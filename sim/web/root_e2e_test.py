@@ -151,7 +151,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page.screenshot(path=str(screenshots / "g1-p37-live-inference.png"), timeout=90000)
             page.get_by_role("combobox", name="Select a robot").select_option("franka_panda")
             assert "Fixed-base robot" in page.locator(".p37-steer-panel").inner_text()
-            assert page.get_by_text("Move a real arm joint to a target").is_visible()
+            assert page.get_by_text("Sweep a Panda arm joint by 0.15 rad").is_visible()
             assert page.get_by_role("button", name="Forward").count() == 0
             assert "scene=franka_panda" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
