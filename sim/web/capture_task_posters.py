@@ -155,8 +155,11 @@ def capture(simulator: Path, destination: Path) -> dict:
                             "pixels_from_mujoco_browser_renderer": True,
                             "panda_motor_replay_selected": robot.id == "franka_panda",
                             "panda_live_cube_lift_observed": (
-                                bool(observation and observation["cubeZ"] is not None
-                                     and observation["cubeZ"] > 0.66)
+                                bool(
+                                    observation
+                                    and observation["cubeZ"] is not None
+                                    and observation["cubeZ"] > 0.66
+                                )
                             ),
                         }
                     )
