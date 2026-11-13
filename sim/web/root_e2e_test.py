@@ -56,8 +56,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     assert {r["id"] for r in robots} <= scenes.keys()
     assert scenes["unitree_g1"].get("policies"), "Missing browser ONNX controller"
     assert any(
-        p["id"] == "panda_physical_cube_stack_scripted"
-        for p in scenes["franka_panda"]["policies"]
+        p["id"] == "panda_physical_cube_stack_scripted" for p in scenes["franka_panda"]["policies"]
     ), "Validated physical Panda stack replay is not attached"
     motions = json.loads((site / "simulator/motion_data/index.json").read_text(encoding="utf-8"))
     assert set(motions["motions"]) == {r["id"] for r in robots}
