@@ -19,16 +19,15 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
-from scipy.spatial.transform import Rotation
-
 from physical_task_scenes import add_physical_task_scene
+from scipy.spatial.transform import Rotation
 
 RATE = 50
 CONTROL_DT = 1.0 / RATE
 TIP_LOCAL = np.array([0.0, 0.0, 0.103])
 HAND_TARGET_ROT = Rotation.from_euler("xyz", [math.pi, 0.0, 0.0])
 SOURCE = np.array([0.45, -0.16, 0.565])
-DESTINATION = np.array([0.61, 0.12, 0.638])
+DESTINATION = np.array([0.53, 0.12, 0.638])
 
 
 def load_model(menagerie: Path) -> mujoco.MjModel:
@@ -88,7 +87,10 @@ def solve_ik(
         mujoco.mj_forward(model, working)
         tip, orientation = tool_pose(working, hand)
         delta = position - tip
-        angular = (HAND_TARGET_ROT * orientation.inv()).as_rotvec()
+        # Enforce tool pointing downward while allowing free wrist yaw.
+        # The z-axis constraint avoids singularity at far lateral targets.
+        tool_z = orientation.apply([0.0, 0.0, 1.0])
+        angular = np.cross(tool_z, [0.0, 0.0, -1.0])
         err_p, err_r = np.linalg.norm(delta), np.linalg.norm(angular)
         if err_p < 0.004 and err_r < 0.07:
             break
@@ -128,16 +130,16 @@ def _cube_state(model: mujoco.MjModel, data: mujoco.MjData, name: str) -> np.nda
 def _waypoints() -> list[tuple[str, np.ndarray, float, float]]:
     src, dst = SOURCE, DESTINATION
     return [
-        ("settle", src + [0, 0, 0.20], 255.0, 0.6),
-        ("approach", src + [0, 0, 0.19], 255.0, 2.4),
+        ("settle", src + np.array([0, 0, 0.20]), 255.0, 0.6),
+        ("approach", src + np.array([0, 0, 0.19]), 255.0, 2.4),
         ("descend", src.copy(), 255.0, 2.0),
         ("grasp", src.copy(), 0.0, 1.5),
-        ("lift", src + [0, 0, 0.22], 0.0, 2.4),
-        ("carry", dst + [0, 0, 0.18], 0.0, 2.6),
+        ("lift", src + np.array([0, 0, 0.22]), 0.0, 2.4),
+        ("carry", dst + np.array([0, 0, 0.18]), 0.0, 2.6),
         ("place", dst.copy(), 0.0, 1.9),
         ("release", dst.copy(), 255.0, 1.6),
-        ("retreat", dst + [0, 0, 0.20], 255.0, 1.7),
-        ("verify", dst + [0, 0, 0.20], 255.0, 1.5),
+        ("retreat", dst + np.array([0, 0, 0.20]), 255.0, 1.7),
+        ("verify", dst + np.array([0, 0, 0.20]), 255.0, 1.5),
     ]
 
 
@@ -176,6 +178,8 @@ def simulate(
     events: list[dict] = []
     stage_results = []
     grasp_contact = 0
+    left_frames = right_frames = palm_frames = 0
+    recent_left = recent_right = 0
     lifted = False
     released = False
     settled = 0
@@ -205,7 +209,12 @@ def simulate(
             blue = _cube_state(model, data, "p37_stack_blue")
             amber = _cube_state(model, data, "p37_stack_amber")
             left, right, on_stack = contact_flags(model, data)
-            closed_contact = left and right and float(data.qpos[finger]) < 0.033
+            left_frames += int(left)
+            right_frames += int(right)
+            recent_left = min(12, recent_left + 1) if left else max(0, recent_left - 1)
+            recent_right = min(12, recent_right + 1) if right else max(0, recent_right - 1)
+            closed_contact = (recent_left >= 2 and recent_right >= 2
+                              and float(data.qpos[finger]) < 0.034)
             if closed_contact:
                 grasp_contact += 1
             if (grasp_contact >= 5 and blue[2] > 0.66
@@ -244,6 +253,8 @@ def simulate(
             "tool": [round(float(v), 3) for v in tool_pose(data, hand)[0]],
             "grip": events[-1]["finger_qpos"],
             "two_finger_frames": grasp_contact,
+            "left_contact_frames": left_frames,
+            "right_contact_frames": right_frames,
             "lifted": lifted,
             "released": released,
             "settled_frames": settled,
@@ -256,6 +267,8 @@ def simulate(
         "frames": len(controls),
         "control_hz": RATE,
         "contact_grasp_observed": grasp_contact >= 5,
+        "left_contact_frames": left_frames,
+        "right_contact_frames": right_frames,
         "lift_observed": lifted,
         "release_observed": released,
         "stable_stack_observed": settled >= 12,
@@ -300,7 +313,7 @@ def run(menagerie: Path, output: Path, *, require_success: bool) -> dict:
         )
         return info
     if require_success:
-        raise RuntimeError("Panda scripted controller failed actual contact/lift/release/stack checks")
+        raise RuntimeError("Panda controller failed physical grasp/lift/release/stack checks")
     return record["report"]
 
 
