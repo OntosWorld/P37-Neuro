@@ -127,16 +127,16 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page = browser.new_page(viewport={"width": 1512, "height": 982})
             response = page.goto(origin, wait_until="domcontentloaded", timeout=45000)
             assert response is not None and response.status == 200
-            page.get_by_role(
-                "heading", name="Watch the robot complete the task."
-            ).wait_for(timeout=35000)
+            page.get_by_role("heading", name="Watch the robot complete the task.").wait_for(
+                timeout=35000
+            )
             assert page.get_by_role("region", name="Panda physical task demonstration").is_visible()
             assert page.get_by_role("region", name="Browse physical robot tasks").is_visible()
             assert page.get_by_role("button", name="Inspect Stack two cubes").is_visible()
             assert page.get_by_role("button", name="Inspect Cross an obstacle course").is_visible()
-            assert "scene=franka_panda" in page.locator(
-                "iframe.menagerie-viewer"
-            ).get_attribute("src")
+            assert "scene=franka_panda" in page.locator("iframe.menagerie-viewer").get_attribute(
+                "src"
+            )
             movie = page.locator("video.p37-task-film-video")
             assert movie.count() == 1
             assert "films/panda-cube-stack.mp4" in movie.locator("source").get_attribute("src")
