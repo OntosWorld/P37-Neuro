@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import faulthandler
 import json
+import subprocess
 from pathlib import Path
 
 import mujoco
@@ -94,32 +95,82 @@ def _model(menagerie: Path, robot_id: str) -> mujoco.MjModel:
 def _panda_frames(
     model: mujoco.MjModel,
     controls: np.ndarray,
+    video_path: Path,
 ) -> dict[str, mujoco.MjData]:
     if controls.ndim != 2 or controls.shape[1] != 8 or len(controls) < 880:
         raise ValueError("Physically qualified Panda motor trace is missing or corrupt")
     snapshots: dict[str, mujoco.MjData] = {}
     data = initial_data(model)
     substeps = round((1.0 / 50.0) / float(model.opt.timestep))
-    for frame in range(len(controls)):
-        data.ctrl[:] = controls[frame]
-        for _ in range(substeps):
-            mujoco.mj_step(model, data)
-        if frame == 385:
-            snapshot = mujoco.MjData(model)
-            snapshot.qpos[:] = data.qpos
-            snapshot.qvel[:] = data.qvel
-            snapshot.ctrl[:] = data.ctrl
-            snapshot.time = data.time
-            mujoco.mj_forward(model, snapshot)
-            snapshots["panda-stack"] = snapshot
-        if frame == len(controls) - 1:
-            snapshot = mujoco.MjData(model)
-            snapshot.qpos[:] = data.qpos
-            snapshot.qvel[:] = data.qvel
-            snapshot.ctrl[:] = data.ctrl
-            snapshot.time = data.time
-            mujoco.mj_forward(model, snapshot)
-            snapshots["panda-recorded"] = snapshot
+    model.vis.global_.offwidth = max(WIDTH, int(model.vis.global_.offwidth))
+    model.vis.global_.offheight = max(HEIGHT, int(model.vis.global_.offheight))
+    _robot, lookat, distance, azimuth, elevation = VIEWS["panda-stack"]
+    camera = mujoco.MjvCamera()
+    mujoco.mjv_defaultCamera(camera)
+    camera.type = mujoco.mjtCamera.mjCAMERA_FREE
+    camera.lookat[:] = lookat
+    camera.distance = distance
+    camera.azimuth = azimuth
+    camera.elevation = elevation
+    # A real video, generated from the same native physical motor trajectory:
+    # sample 12.5 fps from grasp through settled placement, without modifying
+    # any recorded object state. No synthetic interpolation or animation.
+    video_path.parent.mkdir(parents=True, exist_ok=True)
+    renderer = mujoco.Renderer(model, width=WIDTH, height=HEIGHT)
+    encoder = subprocess.Popen(
+        [
+            "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+            "-f", "rawvideo", "-pixel_format", "rgb24",
+            "-video_size", f"{WIDTH}x{HEIGHT}", "-framerate", "12.5",
+            "-i", "pipe:0", "-an", "-c:v", "libx264", "-preset", "ultrafast",
+            "-crf", "26", "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+            str(video_path),
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    video_frames = 0
+    try:
+        for frame in range(len(controls)):
+            data.ctrl[:] = controls[frame]
+            for _ in range(substeps):
+                mujoco.mj_step(model, data)
+            if frame >= 210 and frame % 4 == 0:
+                renderer.update_scene(data, camera=camera)
+                if encoder.stdin is None:
+                    raise RuntimeError("FFmpeg video encoder pipe unavailable")
+                encoder.stdin.write(renderer.render().tobytes())
+                video_frames += 1
+            if frame == 385:
+                snapshot = mujoco.MjData(model)
+                snapshot.qpos[:] = data.qpos
+                snapshot.qvel[:] = data.qvel
+                snapshot.ctrl[:] = data.ctrl
+                snapshot.time = data.time
+                mujoco.mj_forward(model, snapshot)
+                snapshots["panda-stack"] = snapshot
+            if frame == len(controls) - 1:
+                snapshot = mujoco.MjData(model)
+                snapshot.qpos[:] = data.qpos
+                snapshot.qvel[:] = data.qvel
+                snapshot.ctrl[:] = data.ctrl
+                snapshot.time = data.time
+                mujoco.mj_forward(model, snapshot)
+                snapshots["panda-recorded"] = snapshot
+    finally:
+        if encoder.stdin is not None:
+            encoder.stdin.close()
+        result = encoder.wait(timeout=120)
+        renderer.close()
+    if result != 0 or video_frames < 130 or not video_path.is_file():
+        raise RuntimeError("Physically simulated Panda task video capture failed")
+    if video_path.stat().st_size < 50000:
+        raise RuntimeError("Native Panda task clip unexpectedly small")
+    print(
+        f"Rendered {video_frames} genuine Panda physics frames: {video_path.stat().st_size} bytes",
+        flush=True,
+    )
     if set(snapshots) != {"panda-stack", "panda-recorded"}:
         raise RuntimeError("Qualified Panda task did not reach capture checkpoints")
     return snapshots
@@ -142,7 +193,7 @@ def build(menagerie: Path, actions: Path, output: Path) -> dict:
     ):
         model = _model(menagerie, robot_id)
         if robot_id == "franka_panda":
-            captures = _panda_frames(model, controls)
+            captures = _panda_frames(model, controls, output / "panda-stack.mp4")
         else:
             data = mujoco.MjData(model)
             if model.nkey:
@@ -167,6 +218,12 @@ def build(menagerie: Path, actions: Path, output: Path) -> dict:
                     "native_panda_motor_replay": robot_id == "franka_panda",
                 }
             )
+    report["featured_video"] = {
+        "file": "panda-stack.mp4",
+        "native_physics_frames": True,
+        "controller": "contact_verified_scripted_reference",
+        "trained_p37_policy": False,
+    }
     if len(report["scenes"]) != len(VIEWS):
         raise RuntimeError("Missing rendered physical task gallery scene")
     (output / "manifest.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
