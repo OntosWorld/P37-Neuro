@@ -31,7 +31,7 @@ jobs:
       - name: Fetch manufacturer-derived Panda
         run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
       - name: Run real contact manipulation and replay
-        run: python sim/web/panda_physical_stack.py --menagerie _menagerie --output _panda_trial
+        run: python sim/web/panda_physical_stack.py --menagerie _menagerie --output _panda_trial --require-success
       - name: Upload measured traces and diagnostics
         if: always()
         uses: actions/upload-artifact@v4
