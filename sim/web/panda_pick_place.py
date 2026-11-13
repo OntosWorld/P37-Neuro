@@ -12,7 +12,6 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
-
 from panda_physical_stack import (
     CONTROL_DT,
     RATE,
