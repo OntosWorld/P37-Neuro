@@ -38,7 +38,7 @@ export const GALLERY_TASKS: GalleryTask[] = [
     category: 'Manipulation', route: 'pick',
     status: 'Build-gated physical task',
     source: 'MuJoCo Menagerie · native Panda',
-    image: 'panda-stack.jpg',
+    image: 'panda-pick-place.jpg',
     sourceImage: menagerie + 'franka_emika_panda/panda.png',
     action: 'Run physical pick-and-place',
     evidence: 'Separate cube/tabletop scene; contact and placement qualification is build-gated',
