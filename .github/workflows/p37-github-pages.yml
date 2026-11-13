@@ -3,7 +3,7 @@ on:
   pull_request:
     paths:
       - "sim/web/assemble_site.py"
-      - "sim/web/render_task_posters.py"
+      - "sim/web/capture_task_posters.py"
       - "sim/web/build_mjswan.py"
       - "sim/web/panda_physical_stack.py"
       - "sim/web/physical_task_scenes.py"
@@ -18,7 +18,7 @@ on:
     branches: [main]
     paths:
       - "sim/web/assemble_site.py"
-      - "sim/web/render_task_posters.py"
+      - "sim/web/capture_task_posters.py"
       - "sim/web/build_mjswan.py"
       - "sim/web/panda_physical_stack.py"
       - "sim/web/physical_task_scenes.py"
@@ -68,16 +68,12 @@ jobs:
             --menagerie _menagerie \
             --base-path /P37-Neuro/simulator/ \
             --p37-artifact _p37_policy
-      - name: Render native physical robot task gallery posters
-        env:
-          MUJOCO_GL: osmesa
-          PYOPENGL_PLATFORM: osmesa
+      - name: Capture real MuJoCo WebGL task gallery posters
         run: |
-          sudo apt-get update -qq
-          sudo apt-get install -y -qq libosmesa6 libosmesa6-dev
-          python -m pip install Pillow PyOpenGL
-          python sim/web/render_task_posters.py \
-            --menagerie _menagerie \
+          python -m pip install "playwright>=1.55,<2" Pillow
+          python -m playwright install --with-deps chromium
+          python sim/web/capture_task_posters.py \
+            --simulator sim/web/dist \
             --output docs/interactive-lab/steel/public/task-posters
       - name: Build Steel WebGPU task gallery
         working-directory: docs/interactive-lab/steel
