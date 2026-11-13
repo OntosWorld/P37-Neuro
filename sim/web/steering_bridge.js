@@ -12,6 +12,7 @@
   const KEYS = Object.freeze(['forward', 'back', 'left', 'right', 'turnLeft', 'turnRight']);
   const input = Object.fromEntries(KEYS.map(key => [key, false]));
   let selectedBody = -1;
+  let baseQposAddress = -1;
   let lastModel = null;
   let totalMass = 1;
   let readyReported = false;
@@ -66,6 +67,14 @@
     if (model !== lastModel) {
       lastModel = model;
       selectedBody = locateBase(model);
+      baseQposAddress = -1;
+      for (let joint = 0; joint < model.njnt; joint++) {
+        if (model.jnt_type[joint] === 0 &&
+            model.jnt_bodyid[joint] === selectedBody) {
+          baseQposAddress = model.jnt_qposadr[joint];
+          break;
+        }
+      }
       totalMass = Math.max(0.1, Array.from(model.body_mass || []).reduce(
         (sum, value) => sum + Math.max(0, Number(value) || 0), 0
       ));
@@ -138,12 +147,16 @@
     }
     frame++;
     if (frame % 8 !== 0) return;
-    const pos = data.xpos;
-    if (!pos || pos.length <= body * 3 + 2) return;
+    // A free joint's qpos address holds the actual world position [x,y,z].
+    // Do not depend on derived render-body xpos buffers, which can be absent
+    // or delayed on headless Metal/GPU builds.
+    const pos = data.qpos;
+    const indexPosition = baseQposAddress;
+    if (!pos || indexPosition < 0 || pos.length <= indexPosition + 2) return;
     const xyz = [
-      Number(pos[body * 3]) || 0,
-      Number(pos[body * 3 + 1]) || 0,
-      Number(pos[body * 3 + 2]) || 0,
+      Number(pos[indexPosition]) || 0,
+      Number(pos[indexPosition + 1]) || 0,
+      Number(pos[indexPosition + 2]) || 0,
     ];
     if (!originPosition) originPosition = xyz;
     const dx = xyz[0] - originPosition[0];
