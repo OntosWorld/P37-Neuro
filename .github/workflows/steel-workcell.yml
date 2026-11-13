@@ -86,7 +86,8 @@ jobs:
           python sim/web/root_e2e_test.py \
             --site _pages \
             --url-prefix /P37-Neuro/ \
-            --screenshots _robot_visual_evidence
+            --screenshots _robot_visual_evidence \
+            --skip-gallery-previews
       - name: Keep robot screenshots and policy-gate evidence
         if: always()
         uses: actions/upload-artifact@v4
