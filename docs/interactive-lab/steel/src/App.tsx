@@ -7,6 +7,7 @@ type Robot = {
 };
 type Catalog = { robots: Robot[] };
 type MotionMode = 'motion_cycle' | 'articulation' | 'hold' | 'p37_experimental';
+type Experience = 'simulation' | 'recorded' | 'policy';
 type MotionClip = {
   robot_id: string; id: string; name: string; source: string;
   dataset_file: string; frames: number; control_hz: number;
@@ -23,6 +24,9 @@ type SteeringTelemetry = {
   message?: string; steering?: boolean;
   relativeX?: number; relativeY?: number; relativeZ?: number;
   jointDelta?: number; jointName?: string;
+  objectDistance?: number; stackHeight?: number; stackStable?: boolean;
+  objectDelivered?: boolean; observedObjects?: number;
+  scriptedTaskRunning?: boolean; scriptedTaskElapsed?: number;
 };
 type BuildInfo = {
   trained_p37_policy_attached: boolean;
@@ -48,6 +52,7 @@ const CATEGORIES = ['All', 'Humanoids', 'Quadrupeds', 'Manipulators', 'Mobile', 
 export function App() {
   const [catalog, setCatalog] = useState<Robot[]>([]);
   const [selected, setSelected] = useState('unitree_g1');
+  const [experience, setExperience] = useState<Experience>('simulation');
   const [motion, setMotion] = useState<MotionMode>('motion_cycle');
   const [lastMotion, setLastMotion] = useState<MotionMode>('motion_cycle');
   const [category, setCategory] = useState('All');
@@ -173,6 +178,13 @@ export function App() {
         relativeZ: Number.isFinite(msg.relativeZ)?msg.relativeZ:undefined,
         jointDelta: Number.isFinite(msg.jointDelta)?msg.jointDelta:undefined,
         jointName: typeof msg.jointName==='string'?msg.jointName:undefined,
+        objectDistance: Number.isFinite(msg.objectDistance)?msg.objectDistance:undefined,
+        stackHeight: Number.isFinite(msg.stackHeight)?msg.stackHeight:undefined,
+        stackStable: msg.stackStable === true,
+        objectDelivered: msg.objectDelivered === true,
+        observedObjects: Number.isInteger(msg.observedObjects)?msg.observedObjects:undefined,
+        scriptedTaskRunning: msg.scriptedTaskRunning === true,
+        scriptedTaskElapsed: Number.isFinite(msg.scriptedTaskElapsed)?msg.scriptedTaskElapsed:undefined,
       });
     };
     window.addEventListener('message',receive);
@@ -182,6 +194,7 @@ export function App() {
     if (next === 'p37_experimental' && !p37Available) return;
     if (next !== 'hold') setLastMotion(next);
     releaseSteer();
+    setExperience(next === 'p37_experimental' ? 'policy' : 'simulation');
     setMotion(next);
     setTelemetry({status:'waiting'});
     setStageLoaded(false);
@@ -196,11 +209,35 @@ export function App() {
   const selectRobot = (robot: Robot) => {
     releaseSteer();
     setSelected(robot.id);
+    setExperience('simulation');
     setTelemetry({status:'waiting'});
     setMotion('motion_cycle');
     setLastMotion('motion_cycle');
     setStageLoaded(false);
     setReload(x => x + 1);
+  };
+  const changeExperience = (next: Experience) => {
+    if (next === experience) return;
+    releaseSteer();
+    setTelemetry({status:'waiting'});
+    setStageLoaded(false);
+    if (next === 'policy') {
+      if (!build?.trained_p37_policy_attached ||
+          build.experimental_policy_robot !== 'unitree_g1') return;
+      setSelected('unitree_g1');
+      setMotion('p37_experimental');
+    } else if (experience === 'policy') {
+      setMotion('motion_cycle');
+    }
+    setExperience(next);
+    setReload(n => n + 1);
+  };
+  const toggleReferenceTask = () => {
+    if (experiment?.kind !== 'terrain') return;
+    iframeRef.current?.contentWindow?.postMessage({
+      type:'p37:steering', robot:selected,
+      action:telemetry.scriptedTaskRunning ? 'stop-task' : 'start-task'
+    }, window.location.origin);
   };
   const url = import.meta.env.BASE_URL + 'simulator/?project=p37_robot_models&scene='
     + encodeURIComponent(selected)
