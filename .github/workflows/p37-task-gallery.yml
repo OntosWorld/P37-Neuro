@@ -36,7 +36,7 @@ jobs:
       - name: Install headless MuJoCo and native imaging
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq libegl1 libgl1-mesa-dri
+          sudo apt-get install -y -qq libegl1 libgl1-mesa-dri ffmpeg
           python -m pip install "mujoco>=3.3,<4" "numpy>=1.26" "scipy>=1.13" "Pillow>=11" "PyOpenGL>=3.1.9"
       - name: Fetch original manufacturer robot geometry
         run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
