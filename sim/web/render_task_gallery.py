@@ -14,12 +14,11 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
-from PIL import Image
-
 from build_mjswan import _light_scene, _task_checkpoint
 from catalog import ROBOTS
 from panda_physical_stack import initial_data
 from physical_task_scenes import add_physical_task_scene
+from PIL import Image
 
 WIDTH = 960
 HEIGHT = 600
@@ -105,7 +104,13 @@ def build(menagerie: Path, actions: Path, output: Path) -> dict:
         controls = np.asarray(recorded["actions"], dtype=np.float64)
     report = {"renderer": "MuJoCo Python offscreen", "image_source": "manufacturer meshes",
               "scenes": []}
-    for robot_id in ("franka_panda", "unitree_go2", "anymal_c", "hello_robot_stretch", "unitree_g1"):
+    for robot_id in (
+        "franka_panda",
+        "unitree_go2",
+        "anymal_c",
+        "hello_robot_stretch",
+        "unitree_g1",
+    ):
         model = _model(menagerie, robot_id)
         if robot_id == "franka_panda":
             captures = _panda_frames(model, controls)
