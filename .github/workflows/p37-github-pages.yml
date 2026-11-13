@@ -5,6 +5,7 @@ on:
       - "sim/web/assemble_site.py"
       - "sim/web/build_mjswan.py"
       - "sim/web/panda_physical_stack.py"
+      - "sim/web/render_panda_demo.py"
       - "sim/web/physical_task_scenes.py"
       - "sim/web/steering_bridge.js"
       - "sim/web/model_motion_library.py"
@@ -19,6 +20,7 @@ on:
       - "sim/web/assemble_site.py"
       - "sim/web/build_mjswan.py"
       - "sim/web/panda_physical_stack.py"
+      - "sim/web/render_panda_demo.py"
       - "sim/web/physical_task_scenes.py"
       - "sim/web/steering_bridge.js"
       - "sim/web/model_motion_library.py"
@@ -71,6 +73,18 @@ jobs:
             --menagerie _menagerie \
             --base-path /P37-Neuro/simulator/ \
             --p37-artifact _p37_policy
+      - name: Render contact-verified Panda task video from native MuJoCo
+        env:
+          MUJOCO_GL: osmesa
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libosmesa6 libgl1-mesa-dri ffmpeg
+          python sim/web/render_panda_demo.py \
+            --menagerie _menagerie \
+            --controls sim/web/motion_data/panda-physical-stack.npz \
+            --qualification sim/web/motion_data/panda-physical-stack.json \
+            --video sim/web/dist/motion_data/panda-cube-stack.mp4 \
+            --poster sim/web/dist/motion_data/panda-cube-stack.png
       - name: Publish only the canonical root experience
         run: python sim/web/assemble_site.py --output _pages
       - name: Validate root page and isolated browser assets

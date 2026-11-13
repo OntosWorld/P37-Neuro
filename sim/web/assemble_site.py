@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import shutil
+import sys
 from pathlib import Path
 
 from catalog import ROBOTS
@@ -41,6 +42,38 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     if not (simulator / "manifest.json").is_file():
         raise FileNotFoundError("Build manufacturer-derived MuJoCo scenes first")
     shutil.copytree(simulator, output / "simulator")
+    # The first-screen task film is a native MuJoCo render of a qualified
+    # motor trajectory, not a staged animation or an external sample video.
+    task_assets = simulator / "motion_data"
+    reel_manifest = task_assets / "panda-cube-stack-video.json"
+    if reel_manifest.is_file():
+        reel = json.loads(reel_manifest.read_text(encoding="utf-8"))
+        task_record = json.loads(
+            (task_assets / "panda-physical-stack.json").read_text(encoding="utf-8")
+        )
+        if (
+            reel.get("source_sha256") != task_record.get("sha256")
+            or reel.get("native_physics_verified") is not True
+            or reel.get("learned_p37_policy") is not False
+            or reel.get("frames", 0) < 350
+        ):
+            raise RuntimeError("Public task film has no verified physics provenance")
+        film = output / "films"
+        film.mkdir(parents=True, exist_ok=True)
+        for filename in ("panda-cube-stack.mp4", "panda-cube-stack.png"):
+            src = task_assets / filename
+            if not src.is_file() or src.stat().st_size < 10_000:
+                raise FileNotFoundError("Public task film asset missing: " + filename)
+            shutil.copy2(src, film / filename)
+        shutil.copy2(reel_manifest, film / reel_manifest.name)
+    elif sys.platform != "darwin":
+        # Linux Pages publishing is fail-closed: no film, no public release.
+        raise FileNotFoundError("Source-verified Panda task film missing")
+    else:
+        # macOS-only model/browser compatibility smoke: the native renderer
+        # produces the video on Linux in the *separate* strict Pages workflow.
+        # Never use a placeholder or fabricate a movie for this test job.
+        print("macOS physics compatibility gate: native task film generated on Linux")
     # Source-attributed MimicGen episodes are published as recorded DATA,
     # not driven through an unrelated physical robot controller.
     recorded = ROOT / "docs" / "interactive-lab" / "compare"

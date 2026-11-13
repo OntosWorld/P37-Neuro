@@ -10,6 +10,7 @@ import argparse
 import http.server
 import json
 import socketserver
+import sys
 import threading
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -40,6 +41,17 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     assert panda_task["learned_p37_policy"] is False
     assert panda_task["frames"] > 500
     assert panda_task["control_hz"] == 50
+    film = site / "films" / "panda-cube-stack.mp4"
+    poster = site / "films" / "panda-cube-stack.png"
+    if sys.platform != "darwin":
+        # Only the Linux publishing gate can certify the produced movie.
+        reel = json.loads((site / "films" / "panda-cube-stack-video.json").read_text())
+        assert film.is_file() and film.stat().st_size > 100_000
+        assert poster.is_file() and poster.stat().st_size > 15_000
+        assert reel["source_sha256"] == panda_task["control_sha256"]
+        assert reel["native_physics_verified"] is True
+        assert reel["learned_p37_policy"] is False
+        assert 17 <= reel["duration_seconds"] <= 20
     assert set(metadata["task_experiences"]) == {
         "live_assisted_physics",
         "source_recorded_replay",
@@ -118,7 +130,30 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page = browser.new_page(viewport={"width": 1512, "height": 982})
             response = page.goto(origin, wait_until="domcontentloaded", timeout=45000)
             assert response is not None and response.status == 200
-            page.get_by_role("heading", name="One brain. Different bodies.").wait_for(timeout=35000)
+            page.get_by_role("heading", name="Watch the robot complete the task.").wait_for(
+                timeout=35000
+            )
+            assert page.get_by_role("region", name="Panda physical task demonstration").is_visible()
+            assert page.get_by_role("region", name="Browse physical robot tasks").is_visible()
+            assert page.get_by_role("button", name="Inspect Stack two cubes").is_visible()
+            assert page.get_by_role("button", name="Inspect Cross an obstacle course").is_visible()
+            assert "scene=franka_panda" in page.locator("iframe.menagerie-viewer").get_attribute(
+                "src"
+            )
+            movie = page.locator("video.p37-task-film-video")
+            assert movie.count() == 1
+            assert "films/panda-cube-stack.mp4" in movie.locator("source").get_attribute("src")
+            if sys.platform != "darwin":
+                # Decode the actual native film, not merely the HTML source tag.
+                movie.evaluate("(el) => el.load()")
+                page.wait_for_function(
+                    "() => document.querySelector('video.p37-task-film-video')?.readyState >= 1",
+                    timeout=45000,
+                )
+                assert page.locator(".p37-task-film-fallback").count() == 0
+            page.screenshot(path=str(screenshots / "panda-task-first-hero.png"), timeout=90000)
+            # The full catalog remains accessible after the native task film.
+            page.get_by_role("combobox", name="Select a robot").select_option("unitree_g1")
             page.get_by_role("button", name="Unitree G1").wait_for(timeout=30000)
             assert page.locator(".robot-catalog button").count() == 10
             assert "reference arm" not in page.locator("main").inner_text().lower()

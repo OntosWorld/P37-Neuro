@@ -58,19 +58,40 @@ type Evidence = {
 type G1Evidence = { evaluation: { seeds: { fallen: boolean }[] }; qualification: string };
 
 const CATEGORIES = ['All', 'Humanoids', 'Quadrupeds', 'Manipulators', 'Mobile', 'Aerial'];
+const TASK_REEL = [
+  {label:'Approach', start:0},
+  {label:'Grip cube', start:5.0},
+  {label:'Lift object', start:6.5},
+  {label:'Carry across', start:8.9},
+  {label:'Place and release', start:11.5},
+  {label:'Verify stack', start:15.0},
+];
+const TASK_SHOWCASE = [
+  {id:'franka_panda', title:'Stack two cubes', descriptor:'Grasp, lift, carry, release and settle.',
+    source:'Scripted Panda · native MuJoCo', kind:'Completed reference'},
+  {id:'unitree_go2', title:'Cross an obstacle course', descriptor:'Navigate a curb and raised step with real contact.',
+    source:'Force-assisted terrain experiment', kind:'Assisted trial'},
+  {id:'anymal_c', title:'Traverse uneven ground', descriptor:'Attempt a collision-backed terrain course.',
+    source:'Force-assisted terrain experiment', kind:'Assisted trial'},
+  {id:'hello_robot_stretch', title:'Deliver a parcel', descriptor:'Inspect the physical object and receiving station.',
+    source:'No qualified pickup controller', kind:'Environment only'},
+];
 
 export function App() {
   const [catalog, setCatalog] = useState<Robot[]>([]);
-  const [selected, setSelected] = useState('unitree_g1');
+  const [selected, setSelected] = useState('franka_panda');
   const [experience, setExperience] = useState<Experience>('simulation');
-  const [motion, setMotion] = useState<MotionMode>('motion_cycle');
-  const [lastMotion, setLastMotion] = useState<MotionMode>('motion_cycle');
+  const [motion, setMotion] = useState<MotionMode>('panda_scripted_stack');
+  const [lastMotion, setLastMotion] = useState<MotionMode>('panda_scripted_stack');
   const [category, setCategory] = useState('All');
   const [panel, setPanel] = useState(false);
   const [reload, setReload] = useState(0);
   const [stageLoaded, setStageLoaded] = useState(false);
   const [telemetry, setTelemetry] = useState<SteeringTelemetry>({status:'waiting'});
   const iframeRef = useRef<HTMLIFrameElement|null>(null);
+  const reelRef = useRef<HTMLVideoElement|null>(null);
+  const [reelTime, setReelTime] = useState(0);
+  const [reelError, setReelError] = useState(false);
   const heldRef = useRef<Set<SteeringKey>>(new Set());
   const [error, setError] = useState('');
   const [build, setBuild] = useState<BuildInfo | null>(null);
@@ -115,6 +136,7 @@ export function App() {
     return () => abort.abort();
   }, []);
   const current = catalog.find(r => r.id === selected);
+  const reelStep = [...TASK_REEL].reverse().find(step => reelTime >= step.start) ?? TASK_REEL[0];
   const experiment = TASK_EXPERIMENTS[selected];
   const result = experiment ? taskProgress(experiment, telemetry) : null;
   const selection = useMemo(() => catalog.filter(robot =>
@@ -260,24 +282,103 @@ export function App() {
     <header className="site-header">
       <a className="brand" href="./">ONTOS <span>/ P37 NEURO</span></a>
       <nav aria-label="P37 navigation">
-        <a href="#simulator">Simulation</a>
+        <a href="#tasks">Task demonstrations</a>
+        <a href="#simulator">Live physics</a>
         <a href="#evidence">Research evidence</a>
         <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noreferrer">GitHub ↗</a>
       </nav>
       <span className="build-tag">POWERED BY P37-NEURO</span>
     </header>
     <main>
-      <section className="title-row">
-        <span className="overline">P37 / CROSS-EMBODIMENT ROBOTICS</span>
-        <h1>One brain. Different bodies.</h1>
-        <p className="intro">
-          Watch a source-attributed robot recording, explore live MuJoCo tasks or test
-          the experimental P37 controller on Unitree G1. Panda cube stacking,
-          quadruped obstacle courses and Stretch delivery use real simulated
-          objects and contacts. Panda runs a contact-verified deterministic motor
-          reference; qualified cross-body policies remain separate research work.
-        </p>
+      <section className="p37-task-hero" aria-label="Panda physical task demonstration">
+        <div className="p37-task-hero-copy">
+          <span className="p37-task-kicker">P37 / ROBOT TASK EXPERIMENTS</span>
+          <h1>Watch the robot <em>complete the task.</em></h1>
+          <p>Franka Panda grasps a cube, lifts it, carries it across a workbench,
+            releases it onto another cube, and leaves the stack standing.
+            The entire sequence runs through real MuJoCo contact physics.</p>
+          <div className="p37-task-hero-actions">
+            <a href="#simulator" className="p37-task-hero-primary"
+              onClick={() => {
+                const robot = catalog.find(r => r.id === 'franka_panda');
+                if (robot) selectRobot(robot);
+              }}>Open live 3D simulation <span aria-hidden="true">↗</span></a>
+            <button type="button" className="p37-task-replay" onClick={() => {
+              const video = reelRef.current;
+              if (!video) return;
+              video.currentTime = 0;
+              setReelTime(0);
+              void video.play().catch(() => {});
+            }}>Replay 18-second task <span aria-hidden="true">↺</span></button>
+          </div>
+          <div className="p37-task-hero-provenance">
+            <strong>Native physics verified</strong>
+            <span>Deterministic scripted controller · 50 Hz motor commands</span>
+            <span>No P37 learned manipulation claim</span>
+          </div>
+        </div>
+        <div className="p37-task-film">
+          {reelError && <div className="p37-task-film-fallback" role="status">
+            <strong>Recorded demonstration unavailable</strong>
+            <p>Open the live Panda simulation below to inspect the actual task.</p>
+            <a href="#simulator">Open live task ↗</a>
+          </div>}
+          <video ref={reelRef} className="p37-task-film-video"
+            style={reelError ? {display:'none'} : undefined}
+            aria-label="Native MuJoCo Panda cube grasp lift carry and stack"
+            muted autoPlay playsInline loop preload="metadata"
+            poster={import.meta.env.BASE_URL + 'films/panda-cube-stack.png'}
+            onTimeUpdate={e=>setReelTime(e.currentTarget.currentTime)}
+            onError={()=>setReelError(true)}>
+            <source src={import.meta.env.BASE_URL + 'films/panda-cube-stack.mp4'} type="video/mp4"/>
+          </video>
+          <div className="p37-task-film-top">
+            <span className="p37-task-film-live"><span/> SIMULATION RECORDING</span>
+            <span>FRANKA PANDA / NATIVE MUJOCO</span>
+          </div>
+          <div className="p37-task-film-bottom">
+            <div className="p37-task-film-running">
+              <small>EXECUTING</small>
+              <strong>{reelStep.label}</strong>
+            </div>
+            <span className="p37-task-film-time">{reelTime.toFixed(1)} / 18.2 s</span>
+          </div>
+        </div>
       </section>
+      <section className="p37-task-library" id="tasks" aria-label="Browse physical robot tasks">
+        <div className="p37-task-library-heading">
+          <div>
+            <span className="p37-task-kicker">SELECT A TASK</span>
+            <h2>Physical robot experiments</h2>
+          </div>
+          <p>Choose what a robot is attempting. Completed task execution,
+            assisted locomotion and environments awaiting a controller are
+            identified separately.</p>
+        </div>
+        <div className="p37-task-library-grid">
+          {TASK_SHOWCASE.map((task, index) => <button
+            type="button" className={'p37-task-library-item' +
+              (selected === task.id ? ' selected' : '')}
+            key={task.id} aria-label={'Inspect ' + task.title}
+            onClick={() => {
+              const robot = catalog.find(r=>r.id===task.id);
+              if (robot) selectRobot(robot);
+              document.getElementById('simulator')?.scrollIntoView({behavior:'smooth'});
+            }}>
+            <span className="p37-task-library-top"><span>0{index+1} / {task.id.replaceAll('_',' ').toUpperCase()}</span>
+              <span className="p37-task-card-action" aria-hidden="true">↗</span></span>
+            <strong>{task.title}</strong>
+            <span className="p37-task-library-description">{task.descriptor}</span>
+            <span className="p37-task-library-bottom"><span>{task.kind}</span><small>{task.source}</small></span>
+          </button>)}
+        </div>
+      </section>
+      <div className="p37-lab-heading">
+        <div><span className="p37-task-kicker">INTERACTIVE / REAL RIGID-BODY PHYSICS</span>
+          <h2>Inspect the live simulation.</h2></div>
+        <p>Orbit the camera, change robots, run a reference controller,
+          and read the measured result. The complete Panda task is selected first.</p>
+      </div>
       <section className="lab-grid" id="simulator" aria-label="Live manufacturer robot simulation">
         <div className="viewport">
           <div className="playground-scenes p37-scenes" role="group" aria-label="Choose robot category">
