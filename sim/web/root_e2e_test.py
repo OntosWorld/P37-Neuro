@@ -21,7 +21,10 @@ class LocalServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
     daemon_threads = True
 
 
-def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> dict:
+def test(
+    site: Path, screenshots: Path, *,
+    url_prefix: str = "/P37-Neuro/", require_gallery_previews: bool = True,
+) -> dict:
     site = site.resolve()
     screenshots.mkdir(parents=True, exist_ok=True)
     assert (site / "index.html").is_file()
@@ -47,19 +50,20 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     }
     assert (site / "recorded/index.html").is_file()
     assert (site / "recorded/samples/mimicgen-square-source.json").is_file()
-    previews = json.loads((site / "task-previews/manifest.json").read_text(encoding="utf-8"))
-    assert previews["renderer"] == "MuJoCo Python offscreen"
-    assert len(previews["scenes"]) == 6
-    assert previews["featured_video"]["file"] == "panda-stack.mp4"
-    assert previews["featured_video"]["native_physics_frames"] is True
-    movie = site / "task-previews/panda-stack.mp4"
-    assert movie.is_file() and movie.stat().st_size > 50000
-    assert movie.read_bytes()[4:8] == b"ftyp"
-    assert all(item["actual_mujoco_scene"] is True for item in previews["scenes"])
-    for item in previews["scenes"]:
-        image = site / "task-previews" / item["file"]
-        assert image.is_file() and image.stat().st_size > 12000
-        assert image.read_bytes().startswith(bytes((255, 216, 255)))
+    if require_gallery_previews:
+        previews = json.loads((site / "task-previews/manifest.json").read_text(encoding="utf-8"))
+        assert previews["renderer"] == "MuJoCo Python offscreen"
+        assert len(previews["scenes"]) == 6
+        assert previews["featured_video"]["file"] == "panda-stack.mp4"
+        assert previews["featured_video"]["native_physics_frames"] is True
+        movie = site / "task-previews/panda-stack.mp4"
+        assert movie.is_file() and movie.stat().st_size > 50000
+        assert movie.read_bytes()[4:8] == b"ftyp"
+        assert all(item["actual_mujoco_scene"] is True for item in previews["scenes"])
+        for item in previews["scenes"]:
+            image = site / "task-previews" / item["file"]
+            assert image.is_file() and image.stat().st_size > 12000
+            assert image.read_bytes().startswith(bytes((255, 216, 255)))
     cross = json.loads((site / "p37-cross-body-evidence.json").read_text(encoding="utf-8"))
     assert metadata["p37_checkpoint_sha256"] == cross["checkpoint_sha256"]
     assert cross["qualified_for_walking"] is False
@@ -140,11 +144,12 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert "panda-stack.mp4" in page.locator(
                 ".task-gallery-card video source"
             ).get_attribute("src")
-            page.wait_for_function(
-                "() => Array.from(document.querySelectorAll('.task-gallery-card img'))"
-                ".slice(0,3).every(img => img.complete && img.naturalWidth > 300)",
-                timeout=35000,
-            )
+            if require_gallery_previews:
+                page.wait_for_function(
+                    "() => Array.from(document.querySelectorAll('.task-gallery-card img'))"
+                    ".slice(0,3).every(img => img.complete && img.naturalWidth > 300)",
+                    timeout=35000,
+                )
             assert page.locator(".robot-catalog button").count() == 10
             assert "reference arm" not in page.locator("main").inner_text().lower()
             assert "compact arm" not in page.locator("main").inner_text().lower()
@@ -322,8 +327,12 @@ def main() -> None:
     parser.add_argument("--site", type=Path, required=True)
     parser.add_argument("--url-prefix", default="/P37-Neuro/")
     parser.add_argument("--screenshots", type=Path, required=True)
+    parser.add_argument("--skip-gallery-previews", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(test(args.site, args.screenshots, url_prefix=args.url_prefix), indent=2))
+    print(json.dumps(test(
+            args.site, args.screenshots, url_prefix=args.url_prefix,
+            require_gallery_previews=not args.skip_gallery_previews,
+        ), indent=2))
 
 
 if __name__ == "__main__":
