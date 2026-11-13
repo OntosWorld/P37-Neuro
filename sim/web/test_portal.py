@@ -88,7 +88,9 @@ def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
     assert "iframe" in root_app and "menagerie-viewer" in root_app
     assert "Select real robot body" in root_app
     assert "unitree_g1" in root_app
-    assert "One brain. Different bodies." in root_app
+    assert "Watch the robot" in root_app and "complete the task." in root_app
+    assert "panda-cube-stack.mp4" in root_app
+    assert "TASK_SHOWCASE" in root_app
     assert "P37 recurrent PPO" in root_app
     assert "Movement cycle" in root_app
     assert "Articulation" in root_app
