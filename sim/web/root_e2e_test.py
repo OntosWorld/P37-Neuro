@@ -61,6 +61,14 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
         for key, scene in scenes.items()
         if key != "unitree_g1"
     ), "Learned policy falsely attached to another body"
+    bridge = site / "simulator/steering_bridge.js"
+    assert bridge.is_file(), "Steering bridge missing from real MuJoCo scene"
+    js = bridge.read_text(encoding="utf-8")
+    assert "xfrc_applied" in js and "event.origin !== window.location.origin" in js
+    assert "p37:steering" in js and "p37:telemetry" in js
+    assert "steering_bridge.js" in (site / "simulator/index.html").read_text(
+        encoding="utf-8"
+    )
     for old_route in ("lab", "demos", "test"):
         assert not (site / old_route).exists()
     assert not (site / "studio.js").exists(), "Old procedural showroom is still published"
@@ -111,6 +119,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
                 "src"
             )
             assert page.get_by_role("button", name="Hold motion").is_visible()
+            assert page.get_by_role("button", name="Forward").is_visible()
+            assert page.get_by_role("button", name="Turn left").is_visible()
+            assert "Download this robot" not in page.locator("main").inner_text()
             page.get_by_role("button", name="Articulation").click()
             assert "policy=motor_articulation" in page.locator(
                 "iframe.menagerie-viewer"
@@ -138,6 +149,8 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             )
             page.screenshot(path=str(screenshots / "g1-p37-live-inference.png"), timeout=90000)
             page.get_by_role("combobox", name="Select a robot").select_option("franka_panda")
+            assert "Fixed-base robot" in page.locator(".p37-steer-panel").inner_text()
+            assert page.get_by_role("button", name="Forward").count() == 0
             assert "scene=franka_panda" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
@@ -152,6 +165,19 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert "scene=unitree_go2" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
+            page.frame_locator("iframe.menagerie-viewer").locator("canvas").first.wait_for(
+                state="visible", timeout=120000
+            )
+            page.get_by_text("Ready for input").wait_for(state="visible", timeout=120000)
+            page.keyboard.down("w")
+            page.wait_for_timeout(1700)
+            page.keyboard.up("w")
+            page.wait_for_timeout(350)
+            measured = page.locator(".p37-steering-telemetry strong").inner_text()
+            assert measured.endswith(" m traveled"), measured
+            displacement = float(measured.split(" ")[0])
+            assert displacement > 0.02, f"Steering did not move real Go2: {measured}"
+            page.screenshot(path=str(screenshots / "go2-user-steering.png"), timeout=90000)
             page.locator(".p37-real-panel .info-row").filter(has_text="Controller").locator(
                 "strong"
             ).filter(has_text="Dataset motor replay").wait_for(timeout=15000)
@@ -171,6 +197,8 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
         "native_robot_models": 10,
         "experimental_g1_policy": True,
         "all_robot_motion_datasets": True,
+        "physical_user_steering": True,
+        "download_ui_removed": True,
         "desktop_mobile": True,
         "panda_model_loaded": True,
         "unqualified_models_not_mislabeled": True,
