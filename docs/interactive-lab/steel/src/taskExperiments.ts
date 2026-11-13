@@ -86,7 +86,7 @@ export const TASK_EXPERIMENTS: Record<string, TaskExperiment> = {
   },
   franka_panda: {
     id:'panda-cube-stack', robotId:'franka_panda', title:'Stack two physical cubes',
-    objective:'Move the blue cube onto the amber cube using real Panda contacts. Two free-body objects, a workbench and measured stack alignment are simulated. Current joint replay is not a grasping expert.',
+    objective:'Move the blue cube onto the amber cube using real Panda contacts. Two free-body objects, a workbench and measured stack alignment are simulated. The validated scripted reference executes a real grasp, lift, carry, release and stack. This is not a P37 learned policy.',
     kind:'cube-stack', target:0.05,
     upstream:'SoftMimicGen · Franka towel fold task',
     upstreamUrl:'https://github.com/NVlabs/SoftMimicGen',
