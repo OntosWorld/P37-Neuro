@@ -35,6 +35,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     assert metadata["experimental_policy_robot"] == "unitree_g1"
     assert metadata["qualified_cross_body_transfer"] is False
     assert metadata["physical_task_scene_version"] == 2
+    assert metadata["task_gallery"]["native_robot_posters"] == 10
     panda_task = metadata["panda_physical_cube_stack"]
     assert panda_task["qualified_native_contact_and_replay"] is True
     assert panda_task["learned_p37_policy"] is False
@@ -45,6 +46,13 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
         "source_recorded_replay",
         "experimental_p37_policy",
     }
+    poster_dir = site / "task-posters"
+    provenance = json.loads((poster_dir / "provenance.json").read_text(encoding="utf-8"))
+    assert provenance["format"] == "p37-mujoco-browser-task-posters"
+    assert len(provenance["posters"]) == 10
+    for item in provenance["posters"]:
+        assert item["pixels_from_mujoco_browser_renderer"] is True
+        assert (poster_dir / item["filename"]).stat().st_size > 7000
     assert (site / "recorded/index.html").is_file()
     assert (site / "recorded/samples/mimicgen-square-source.json").is_file()
     cross = json.loads((site / "p37-cross-body-evidence.json").read_text(encoding="utf-8"))
@@ -118,7 +126,38 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page = browser.new_page(viewport={"width": 1512, "height": 982})
             response = page.goto(origin, wait_until="domcontentloaded", timeout=45000)
             assert response is not None and response.status == 200
-            page.get_by_role("heading", name="One brain. Different bodies.").wait_for(timeout=35000)
+            page.get_by_role("heading", name="Robots at work. Explore the simulations.").wait_for(
+                timeout=35000
+            )
+            assert page.get_by_role("region", name="Task-first simulation gallery").count() == 1
+            assert page.locator(".gallery-task-card").count() == 9
+            assert page.locator(".task-poster").count() == 10
+            page.wait_for_function(
+                "() => { const img = document.querySelector('.gallery-feature-stage .task-poster');"
+                " return img && img.complete && img.naturalWidth >= 100; }",
+                timeout=30000,
+            )
+            assert page.locator("iframe.menagerie-viewer").count() == 0
+            page.screenshot(path=str(screenshots / "task-gallery-desktop.png"), timeout=90000)
+            page.get_by_role("button", name="Navigation", exact=True).click()
+            assert page.locator(".gallery-task-card").count() == 3
+            page.get_by_role("button", name="All tasks", exact=True).click()
+            assert page.locator(".gallery-task-card").count() == 9
+            page.get_by_role(
+                "button", name="Open Franka Panda physical cube stacking simulation"
+            ).click()
+            assert page.url.endswith("#task=franka_panda")
+            assert page.get_by_role("heading", name="Stack two physical cubes").first.is_visible()
+            assert "policy=panda_physical_cube_stack_scripted" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
+            page.screenshot(path=str(screenshots / "panda-task-detail.png"), timeout=90000)
+            page.get_by_role("button", name="Back to all experiments").click()
+            assert page.url == origin
+            page.get_by_role(
+                "button", name="Open task: Reach an inspection point — Unitree G1"
+            ).click()
+            assert page.url.endswith("#task=unitree_g1")
             page.get_by_role("button", name="Unitree G1").wait_for(timeout=30000)
             assert page.locator(".robot-catalog button").count() == 10
             assert "reference arm" not in page.locator("main").inner_text().lower()
@@ -158,7 +197,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert "policy=p37_g1_experimental_recurrent_ppo" in page.locator(
                 "iframe.menagerie-viewer"
             ).get_attribute("src")
-            assert page.url == origin
+            assert page.url.endswith("#task=unitree_g1")
             page.frame_locator("iframe.menagerie-viewer").locator("canvas").first.wait_for(
                 state="visible", timeout=120000
             )
@@ -170,7 +209,11 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page.screenshot(path=str(screenshots / "g1-p37-live-inference.png"), timeout=90000)
             page.get_by_role("combobox", name="Select a robot").select_option("franka_panda")
             assert "Fixed-base robot" in page.locator(".p37-steer-panel").inner_text()
-            assert page.get_by_text("Stack two physical cubes").is_visible()
+            assert (
+                page.locator(".p37-task-experiment h2")
+                .get_by_text("Stack two physical cubes")
+                .is_visible()
+            )
             assert page.get_by_role("button", name="Replay validated Panda stack").is_visible()
             assert "policy=panda_physical_cube_stack_scripted" in page.locator(
                 "iframe.menagerie-viewer"
@@ -231,7 +274,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             # G1 and policy selection were verified before Go2. Keep this
             # physically moving Go2 scene for the mobile check instead of
             # forcing another expensive GPU scene reload after steering.
-            assert page.url == origin
+            assert page.url.endswith("#task=unitree_go2")
             assert "Dataset motor replay" in page.locator(".p37-real-panel").inner_text()
             page.set_viewport_size({"width": 390, "height": 844})
             page.wait_for_timeout(400)
@@ -248,12 +291,19 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert "scene=unitree_go2" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
+            page.get_by_role("button", name="Back to all experiments").click()
+            assert page.locator(".gallery-task-card").count() == 9
+            assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 3")
+            page.screenshot(path=str(screenshots / "task-gallery-mobile.png"), timeout=90000)
             browser.close()
     finally:
         server.shutdown()
         server.server_close()
     return {
         "single_root": True,
+        "task_first_gallery": True,
+        "native_scene_posters": 10,
+        "task_drilldown_and_back": True,
         "native_robot_models": 10,
         "experimental_g1_policy": True,
         "all_robot_motion_datasets": True,

@@ -29,6 +29,38 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     if output.exists():
         shutil.rmtree(output)
     shutil.copytree(dist, output)
+    # A task gallery must show actual manufacturer-derived robot geometry.
+    # Posters are rendered from the SAME MJCF scenes as the live simulator
+    # during this build; never silently ship empty or generic thumbnails.
+    poster_dir = output / "task-posters"
+    manifest_file = poster_dir / "provenance.json"
+    if not manifest_file.is_file():
+        raise FileNotFoundError("Task gallery model-derived poster evidence missing")
+    provenance = json.loads(manifest_file.read_text(encoding="utf-8"))
+    entries = provenance.get("posters", [])
+    if (
+        provenance.get("format") != "p37-mujoco-browser-task-posters"
+        or provenance.get("robot_count") != len(ROBOTS)
+        or {entry.get("robot_id") for entry in entries} != {robot.id for robot in ROBOTS}
+        or len(entries) != len(ROBOTS)
+    ):
+        raise RuntimeError("Task gallery poster provenance does not cover all ten robots")
+    for item in entries:
+        if item.get("pixels_from_mujoco_browser_renderer") is not True:
+            raise RuntimeError("Task gallery cannot publish non-MuJoCo robot posters")
+        filename = item.get("filename")
+        if filename != item["robot_id"] + ".webp":
+            raise RuntimeError("Untrusted gallery poster filename")
+        poster = poster_dir / filename
+        if not poster.is_file() or poster.stat().st_size < 7000:
+            raise RuntimeError(f"Missing or invalid physical poster: {filename}")
+    panda_cover = next(e for e in entries if e["robot_id"] == "franka_panda")
+    if panda_cover.get("panda_motor_replay_selected") is not True:
+        raise RuntimeError("Featured Panda poster must load native motor replay")
+    # Native manipulation evidence is checked independently below; a browser
+    # preview alone does not prove that the cube was lifted in WebAssembly.
+    if not isinstance(panda_cover.get("panda_live_cube_lift_observed"), bool):
+        raise RuntimeError("Panda browser cube state evidence is missing")
     # Keep only native, manufacturer-derived robot geometry in the published
     # website. The former Steel reference URDFs / unused assets are excluded.
     for legacy in ("robots", "vendor"):
@@ -171,6 +203,11 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
             "right_contact_frames": panda_record["right_finger_contact_frames"],
             "final_blue_xyz": panda_record["final_blue_xyz"],
             "final_amber_xyz": panda_record["final_amber_xyz"],
+        },
+        "task_gallery": {
+            "version": 1,
+            "native_robot_posters": len(entries),
+            "source": provenance["generated_from"],
         },
         "physical_task_scene_version": 2,
         "task_experiences": [

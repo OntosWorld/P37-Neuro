@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TASK_EXPERIMENTS, taskProgress } from './taskExperiments';
+import { TaskGallery } from './SimulationGallery';
+import { GALLERY_TASKS, getGalleryTask, type GalleryTask } from './taskGallery';
 
 type Robot = {
   id: string; name: string; model: string; kind: string;
@@ -60,11 +62,18 @@ type G1Evidence = { evaluation: { seeds: { fallen: boolean }[] }; qualification:
 const CATEGORIES = ['All', 'Humanoids', 'Quadrupeds', 'Manipulators', 'Mobile', 'Aerial'];
 
 export function App() {
+  const link = new URLSearchParams(window.location.hash.replace(/^#/, '')).get('task');
+  const initialTask = GALLERY_TASKS.find(t => t.robotId === link);
+  const [showGallery, setShowGallery] = useState(!initialTask);
   const [catalog, setCatalog] = useState<Robot[]>([]);
-  const [selected, setSelected] = useState('unitree_g1');
+  const [selected, setSelected] = useState(initialTask?.robotId ?? 'unitree_g1');
   const [experience, setExperience] = useState<Experience>('simulation');
-  const [motion, setMotion] = useState<MotionMode>('motion_cycle');
-  const [lastMotion, setLastMotion] = useState<MotionMode>('motion_cycle');
+  const [motion, setMotion] = useState<MotionMode>(
+    initialTask?.robotId === 'franka_panda' ? 'panda_scripted_stack' : 'motion_cycle'
+  );
+  const [lastMotion, setLastMotion] = useState<MotionMode>(
+    initialTask?.robotId === 'franka_panda' ? 'panda_scripted_stack' : 'motion_cycle'
+  );
   const [category, setCategory] = useState('All');
   const [panel, setPanel] = useState(false);
   const [reload, setReload] = useState(0);
@@ -116,6 +125,7 @@ export function App() {
   }, []);
   const current = catalog.find(r => r.id === selected);
   const experiment = TASK_EXPERIMENTS[selected];
+  const galleryTask = getGalleryTask(selected);
   const result = experiment ? taskProgress(experiment, telemetry) : null;
   const selection = useMemo(() => catalog.filter(robot =>
     category === 'All' || robot.kind === category), [catalog, category]);
@@ -219,15 +229,28 @@ export function App() {
     p37_experimental: 'p37_g1_experimental_recurrent_ppo',
     panda_scripted_stack: 'panda_physical_cube_stack_scripted',
   })[mode];
-  const selectRobot = (robot: Robot) => {
+  const selectRobotId = (id: string) => {
     releaseSteer();
-    setSelected(robot.id);
+    setSelected(id);
     setExperience('simulation');
     setTelemetry({status:'waiting'});
-    setMotion(robot.id === 'franka_panda' ? 'panda_scripted_stack' : 'motion_cycle');
-    setLastMotion(robot.id === 'franka_panda' ? 'panda_scripted_stack' : 'motion_cycle');
+    setMotion(id === 'franka_panda' ? 'panda_scripted_stack' : 'motion_cycle');
+    setLastMotion(id === 'franka_panda' ? 'panda_scripted_stack' : 'motion_cycle');
     setStageLoaded(false);
     setReload(x => x + 1);
+    window.history.replaceState(null, '', '#task=' + id);
+  };
+  const selectRobot = (robot: Robot) => selectRobotId(robot.id);
+  const openGalleryTask = (task: GalleryTask) => {
+    selectRobotId(task.robotId);
+    setShowGallery(false);
+    window.scrollTo({top:0,behavior:'instant'});
+  };
+  const backToGallery = () => {
+    releaseSteer();
+    setShowGallery(true);
+    window.history.replaceState(null, '', window.location.pathname + window.location.search);
+    window.scrollTo({top:0,behavior:'instant'});
   };
   const changeExperience = (next: Experience) => {
     if (next === experience) return;
@@ -260,23 +283,35 @@ export function App() {
     <header className="site-header">
       <a className="brand" href="./">ONTOS <span>/ P37 NEURO</span></a>
       <nav aria-label="P37 navigation">
-        <a href="#simulator">Simulation</a>
+        <a href="#gallery" onClick={backToGallery}>Experiments</a>
         <a href="#evidence">Research evidence</a>
         <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noreferrer">GitHub ↗</a>
       </nav>
-      <span className="build-tag">POWERED BY P37-NEURO</span>
+      <span className="build-tag">P37-NEURO / PHYSICAL TASK LAB</span>
     </header>
     <main>
-      <section className="title-row">
-        <span className="overline">P37 / CROSS-EMBODIMENT ROBOTICS</span>
-        <h1>One brain. Different bodies.</h1>
-        <p className="intro">
-          Watch a source-attributed robot recording, explore live MuJoCo tasks or test
-          the experimental P37 controller on Unitree G1. Panda cube stacking,
-          quadruped obstacle courses and Stretch delivery use real simulated
-          objects and contacts. Panda runs a contact-verified deterministic motor
-          reference; qualified cross-body policies remain separate research work.
-        </p>
+      {showGallery ? <TaskGallery onOpen={openGalleryTask} ready={catalog.length===10}/> : <>
+      <section className="task-detail-header" aria-label="Selected physical task">
+        <div className="task-detail-navigation">
+          <button className="task-detail-back" type="button" onClick={backToGallery}>
+            ← Back to all experiments</button>
+          <span className="task-detail-index">P37 RESEARCH LAB / EXPERIMENT {galleryTask.number} OF 10</span>
+        </div>
+        <div className="task-detail-top">
+          <div>
+            <span className="task-detail-kicker">{galleryTask.category.toUpperCase()} / {galleryTask.robotName}</span>
+            <h1>{galleryTask.title}</h1>
+            <p>{galleryTask.overview}</p>
+          </div>
+          <div className="task-detail-claim">{galleryTask.label}<br/>{galleryTask.provenance}</div>
+        </div>
+        <div className="task-detail-subhead">
+          <span>REAL MUJOCO WORLD · MANUFACTURER ROBOT GEOMETRY · BROWSER SIMULATION</span>
+          <button className="task-detail-next" type="button" onClick={() => {
+            const index = GALLERY_TASKS.findIndex(t=>t.robotId===selected);
+            openGalleryTask(GALLERY_TASKS[(index+1)%GALLERY_TASKS.length]);
+          }}>Next experiment ↗</button>
+        </div>
       </section>
       <section className="lab-grid" id="simulator" aria-label="Live manufacturer robot simulation">
         <div className="viewport">
@@ -302,6 +337,28 @@ export function App() {
                 p37Active ? 'P37 RECURRENT ONNX / EXPERIMENTAL' :
                 motion === 'hold' ? 'HOLD POSITION / NATIVE PHYSICS' :
                 'MOTION DATASET / NATIVE PHYSICS'}</span>
+            </div>
+          </div>
+          <div className="task-live-controls" role="group" aria-label="Task simulation controls">
+            <div>
+              <span>RUNNING EXPERIMENT {galleryTask.number} / 10</span>
+              <strong>{galleryTask.title}</strong>
+            </div>
+            <div className="task-live-actions">
+              {pandaActive && <button type="button" className="task-live-primary"
+                onClick={()=>setPlayback('panda_scripted_stack')}>
+                ▶ Replay grasp and stack</button>}
+              {experiment?.kind==='terrain' && <button type="button" className="task-live-primary"
+                onClick={toggleReferenceTask}>
+                {telemetry.scriptedTaskRunning ? 'Stop terrain attempt' : '▶ Run assisted terrain attempt'}
+              </button>}
+              {selected==='unitree_g1' && p37Available && <button type="button"
+                className="task-live-primary" onClick={()=>setPlayback('p37_experimental')}>
+                ▶ Test experimental P37 model</button>}
+              <button type="button" className="task-live-reset" onClick={()=>{
+                releaseSteer(); setTelemetry({status:'waiting'});
+                setStageLoaded(false); setReload(x=>x+1);
+              }}>↻ Reset scene</button>
             </div>
           </div>
           <div className="canvas-wrap p37-scene">
@@ -440,7 +497,13 @@ export function App() {
         </div>
         <aside className="playground-panel p37-real-panel">
           <div className="side-panel">
-            <div className="section-heading"><span>ROBOT LIBRARY</span><span>10 / VERIFIED MODELS</span></div>
+            <div className="p37-aside-task">
+              <div className="section-heading"><span>ACTIVE TASK</span><span>{galleryTask.number} / 10</span></div>
+              <h3>{galleryTask.title}</h3>
+              <p>{galleryTask.overview}</p>
+              <span>{galleryTask.label}</span>
+            </div>
+            <div className="section-heading"><span>ROBOT LIBRARY</span><span>10 / SOURCE MODELS</span></div>
             <label htmlFor="real-robot">Select a robot</label>
             <select id="real-robot" value={selected} onChange={e => {
               const robot = catalog.find(r => r.id === e.target.value);
@@ -497,6 +560,7 @@ export function App() {
           </div>
         </aside>
       </section>
+      </>}
       <section className="policy-evidence" id="evidence" aria-label="Recorded P37 native policy evidence">
         <div className="policy-evidence-heading">
           <span className="overline">MEASURED / REPRODUCIBLE RESEARCH</span>

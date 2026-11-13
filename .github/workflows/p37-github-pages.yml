@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - "sim/web/assemble_site.py"
+      - "sim/web/capture_task_posters.py"
       - "sim/web/build_mjswan.py"
       - "sim/web/panda_physical_stack.py"
       - "sim/web/physical_task_scenes.py"
@@ -17,6 +18,7 @@ on:
     branches: [main]
     paths:
       - "sim/web/assemble_site.py"
+      - "sim/web/capture_task_posters.py"
       - "sim/web/build_mjswan.py"
       - "sim/web/panda_physical_stack.py"
       - "sim/web/physical_task_scenes.py"
@@ -50,11 +52,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Build Steel WebGPU workcell
-        working-directory: docs/interactive-lab/steel
-        run: |
-          npm install --no-audit --no-fund
-          npm run build
       - name: Obtain reviewed P37 G1 experimental model
         uses: actions/download-artifact@v4
         with:
@@ -71,6 +68,18 @@ jobs:
             --menagerie _menagerie \
             --base-path /P37-Neuro/simulator/ \
             --p37-artifact _p37_policy
+      - name: Capture real MuJoCo WebGL task gallery posters
+        run: |
+          python -m pip install "playwright>=1.55,<2" Pillow
+          python -m playwright install --with-deps chromium
+          python sim/web/capture_task_posters.py \
+            --simulator sim/web/dist \
+            --output docs/interactive-lab/steel/public/task-posters
+      - name: Build Steel WebGPU task gallery
+        working-directory: docs/interactive-lab/steel
+        run: |
+          npm install --no-audit --no-fund
+          npm run build
       - name: Publish only the canonical root experience
         run: python sim/web/assemble_site.py --output _pages
       - name: Validate root page and isolated browser assets

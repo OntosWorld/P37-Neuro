@@ -88,13 +88,18 @@ def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
     assert "iframe" in root_app and "menagerie-viewer" in root_app
     assert "Select real robot body" in root_app
     assert "unitree_g1" in root_app
-    assert "One brain. Different bodies." in root_app
+    assert "TaskGallery" in root_app
+    task_gallery = (
+        ROOT.parents[1] / "docs" / "interactive-lab" / "steel" / "src" / "SimulationGallery.tsx"
+    ).read_text(encoding="utf-8")
+    assert "Robots at work." in task_gallery
+    assert "Watch the simulation" in task_gallery
     assert "P37 recurrent PPO" in root_app
     assert "Movement cycle" in root_app
     assert "Articulation" in root_app
     assert "Hold motion" in root_app
     assert "not a trained autonomous skill" in root_app.lower()
-    assert "POWERED BY P37-NEURO" in root_app
+    assert "P37-NEURO / PHYSICAL TASK LAB" in root_app
     assert "model_derived" in (ROOT / "model_motion_library.py").read_text(encoding="utf-8")
     assert "compact arm" not in root_app.lower()
     assert "extended arm" not in root_app.lower()
