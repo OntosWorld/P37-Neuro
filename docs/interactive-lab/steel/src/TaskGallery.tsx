@@ -45,7 +45,9 @@ export function TaskGallery({ activeId, onSelect, baseUrl }: Props) {
           <span className="task-card-image">
             <img loading={index < 3 ? 'eager' : 'lazy'}
               src={baseUrl + 'task-previews/' + task.image}
-              alt={'Native MuJoCo scene preview of ' + task.robotName}
+              alt={task.route === 'recorded'
+                ? 'MuJoCo Panda model reference, separate from the original recorded MimicGen data'
+                : 'Native MuJoCo scene preview of ' + task.robotName}
               onError={event => {
                 const image = event.currentTarget;
                 if (image.src !== task.sourceImage) {
@@ -54,10 +56,22 @@ export function TaskGallery({ activeId, onSelect, baseUrl }: Props) {
                 }
               }}
             />
+            {task.id === 'panda-stack' && <video
+              aria-hidden="true"
+              className="task-card-video"
+              autoPlay muted loop playsInline preload="metadata"
+              poster={baseUrl + 'task-previews/panda-stack.jpg'}
+              onError={event => { event.currentTarget.style.display = 'none'; }}>
+              <source src={baseUrl + 'task-previews/panda-stack.mp4'} type="video/mp4"/>
+            </video>}
             <span className="task-card-image-shade"/>
             <span className="task-card-top">
               <small>{task.kicker}</small>
-              <small className="task-card-source">MUJOCO / NATIVE MESH</small>
+              <small className="task-card-source">{task.route === 'recorded'
+                ? 'MODEL PREVIEW / SOURCE DATA'
+                : task.id === 'panda-stack'
+                  ? 'ACTUAL SIMULATED TASK'
+                  : 'MUJOCO / NATIVE MESH'}</small>
             </span>
             <span className="task-card-robot">{task.robotName}</span>
           </span>
