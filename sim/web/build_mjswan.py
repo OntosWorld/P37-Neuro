@@ -242,7 +242,9 @@ def build(
                 terminations={},
                 policy_joint_names=action_names,
                 policy_num_actions=clip["actuators"],
-                default=(robot.id not in ("unitree_g1", "franka_panda") and clip_id == "articulation"),
+                default=(
+                    robot.id not in ("unitree_g1", "franka_panda") and clip_id == "articulation"
+                ),
                 extras={
                     "source": "MuJoCo model-derived actuator motion dataset",
                     "dataset_file": clip["dataset_file"],
