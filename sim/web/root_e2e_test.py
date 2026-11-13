@@ -22,8 +22,11 @@ class LocalServer(socketserver.ThreadingMixIn, http.server.HTTPServer):
 
 
 def test(
-    site: Path, screenshots: Path, *,
-    url_prefix: str = "/P37-Neuro/", require_gallery_previews: bool = True,
+    site: Path,
+    screenshots: Path,
+    *,
+    url_prefix: str = "/P37-Neuro/",
+    require_gallery_previews: bool = True,
 ) -> dict:
     site = site.resolve()
     screenshots.mkdir(parents=True, exist_ok=True)
@@ -329,10 +332,17 @@ def main() -> None:
     parser.add_argument("--screenshots", type=Path, required=True)
     parser.add_argument("--skip-gallery-previews", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(test(
-            args.site, args.screenshots, url_prefix=args.url_prefix,
-            require_gallery_previews=not args.skip_gallery_previews,
-        ), indent=2))
+    print(
+        json.dumps(
+            test(
+                args.site,
+                args.screenshots,
+                url_prefix=args.url_prefix,
+                require_gallery_previews=not args.skip_gallery_previews,
+            ),
+            indent=2,
+        )
+    )
 
 
 if __name__ == "__main__":
