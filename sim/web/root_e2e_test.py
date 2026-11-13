@@ -54,7 +54,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     for item in previews["scenes"]:
         image = site / "task-previews" / item["file"]
         assert image.is_file() and image.stat().st_size > 12000
-        assert image.read_bytes().startswith(b"\\xff\\xd8\\xff")
+        assert image.read_bytes().startswith(bytes((255, 216, 255)))
     cross = json.loads((site / "p37-cross-body-evidence.json").read_text(encoding="utf-8"))
     assert metadata["p37_checkpoint_sha256"] == cross["checkpoint_sha256"]
     assert cross["qualified_for_walking"] is False
