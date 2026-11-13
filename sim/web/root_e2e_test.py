@@ -66,9 +66,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     js = bridge.read_text(encoding="utf-8")
     assert "xfrc_applied" in js and "event.origin !== window.location.origin" in js
     assert "p37:steering" in js and "p37:telemetry" in js
-    assert "steering_bridge.js" in (site / "simulator/index.html").read_text(
-        encoding="utf-8"
-    )
+    assert "steering_bridge.js" in (site / "simulator/index.html").read_text(encoding="utf-8")
     for old_route in ("lab", "demos", "test"):
         assert not (site / old_route).exists()
     assert not (site / "studio.js").exists(), "Old procedural showroom is still published"
