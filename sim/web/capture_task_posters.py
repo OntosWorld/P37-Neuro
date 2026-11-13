@@ -96,25 +96,33 @@ def capture(simulator: Path, destination: Path) -> dict:
                     canvas = page.locator("canvas").first
                     canvas.wait_for(state="visible", timeout=30000)
                     if robot.id == "franka_panda":
-                        # Check the real source cube freejoint position while the
-                        # validated motor table runs, before taking its poster.
-                        page.wait_for_function(
+                        # Capture the actual browser Panda scene after the motor
+                        # policy has started. Full native manipulation qualifies
+                        # separately; browser playback can be slower than real time
+                        # under software WebGL and must never be called a lifted
+                        # frame without measuring cube height.
+                        page.wait_for_timeout(2200)
+                        observation = page.evaluate(
                             """() => {
                               const runtime = window.__p37Engine?.runtime;
                               const model = runtime?.mjModel;
                               const data = runtime?.mjData;
-                              if (!model || !data || data.time < 8.0) return false;
-                              for (let j = 0; j < model.njnt; j++) {
-                                if (model.jnt_type[j] === 0) {
-                                  const address = model.jnt_qposadr[j];
-                                  return Number(data.qpos[address+2]) > 0.66;
+                              let cubeZ = null;
+                              if (model && data) {
+                                for (let j = 0; j < model.njnt; j++) {
+                                  if (model.jnt_type[j] === 0) {
+                                    cubeZ = Number(data.qpos[model.jnt_qposadr[j]+2]);
+                                    break;
+                                  }
                                 }
                               }
-                              return false;
-                            }""",
-                            timeout=120000,
+                              return {time: Number(data?.time ?? 0), cubeZ,
+                                ctrl: data?.ctrl ? Array.from(data.ctrl).slice(0,8) : []};
+                            }"""
                         )
+                        print(f"PANDA BROWSER OBSERVATION {json.dumps(observation)}", flush=True)
                     else:
+                        observation = None
                         page.wait_for_timeout(650)
                     pixels = canvas.screenshot(type="png", timeout=30000)
                     image = Image.open(io.BytesIO(pixels)).convert("RGB")
@@ -145,7 +153,11 @@ def capture(simulator: Path, destination: Path) -> dict:
                             "width": WIDTH,
                             "height": HEIGHT,
                             "pixels_from_mujoco_browser_renderer": True,
-                            "panda_lift_frame_from_actual_motors": robot.id == "franka_panda",
+                            "panda_motor_replay_selected": robot.id == "franka_panda",
+                            "panda_live_cube_lift_observed": (
+                                bool(observation and observation["cubeZ"] is not None
+                                     and observation["cubeZ"] > 0.66)
+                            ),
                         }
                     )
                     print(f"POSTER {robot.id}: {outfile.stat().st_size:,} bytes", flush=True)
