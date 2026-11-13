@@ -1,0 +1,42 @@
+name: P37 Panda Physical Manipulation
+on:
+  pull_request:
+    paths:
+      - "sim/web/panda_physical_stack.py"
+      - "sim/web/physical_task_scenes.py"
+      - ".github/workflows/panda-physical-task.yml"
+  push:
+    branches: [main]
+    paths:
+      - "sim/web/panda_physical_stack.py"
+      - "sim/web/physical_task_scenes.py"
+      - ".github/workflows/panda-physical-task.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  contact-verified-task:
+    name: Panda native grasp / lift / release / stack
+    runs-on: ubuntu-latest
+    timeout-minutes: 16
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install native MuJoCo dependencies
+        run: python -m pip install "mujoco>=3.2,<4" "numpy>=1.26" "scipy>=1.13"
+      - name: Fetch manufacturer-derived Panda
+        run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
+      - name: Run real contact manipulation and replay
+        run: python sim/web/panda_physical_stack.py --menagerie _menagerie --output _panda_trial
+      - name: Upload measured traces and diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-panda-physical-manipulation-diagnostics
+          path: _panda_trial/
+          if-no-files-found: warn
+          retention-days: 14
