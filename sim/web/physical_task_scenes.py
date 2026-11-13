@@ -175,7 +175,12 @@ def validate_task_scene(model: mujoco.MjModel, robot_id: str) -> None:
         if int(model.geom_contype[geom]) == 0 or int(model.geom_conaffinity[geom]) == 0:
             raise ValueError(f"task geom {robot_id}/{name} must have physical collision")
     if robot_id in {"franka_panda", "franka_pick_place"}:
-        for name in (("p37_stack_blue", "p37_stack_amber") if robot_id == "franka_panda" else ("p37_pick_cube",)):
+        cube_names = (
+            ("p37_stack_blue", "p37_stack_amber")
+            if robot_id == "franka_panda"
+            else ("p37_pick_cube",)
+        )
+        for name in cube_names:
             body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
             if body < 0:
                 raise ValueError(f"missing cube body {name}")
