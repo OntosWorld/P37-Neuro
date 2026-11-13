@@ -9,6 +9,7 @@ animation. This script fails the site build if rendering is unavailable.
 from __future__ import annotations
 
 import argparse
+import faulthandler
 import json
 from pathlib import Path
 
@@ -126,7 +127,9 @@ def build(menagerie: Path, actions: Path, output: Path) -> dict:
             captures = {task_key: data}
         for key, capture in captures.items():
             target = output / f"{key}.jpg"
+            print(f"Rendering native task scene {key}: {model.ngeom} geoms", flush=True)
             _render(model, capture, target, VIEWS[key])
+            print(f"Rendered task scene {key}: {target.stat().st_size} bytes", flush=True)
             if target.stat().st_size < 12_000:
                 raise RuntimeError(f"Scene preview suspiciously small: {target}")
             report["scenes"].append(
@@ -151,6 +154,8 @@ def main() -> None:
     parser.add_argument("--actions", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    faulthandler.enable()
+    print("Starting headless MuJoCo EGL native task capture", flush=True)
     print(json.dumps(build(args.menagerie, args.actions, args.output), indent=2))
 
 
