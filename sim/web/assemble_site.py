@@ -58,7 +58,7 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         or reel.get("frames", 0) < 350
     ):
         raise RuntimeError("Public task film has no verified physics provenance")
-    film = output / "demos"
+    film = output / "films"
     film.mkdir(parents=True, exist_ok=True)
     for filename in ("panda-cube-stack.mp4", "panda-cube-stack.png"):
         src = task_assets / filename
