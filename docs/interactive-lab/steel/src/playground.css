@@ -493,3 +493,27 @@ body,.app-shell{color:#242827!important}
 .p37-task-next a{color:#254a33;text-decoration:underline;text-underline-offset:3px;
   overflow-wrap:anywhere}
 @media(max-width:650px){.p37-task-experiment{padding:20px 16px}}
+
+/* Task-based physical simulation modes — one restrained public workcell. */
+.p37-experience-tabs{display:flex;align-items:center;gap:8px;flex-wrap:wrap;
+  padding:13px 17px;border-bottom:1px solid #dce4dc;background:#fbfcfb}
+.p37-experience-tabs button{border-radius:999px;padding:10px 15px;
+  font-size:12px;border:1px solid #d7ded7;background:#fff;color:#304239}
+.p37-experience-tabs button[aria-pressed=true]{background:#253d30;color:#fff;
+  border-color:#253d30;font-weight:600}
+.p37-experience-tabs button:disabled{opacity:.42}
+.p37-recorded-viewer{display:block;width:100%;height:min(700px,75vh);
+  min-height:425px;border:0;background:#fff}
+.p37-task-execution{display:flex;gap:12px;align-items:center;flex-wrap:wrap;
+  margin:15px 0 8px;padding:14px;background:#ebf1ea;border-radius:9px}
+.p37-task-execution button{border-radius:999px;background:#253c30!important;
+  color:#fff!important;border:1px solid #253c30!important;
+  padding:10px 17px;font-size:12px;font-weight:600}
+.p37-task-execution span{font-size:11px;color:#526e5b;line-height:1.5;flex:1;
+  min-width:160px}
+.p37-task-experiment .p37-task-source-note{margin-top:15px;font-size:12px;
+  max-width:740px;color:#705d3e;padding:11px 13px;border-left:2px solid #b9a27a;
+  background:#f6f3eb}
+@media(max-width:680px){.p37-experience-tabs{padding:11px;gap:7px}
+  .p37-experience-tabs button{padding:9px 11px;font-size:11px}
+  .p37-recorded-viewer{height:67vh;min-height:420px}}

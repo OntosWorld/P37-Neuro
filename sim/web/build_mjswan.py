@@ -19,6 +19,7 @@ import onnx
 from catalog import ROBOTS, RobotScene, check_catalog
 from mjswan.envs.mdp.actions import JointPositionActionCfg, MuscleActivationActionCfg
 from model_motion_library import create_library
+from physical_task_scenes import add_physical_task_scene, validate_task_scene
 
 ROOT = Path(__file__).resolve().parent
 
@@ -84,10 +85,10 @@ def _task_checkpoint(spec: mujoco.MjSpec, robot: RobotScene) -> None:
         "unitree_g1": 1.0,
         "unitree_h1": 1.0,
         "booster_t1": 0.9,
-        "unitree_go2": 1.1,
         "boston_dynamics_spot": 1.2,
-        "anymal_c": 1.0,
         "hello_robot_stretch": 0.8,
+        "unitree_go2": 1.7,
+        "anymal_c": 1.6,
     }
     if robot.id in targets:
         x = targets[robot.id]
@@ -144,7 +145,9 @@ def build(
         "Real MuJoCo Menagerie models under their original licenses.\n"
         "Lab lights and reference markers are visual only.\n"
         "The Unitree G1 scene includes an experimental, unqualified P37 ONNX policy.\n"
-        "Model-derived motion datasets on all ten bodies are not learned P37 skills."
+        "Model-derived motion datasets on all ten bodies are not learned P37 skills.\\n"
+        "Task scenes add colliding cubes, delivery props or obstacle terrain where supported;\\n"
+        "user steering and scripted force assistance are not learned locomotion or manipulation."
     )
 
     if p37_artifact is None:
@@ -161,6 +164,8 @@ def build(
         spec = mujoco.MjSpec.from_file(str(path))
         _light_scene(spec, robot)
         _task_checkpoint(spec, robot)
+        add_physical_task_scene(spec, robot.id)
+        validate_task_scene(spec.compile(), robot.id)
         scene = project.add_scene(
             spec=spec,
             name=robot.name,

@@ -7,6 +7,7 @@ type Robot = {
 };
 type Catalog = { robots: Robot[] };
 type MotionMode = 'motion_cycle' | 'articulation' | 'hold' | 'p37_experimental';
+type Experience = 'simulation' | 'recorded' | 'policy';
 type MotionClip = {
   robot_id: string; id: string; name: string; source: string;
   dataset_file: string; frames: number; control_hz: number;
@@ -23,6 +24,9 @@ type SteeringTelemetry = {
   message?: string; steering?: boolean;
   relativeX?: number; relativeY?: number; relativeZ?: number;
   jointDelta?: number; jointName?: string;
+  objectDistance?: number; stackHeight?: number; stackStable?: boolean;
+  objectDelivered?: boolean; observedObjects?: number;
+  scriptedTaskRunning?: boolean; scriptedTaskElapsed?: number;
 };
 type BuildInfo = {
   trained_p37_policy_attached: boolean;
@@ -48,6 +52,7 @@ const CATEGORIES = ['All', 'Humanoids', 'Quadrupeds', 'Manipulators', 'Mobile', 
 export function App() {
   const [catalog, setCatalog] = useState<Robot[]>([]);
   const [selected, setSelected] = useState('unitree_g1');
+  const [experience, setExperience] = useState<Experience>('simulation');
   const [motion, setMotion] = useState<MotionMode>('motion_cycle');
   const [lastMotion, setLastMotion] = useState<MotionMode>('motion_cycle');
   const [category, setCategory] = useState('All');
@@ -173,6 +178,13 @@ export function App() {
         relativeZ: Number.isFinite(msg.relativeZ)?msg.relativeZ:undefined,
         jointDelta: Number.isFinite(msg.jointDelta)?msg.jointDelta:undefined,
         jointName: typeof msg.jointName==='string'?msg.jointName:undefined,
+        objectDistance: Number.isFinite(msg.objectDistance)?msg.objectDistance:undefined,
+        stackHeight: Number.isFinite(msg.stackHeight)?msg.stackHeight:undefined,
+        stackStable: msg.stackStable === true,
+        objectDelivered: msg.objectDelivered === true,
+        observedObjects: Number.isInteger(msg.observedObjects)?msg.observedObjects:undefined,
+        scriptedTaskRunning: msg.scriptedTaskRunning === true,
+        scriptedTaskElapsed: Number.isFinite(msg.scriptedTaskElapsed)?msg.scriptedTaskElapsed:undefined,
       });
     };
     window.addEventListener('message',receive);
@@ -182,6 +194,7 @@ export function App() {
     if (next === 'p37_experimental' && !p37Available) return;
     if (next !== 'hold') setLastMotion(next);
     releaseSteer();
+    setExperience(next === 'p37_experimental' ? 'policy' : 'simulation');
     setMotion(next);
     setTelemetry({status:'waiting'});
     setStageLoaded(false);
@@ -196,11 +209,35 @@ export function App() {
   const selectRobot = (robot: Robot) => {
     releaseSteer();
     setSelected(robot.id);
+    setExperience('simulation');
     setTelemetry({status:'waiting'});
     setMotion('motion_cycle');
     setLastMotion('motion_cycle');
     setStageLoaded(false);
     setReload(x => x + 1);
+  };
+  const changeExperience = (next: Experience) => {
+    if (next === experience) return;
+    releaseSteer();
+    setTelemetry({status:'waiting'});
+    setStageLoaded(false);
+    if (next === 'policy') {
+      if (!build?.trained_p37_policy_attached ||
+          build.experimental_policy_robot !== 'unitree_g1') return;
+      setSelected('unitree_g1');
+      setMotion('p37_experimental');
+    } else if (experience === 'policy') {
+      setMotion('motion_cycle');
+    }
+    setExperience(next);
+    setReload(n => n + 1);
+  };
+  const toggleReferenceTask = () => {
+    if (experiment?.kind !== 'terrain') return;
+    iframeRef.current?.contentWindow?.postMessage({
+      type:'p37:steering', robot:selected,
+      action:telemetry.scriptedTaskRunning ? 'stop-task' : 'start-task'
+    }, window.location.origin);
   };
   const url = import.meta.env.BASE_URL + 'simulator/?project=p37_robot_models&scene='
     + encodeURIComponent(selected)
@@ -221,10 +258,11 @@ export function App() {
         <span className="overline">P37 / CROSS-EMBODIMENT ROBOTICS</span>
         <h1>One brain. Different bodies.</h1>
         <p className="intro">
-          Explore measurable simulation tasks on ten manufacturer-derived robots.
-          Steer to checkpoints, inspect articulated targets and monitor a flight objective.
-          Goals use live MuJoCo state; this assisted task lab does not claim autonomous skills.
-          The next research stage connects qualified task policies and full object interactions.
+          Watch a source-attributed robot recording, explore live MuJoCo tasks or test
+          the experimental P37 controller on Unitree G1. Panda cube stacking,
+          quadruped obstacle courses and Stretch delivery use real simulated
+          objects and contacts. Task experts and qualified cross-body policies
+          remain separate research work.
         </p>
       </section>
       <section className="lab-grid" id="simulator" aria-label="Live manufacturer robot simulation">
@@ -234,8 +272,17 @@ export function App() {
             {CATEGORIES.map(item => <button key={item} type="button"
               aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}
           </div>
+          <div className="p37-experience-tabs" role="group" aria-label="Choose experiment experience">
+            <button type="button" aria-pressed={experience==='simulation'}
+              onClick={()=>changeExperience('simulation')}>Live physical tasks</button>
+            <button type="button" aria-pressed={experience==='recorded'}
+              onClick={()=>changeExperience('recorded')}>Recorded execution</button>
+            <button type="button" aria-pressed={experience==='policy'}
+              disabled={!build?.trained_p37_policy_attached}
+              onClick={()=>changeExperience('policy')}>P37 model experiment</button>
+          </div>
           <div className="viewport-top">
-            <div><span className="live-dot"/> NATIVE ROBOT PHYSICS
+            <div><span className="live-dot"/> {experience==='recorded'?'SOURCE-RECORDED EPISODE':'NATIVE ROBOT PHYSICS'}
               <span className="muted"> / MuJoCo · WebAssembly</span></div>
             <div className="stage-tools-head">
               <span>{p37Active ? 'P37 RECURRENT ONNX / EXPERIMENTAL' :
@@ -244,7 +291,11 @@ export function App() {
             </div>
           </div>
           <div className="canvas-wrap p37-scene">
-            {catalog.length > 0 && current ? <iframe
+            {experience==='recorded' ? <iframe
+              title="Source-attributed MimicGen Panda robot task recording"
+              className="p37-recorded-viewer"
+              src={import.meta.env.BASE_URL + 'recorded/?sample=mimicgen'}
+              loading="eager"/> : catalog.length > 0 && current ? <iframe
               ref={iframeRef}
               key={selected + '-' + reload + '-' + panel + '-' + motion}
               title={current.name + ' — real MuJoCo robot'}
@@ -256,25 +307,26 @@ export function App() {
               : <div className="viewer-notice">
                 {error ? 'Robot models unavailable: ' + error : 'Loading real robot models…'}
               </div>}
-            {current && <div className="p37-stage-name">
+            {experience!=='recorded' && current && <div className="p37-stage-name">
               <small>ROBOT {String(catalog.indexOf(current) + 1).padStart(2, '0')} / {catalog.length}</small>
               <strong>{current.name}</strong>
               <span>{current.short}</span>
             </div>}
-            <div className="camera-tip">DRAG TO ORBIT · WASD TO STEER · Q/E TO TURN</div>
+            {experience!=='recorded' && <div className="camera-tip">DRAG TO ORBIT · WASD TO STEER · Q/E TO TURN</div>}
           </div>
           <div className="playground-embodiment p37-stage-actions">
-            <span>Motion mode</span>
-            <strong>{p37Active ? 'Experimental P37 recurrent PPO' :
+            <span>Execution source</span>
+            <strong>{experience==='recorded' ? 'MimicGen original Panda episodes · CC BY 4.0' :
+              p37Active ? 'Experimental P37 recurrent PPO' :
               motion === 'hold' ? 'Hold pose · model-derived' :
               'Recorded joint targets · model-derived'}</strong>
             <span className="playground-disclaimer">{stageLoaded ?
               'Viewer loaded · inspect motion inside the live scene' : 'Loading native simulation…'}</span>
           </div>
-          {experiment && result && <section className="p37-task-experiment" aria-label="Measured robot task experiment">
+          {experience!=='recorded' && experiment && result && <section className="p37-task-experiment" aria-label="Measured robot task experiment">
             <div className="p37-task-topline">
               <span>ACTIVE TASK / {experiment.id.toUpperCase()}</span>
-              <span>{result.reached ? 'CHECKPOINT REACHED' : 'TASK IN PROGRESS'}</span>
+              <span>{result.reached ? 'MEASURED CONDITION MET' : 'TASK UNDER EVALUATION'}</span>
             </div>
             <h2>{experiment.title}</h2>
             <p>{experiment.objective}</p>
@@ -286,6 +338,16 @@ export function App() {
               ? 'Measured condition reached in this physics sandbox. This is not a qualified autonomous-policy task success.'
               : 'Goal checks use simulated state. A robot can fall, miss the target, or fail to reach it.'}
             </p>
+            {experiment.kind==='terrain' && experience==='simulation' && <div className="p37-task-execution">
+              <button type="button" onClick={toggleReferenceTask}>
+                {telemetry.scriptedTaskRunning ? 'Stop scripted attempt' : 'Run assisted terrain attempt'}
+              </button>
+              <span>External-force reference controller · no learned gait · up to 18 simulation seconds</span>
+            </div>}
+            {(experiment.kind==='cube-stack' || experiment.kind==='delivery') && <p className="p37-task-source-note">
+              Physical objects and success checks are live. A qualified grasp/placement task policy
+              is not attached; the motor replay does not automatically complete the task.
+            </p>}
             <div className="p37-task-next">
               <span>Next research experiment: {experiment.nextTask}</span>
               <a href={experiment.upstreamUrl} target="_blank" rel="noreferrer">
@@ -293,7 +355,7 @@ export function App() {
               </a>
             </div>
           </section>}
-          <div className="viewport-controls">
+          {experience!=='recorded' && <div className="viewport-controls">
             <div className="action-row">
               <button type="button" onClick={() => setPlayback(
                 motion === 'hold' ? lastMotion : 'hold'
@@ -348,7 +410,7 @@ export function App() {
             <div className="status-line" role="status">{p37Active ?
               'Experimental P37 inference plus user-assisted steering · walking not qualified' :
               'Physical motion replay with user-assisted steering · no learned walking claim'}</div>
-          </div>
+          </div>}
         </div>
         <aside className="playground-panel p37-real-panel">
           <div className="side-panel">

@@ -41,6 +41,19 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     if not (simulator / "manifest.json").is_file():
         raise FileNotFoundError("Build manufacturer-derived MuJoCo scenes first")
     shutil.copytree(simulator, output / "simulator")
+    # Source-attributed MimicGen episodes are published as recorded DATA,
+    # not driven through an unrelated physical robot controller.
+    recorded = ROOT / "docs" / "interactive-lab" / "compare"
+    sample = recorded / "samples" / "mimicgen-square-source.json"
+    if not (recorded / "index.html").is_file() or not sample.is_file():
+        raise FileNotFoundError("Verified source recording viewer is unavailable")
+    publication = json.loads(sample.read_text(encoding="utf-8")).get("publication", {})
+    if (
+        publication.get("source") != "amandlek/mimicgen_datasets"
+        or publication.get("learned_policy_attached") is not False
+    ):
+        raise RuntimeError("Recorded task data failed source/learning integrity checks")
+    shutil.copytree(recorded, output / "recorded")
     # Published measurements are recorded native policy experiments.
     # They are read-only evidence files, never browser policy artifacts.
     for name in ("p37-evidence.json", "p37-cross-body-evidence.json"):
@@ -114,6 +127,13 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         "motion_dataset_source": "MuJoCo Menagerie model-derived actuator targets",
         "motion_dataset_modes_per_robot": 3,
         "all_robot_motion_playback": True,
+        "physical_task_scene_version": 2,
+        "task_experiences": [
+            "live_assisted_physics",
+            "source_recorded_replay",
+            "experimental_p37_policy",
+        ],
+        "recorded_task_source": "amandlek/mimicgen_datasets; CC BY 4.0",
         "panda_loader": "native-MuJoCo-Menagerie-scene",
         "trained_p37_policy_attached": True,
         "experimental_policy_robot": "unitree_g1",

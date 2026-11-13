@@ -21,6 +21,10 @@
   let originPosition = null;
   let measuredJoint = -1;
   let jointOrigin = null;
+  let scriptedRun = false;
+  let scriptedStart = null;
+  let stableFrames = 0;
+  const TERRAIN = Object.freeze({unitree_go2: 1.7, anymal_c: 1.6});
   const robot = new URLSearchParams(window.location.search).get('scene') || '';
 
   function send(payload) {
@@ -44,6 +48,14 @@
     if (message.action === 'input' && KEYS.includes(message.key) &&
         typeof message.down === 'boolean') {
       input[message.key] = message.down;
+      if (message.down) { scriptedRun = false; scriptedStart = null; }
+    }
+    if (message.type === 'p37:steering' && message.action === 'start-task'
+        && Object.prototype.hasOwnProperty.call(TERRAIN, robot)) {
+      resetInputs(); scriptedRun = true; scriptedStart = null; stableFrames = 0;
+    }
+    if (message.type === 'p37:steering' && message.action === 'stop-task') {
+      scriptedRun = false; scriptedStart = null;
     }
   });
 
@@ -74,10 +86,55 @@
     if (!jointType || !jointBody) return -1;
     // mujoco.mjtJoint.mjJNT_FREE == 0. The floating base belongs to the real
     // model body. Never apply fake translation to a fixed industrial arm.
+    if (robot === 'franka_panda' || robot === 'universal_robots_ur5e') return -1;
     for (let j = 0; j < model.njnt; j++) {
       if (jointType[j] === 0 && jointBody[j] > 0) return jointBody[j];
     }
     return -1;
+  }
+
+  function freeBodies(model, data) {
+    const found = [];
+    for (let j=0; j<model.njnt; j++) {
+      if (model.jnt_type[j] !== 0) continue;
+      const adr = model.jnt_qposadr[j];
+      if (adr < 0 || adr + 2 >= data.qpos.length) continue;
+      const xyz = [0,1,2].map(i => Number(data.qpos[adr+i]));
+      if (xyz.every(Number.isFinite)) found.push(xyz);
+    }
+    return found;
+  }
+
+  function taskObservation(model, data) {
+    if (robot !== 'franka_panda' && robot !== 'hello_robot_stretch') return {};
+    const free = freeBodies(model, data);
+    if (robot === 'franka_panda' && free.length >= 2) {
+      // Two cubes were added, in order, after the factory Panda model.
+      const [blue, amber] = free;
+      const offset = Math.hypot(blue[0] - amber[0], blue[1] - amber[1]);
+      const gap = blue[2] - amber[2];
+      const validStack = offset <= 0.050 && gap >= 0.058 && gap <= 0.086
+        && blue[2] >= 0.62 && amber[2] >= 0.55;
+      stableFrames = validStack ? stableFrames + 1 : 0;
+      return { taskKind: 'cube-stack', objectDistance: Number(offset.toFixed(4)),
+        stackHeight: Number(gap.toFixed(4)), stackStable: stableFrames >= 20,
+        observedObjects: 2,
+        bluePosition: blue.map(v => Number(v.toFixed(3))),
+        amberPosition: amber.map(v => Number(v.toFixed(3))) };
+    }
+    if (robot === 'hello_robot_stretch' && free.length >= 2) {
+      // Official Stretch scene has a native, independently moving object.
+      // The robot base is the first free joint; the source object is last.
+      const object = free[free.length - 1];
+      const goal = [0.72,0.55,0.48];
+      const distance = Math.hypot(object[0]-goal[0],object[1]-goal[1]);
+      const delivered = distance < 0.19 && object[2] > 0.445 && object[2] < 0.56;
+      stableFrames = delivered ? stableFrames + 1 : 0;
+      return { taskKind: 'object-delivery', objectDistance: Number(distance.toFixed(4)),
+        objectDelivered: stableFrames >= 20, observedObjects: 1,
+        objectPosition: object.map(v => Number(v.toFixed(3))) };
+    }
+    return { taskKind: 'unavailable', observedObjects: free.length };
   }
 
   function tick() {
@@ -111,6 +168,7 @@
         if (model.jnt_type[j] === 3) { measuredJoint = j; break; }
       }
       frame = 0;
+      scriptedRun = false; scriptedStart = null; stableFrames = 0;
       resetInputs();
     }
     if (selectedBody < 0) {
@@ -123,7 +181,8 @@
           jointDelta: Number.isFinite(angle) && jointOrigin !== null
             ? Number(Math.abs(angle - jointOrigin).toFixed(5)) : undefined,
           jointName: 'Hinge ' + Math.max(1, measuredJoint + 1),
-          message: 'Measured native hinge motion; fixed arm cannot walk or drive.' });
+          message: 'Measured native hinge motion; fixed arm cannot walk or drive.',
+          ...taskObservation(model, data) });
         readyReported = true;
       }
       return;
@@ -141,8 +200,24 @@
     const sideways = Number(input.left) - Number(input.right);
     const turn = Number(input.turnLeft) - Number(input.turnRight);
     const length = Math.max(1, Math.hypot(forward, sideways));
-    const x = (headingX * forward - headingY * sideways) / length;
-    const y = (headingY * forward + headingX * sideways) / length;
+    let x = (headingX * forward - headingY * sideways) / length;
+    let y = (headingY * forward + headingX * sideways) / length;
+    if (scriptedRun && Object.prototype.hasOwnProperty.call(TERRAIN, robot)
+        && baseQposAddress >= 0) {
+      const progressX = Number(data.qpos[baseQposAddress]);
+      const progressY = Number(data.qpos[baseQposAddress + 1]);
+      if (scriptedStart === null) scriptedStart = Number(data.time) || 0;
+      const elapsed = (Number(data.time) || 0) - scriptedStart;
+      if (elapsed > 18 || progressX >= TERRAIN[robot] + 0.05) {
+        scriptedRun = false;
+      } else {
+        // A reference controller drives horizontal force only. It cannot
+        // teleport the body, cancel gravity, attach objects or create a gait.
+        // Crossing or failing is determined by real collision dynamics.
+        x = Math.max(-1,Math.min(1,(TERRAIN[robot] - progressX)*1.4));
+        y = Math.max(-0.50,Math.min(0.50,-progressY*1.1));
+      }
+    }
     const wantedVelocity = 0.65; // m/s; physics outcome is not guaranteed
     const qvel = data.qvel;
     // Floating-base velocity comes from the MuJoCo qvel address, not the camera.
@@ -159,7 +234,7 @@
     // Use bounded body-frame locomotion assistance. We write the REAL MuJoCo
     // external force vector, so contact dynamics, gravity and inertia still run.
     // The force is proportional to body mass and resists sliding when released.
-    const accelerating = forward !== 0 || sideways !== 0;
+    const accelerating = scriptedRun || forward !== 0 || sideways !== 0;
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
     // Account for the mass of the complete robot, not only its torso link.
     // Otherwise the force cannot overcome the floor friction on a quadruped.
@@ -209,7 +284,11 @@
       relativeX: Number(dx.toFixed(4)), relativeY: Number(dy.toFixed(4)),
       relativeZ: Number((xyz[2] - originPosition[2]).toFixed(4)),
       distance: Number(distance.toFixed(3)), moved: Number(moved.toFixed(4)),
-      steering: accelerating || turn !== 0 });
+      steering: accelerating || turn !== 0,
+      scriptedTaskRunning: scriptedRun,
+      scriptedTaskElapsed: scriptedStart===null ? 0 :
+        Number(Math.max(0,(Number(data.time)||0)-scriptedStart).toFixed(2)),
+      ...taskObservation(model, data) });
   }
 
   requestAnimationFrame(tick);

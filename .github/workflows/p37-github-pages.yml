@@ -4,6 +4,8 @@ on:
     paths:
       - "sim/web/assemble_site.py"
       - "sim/web/build_mjswan.py"
+      - "sim/web/physical_task_scenes.py"
+      - "sim/web/steering_bridge.js"
       - "sim/web/model_motion_library.py"
       - "sim/web/catalog.py"
       - "sim/web/p37_browser_policy.py"
@@ -15,6 +17,8 @@ on:
     paths:
       - "sim/web/assemble_site.py"
       - "sim/web/build_mjswan.py"
+      - "sim/web/physical_task_scenes.py"
+      - "sim/web/steering_bridge.js"
       - "sim/web/model_motion_library.py"
       - "sim/web/catalog.py"
       - "sim/web/p37_browser_policy.py"
@@ -58,6 +62,7 @@ jobs:
           path: _p37_policy
       - name: Build manufacturer-derived robots and P37 browser controller
         run: |
+          node --check sim/web/steering_bridge.js
           python -m pip install "mjswan[examples]" "mujoco"
           git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
           python sim/web/build_mjswan.py \

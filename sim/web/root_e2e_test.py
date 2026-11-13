@@ -34,6 +34,14 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     assert metadata["trained_p37_policy_attached"] is True
     assert metadata["experimental_policy_robot"] == "unitree_g1"
     assert metadata["qualified_cross_body_transfer"] is False
+    assert metadata["physical_task_scene_version"] == 2
+    assert set(metadata["task_experiences"]) == {
+        "live_assisted_physics",
+        "source_recorded_replay",
+        "experimental_p37_policy",
+    }
+    assert (site / "recorded/index.html").is_file()
+    assert (site / "recorded/samples/mimicgen-square-source.json").is_file()
     cross = json.loads((site / "p37-cross-body-evidence.json").read_text(encoding="utf-8"))
     assert metadata["p37_checkpoint_sha256"] == cross["checkpoint_sha256"]
     assert cross["qualified_for_walking"] is False
@@ -118,6 +126,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             )
             assert page.get_by_role("button", name="Hold motion").is_visible()
             assert page.get_by_role("button", name="Forward").is_visible()
+            assert page.get_by_role("button", name="Live physical tasks").is_visible()
+            assert page.get_by_role("button", name="Recorded execution").is_visible()
+            assert page.get_by_role("button", name="P37 model experiment").is_visible()
             assert page.get_by_role("region", name="Measured robot task experiment").is_visible()
             assert page.get_by_text("Move to the inspection point").is_visible()
             assert page.get_by_role("progressbar", name="Measured task progress").is_visible()
@@ -151,13 +162,21 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page.screenshot(path=str(screenshots / "g1-p37-live-inference.png"), timeout=90000)
             page.get_by_role("combobox", name="Select a robot").select_option("franka_panda")
             assert "Fixed-base robot" in page.locator(".p37-steer-panel").inner_text()
-            assert page.get_by_text("Sweep a Panda arm joint by 0.15 rad").is_visible()
+            assert page.get_by_text("Stack two physical cubes").is_visible()
             assert page.get_by_role("button", name="Forward").count() == 0
             assert "scene=franka_panda" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
             page.frame_locator("iframe.menagerie-viewer").locator("canvas").first.wait_for(
                 state="visible", timeout=120000
+            )
+            page.wait_for_function(
+                "() => document.querySelector('.p37-task-progress strong')"
+                "?.textContent?.includes('cube alignment')",
+                timeout=120000,
+            )
+            assert (
+                "stack not confirmed" in page.locator(".p37-task-experiment").inner_text().lower()
             )
             page.screenshot(path=str(screenshots / "panda-real-model.png"), timeout=90000)
             page.locator(".p37-real-panel .info-row").filter(has_text="Controller").locator(
@@ -167,7 +186,8 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert "scene=unitree_go2" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
-            assert page.get_by_text("Patrol to a waypoint").is_visible()
+            assert page.get_by_text("Traverse the physical obstacle course").is_visible()
+            assert page.get_by_role("button", name="Run assisted terrain attempt").is_visible()
             page.frame_locator("iframe.menagerie-viewer").locator("canvas").first.wait_for(
                 state="visible", timeout=120000
             )
@@ -186,6 +206,11 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             displacement = float(measured.split(" ")[0])
             assert displacement > 0.02, f"Steering did not move real Go2: {measured}"
             page.screenshot(path=str(screenshots / "go2-user-steering.png"), timeout=90000)
+            page.get_by_role("button", name="Run assisted terrain attempt").click()
+            page.get_by_role("button", name="Stop scripted attempt").wait_for(timeout=15000)
+            page.screenshot(path=str(screenshots / "go2-scripted-task.png"), timeout=90000)
+            page.get_by_role("button", name="Stop scripted attempt").click()
+            page.get_by_role("button", name="Run assisted terrain attempt").wait_for(timeout=15000)
             page.locator(".p37-real-panel .info-row").filter(has_text="Controller").locator(
                 "strong"
             ).filter(has_text="Dataset motor replay").wait_for(timeout=15000)
@@ -198,6 +223,17 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page.wait_for_timeout(400)
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 3")
             page.screenshot(path=str(screenshots / "real-robot-mobile.png"), timeout=90000)
+            page.get_by_role("button", name="Recorded execution").click()
+            assert page.locator("iframe.p37-recorded-viewer").count() == 1
+            assert page.locator("iframe.menagerie-viewer").count() == 0
+            page.frame_locator("iframe.p37-recorded-viewer").get_by_text(
+                "2 recorded episodes imported"
+            ).wait_for(timeout=30000)
+            page.get_by_role("button", name="Live physical tasks").click()
+            assert page.locator("iframe.p37-recorded-viewer").count() == 0
+            assert "scene=unitree_go2" in page.locator("iframe.menagerie-viewer").get_attribute(
+                "src"
+            )
             browser.close()
     finally:
         server.shutdown()
@@ -210,6 +246,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
         "physical_user_steering": True,
         "download_ui_removed": True,
         "task_objectives_and_metrics": True,
+        "physical_task_scenes_and_source_recording": True,
         "desktop_mobile": True,
         "panda_model_loaded": True,
         "unqualified_models_not_mislabeled": True,
