@@ -13,6 +13,7 @@
   const input = Object.fromEntries(KEYS.map(key => [key, false]));
   let selectedBody = -1;
   let lastModel = null;
+  let totalMass = 1;
   let readyReported = false;
   let frame = 0;
   let priorPosition = null;
@@ -65,6 +66,9 @@
     if (model !== lastModel) {
       lastModel = model;
       selectedBody = locateBase(model);
+      totalMass = Math.max(0.1, Array.from(model.body_mass || []).reduce(
+        (sum, value) => sum + Math.max(0, Number(value) || 0), 0
+      ));
       readyReported = false;
       priorPosition = null;
       originPosition = null;
@@ -83,8 +87,7 @@
     const index = body * 6;
     if (index + 5 >= force.length) return;
 
-    const mass = Math.max(0.1, Number(model.body_mass[body]) || 1);
-    const orient = data.xmat;
+     const orient = data.xmat;
     const ori = body * 9;
     const headingX = orient ? orient[ori] : 1;
     const headingY = orient ? orient[ori + 3] : 0;
@@ -112,8 +115,10 @@
     // The force is proportional to body mass and resists sliding when released.
     const accelerating = forward !== 0 || sideways !== 0;
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-    const gain = 10 * mass;
-    const maxForce = 7.5 * mass;
+    // Account for the mass of the complete robot, not only its torso link.
+    // Otherwise the force cannot overcome the floor friction on a quadruped.
+    const gain = 18 * totalMass;
+    const maxForce = 15 * totalMass;
     force[index] = clamp(((accelerating ? x * wantedVelocity : 0) - vx) * gain,
       -maxForce, maxForce);
     force[index + 1] = clamp(((accelerating ? y * wantedVelocity : 0) - vy) * gain,
@@ -123,8 +128,8 @@
     force[index + 3] = 0;
     force[index + 4] = 0;
     const yawV = veladr >= 0 ? Number(qvel[veladr + 5]) || 0 : 0;
-    force[index + 5] = clamp((turn * 0.65 - yawV) * 1.5 * mass,
-      -2.5 * mass, 2.5 * mass);
+    force[index + 5] = clamp((turn * 0.65 - yawV) * 1.5 * totalMass,
+      -2.5 * totalMass, 2.5 * totalMass);
 
     if (!readyReported) {
       send({ status: 'ready', controllable: true,
