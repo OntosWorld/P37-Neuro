@@ -48,10 +48,10 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     }
     poster_dir = site / "task-posters"
     provenance = json.loads((poster_dir / "provenance.json").read_text(encoding="utf-8"))
-    assert provenance["format"] == "p37-native-mujoco-task-posters"
+    assert provenance["format"] == "p37-mujoco-browser-task-posters"
     assert len(provenance["posters"]) == 10
     for item in provenance["posters"]:
-        assert item["pixels_from_native_renderer"] is True
+        assert item["pixels_from_mujoco_browser_renderer"] is True
         assert (poster_dir / item["filename"]).stat().st_size > 7000
     assert (site / "recorded/index.html").is_file()
     assert (site / "recorded/samples/mimicgen-square-source.json").is_file()
