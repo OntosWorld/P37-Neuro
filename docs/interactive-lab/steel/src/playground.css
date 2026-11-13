@@ -703,3 +703,10 @@ body,.app-shell{color:#242827!important}
   .task-gallery-card,.task-card-image img{transition:none}
   .task-gallery-card:hover{transform:none}
 }
+
+/* Gallery movie is a direct render of the physics-qualified Panda motor
+   reference. It is decorative, muted and never blocks task selection. */
+.task-card-video{position:absolute;inset:0;z-index:0;display:block;width:100%;
+  height:100%;object-fit:cover;object-position:center 52%;pointer-events:none;
+  filter:saturate(.78) contrast(1.02)}
+@media(prefers-reduced-motion:reduce){.task-card-video{display:none}}
