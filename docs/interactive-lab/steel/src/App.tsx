@@ -28,6 +28,8 @@ type SteeringTelemetry = {
   jointDelta?: number; jointName?: string;
   objectDistance?: number; stackHeight?: number; stackStable?: boolean;
   objectDelivered?: boolean; observedObjects?: number;
+  taskLiftObserved?: boolean; taskCarryObserved?: boolean;
+  taskReleaseObserved?: boolean; taskSequenceComplete?: boolean;
   scriptedTaskRunning?: boolean; scriptedTaskElapsed?: number;
   taskTime?: number;
 };
@@ -206,6 +208,10 @@ export function App() {
         objectDistance: Number.isFinite(msg.objectDistance)?msg.objectDistance:undefined,
         stackHeight: Number.isFinite(msg.stackHeight)?msg.stackHeight:undefined,
         stackStable: msg.stackStable === true,
+        taskLiftObserved: msg.taskLiftObserved === true,
+        taskCarryObserved: msg.taskCarryObserved === true,
+        taskReleaseObserved: msg.taskReleaseObserved === true,
+        taskSequenceComplete: msg.taskSequenceComplete === true,
         objectDelivered: msg.objectDelivered === true,
         observedObjects: Number.isInteger(msg.observedObjects)?msg.observedObjects:undefined,
         scriptedTaskRunning: msg.scriptedTaskRunning === true,
@@ -399,6 +405,26 @@ export function App() {
               </div>)}
               <div className="p37-task-clock">{pandaTime.toFixed(1)} / 18.2s</div>
             </div>}
+            {pandaActive && <div className="p37-task-live-gates"
+              aria-label="Live Panda task verification">
+              <div className="p37-task-live-heading">
+                <strong>Live physics checks</strong>
+                <span>{telemetry.taskSequenceComplete ? 'OBSERVED IN BROWSER' : 'IN PROGRESS'}</span>
+              </div>
+              {([
+                ['Cube lifted', telemetry.taskLiftObserved],
+                ['Cube carried toward target', telemetry.taskCarryObserved],
+                ['Cube released with jaws open', telemetry.taskReleaseObserved],
+                ['Final stack stable for 20 samples', telemetry.taskSequenceComplete],
+              ] as const).map(([label, observed]) =>
+                <div key={label} className="p37-task-live-gate">
+                  <span>{observed ? '✓' : '○'} {label}</span>
+                  <strong>{observed ? 'Observed' : 'Pending'}</strong>
+                </div>
+              )}
+              <small>Observed from MuJoCo cube poses and gripper opening.
+                Contact qualification is established separately by native simulation and replay.</small>
+            </div>}
             {pandaActive && build?.panda_physical_cube_stack && <div
               className="p37-scripted-evidence" aria-label="Panda source experiment evidence">
               <strong>Native task verified · deterministic motor reference</strong>
@@ -413,7 +439,9 @@ export function App() {
               <div><strong>{result.measure}</strong><span>{result.goal}</span></div>
             </div>
             <p className="p37-task-boundary">{result.reached
-              ? 'Measured condition reached in this physics sandbox. This is not a qualified autonomous-policy task success.'
+              ? (pandaActive
+                 ? 'Ordered task execution observed in browser physics. This is a scripted reference controller, not a trained P37 policy.'
+                 : 'Measured condition reached in this physics sandbox. This is not a qualified autonomous-policy task success.')
               : 'Goal checks use simulated state. A robot can fall, miss the target, or fail to reach it.'}
             </p>
             {experiment.kind==='terrain' && experience==='simulation' && <div className="p37-task-execution">
