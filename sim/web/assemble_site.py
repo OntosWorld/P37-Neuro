@@ -167,6 +167,10 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
             "control_sha256": panda_record["sha256"],
             "frames": panda_record["frames"],
             "control_hz": panda_record["control_hz"],
+            "left_contact_frames": panda_record["left_finger_contact_frames"],
+            "right_contact_frames": panda_record["right_finger_contact_frames"],
+            "final_blue_xyz": panda_record["final_blue_xyz"],
+            "final_amber_xyz": panda_record["final_amber_xyz"],
         },
         "physical_task_scene_version": 2,
         "task_experiences": [
