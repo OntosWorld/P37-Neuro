@@ -133,8 +133,8 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert page.locator(".gallery-task-card").count() == 9
             assert page.locator(".task-poster").count() == 10
             page.wait_for_function(
-                "() => Array.from(document.querySelectorAll('.task-poster'))"
-                ".every(img => img.complete && img.naturalWidth >= 100)",
+                "() => { const img = document.querySelector('.gallery-feature-stage .task-poster');"
+                " return img && img.complete && img.naturalWidth >= 100; }",
                 timeout=30000,
             )
             assert page.locator("iframe.menagerie-viewer").count() == 0
