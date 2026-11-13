@@ -710,3 +710,17 @@ body,.app-shell{color:#242827!important}
   height:100%;object-fit:cover;object-position:center 52%;pointer-events:none;
   filter:saturate(.78) contrast(1.02)}
 @media(prefers-reduced-motion:reduce){.task-card-video{display:none}}
+
+
+/* Live, observed Franka manipulation gates. Never inferred from timeline alone. */
+.p37-task-live-gates{margin:18px 0;padding:17px;border:1px solid #d6ddd8;
+  background:#f9fbf9;border-radius:9px;display:grid;gap:0}
+.p37-task-live-heading{display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding-bottom:12px;border-bottom:1px solid #e0e7e2}
+.p37-task-live-heading strong{font-size:13px;color:#26342c;font-weight:650}
+.p37-task-live-heading span{font-size:10px;color:#637269;letter-spacing:.04em}
+.p37-task-live-gate{display:flex;align-items:center;justify-content:space-between;
+  gap:15px;border-bottom:1px solid #e9eeea;padding:11px 0;font-size:12px}
+.p37-task-live-gate span{color:#35473c}
+.p37-task-live-gate strong{font-size:10px;font-weight:600;color:#68766b}
+.p37-task-live-gates small{font-size:11px;line-height:1.55;color:#748177;margin-top:13px}
