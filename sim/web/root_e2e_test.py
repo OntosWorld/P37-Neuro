@@ -36,7 +36,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     assert metadata["qualified_cross_body_transfer"] is False
     assert metadata["physical_task_scene_version"] == 2
     assert set(metadata["task_experiences"]) == {
-        "live_assisted_physics", "source_recorded_replay", "experimental_p37_policy"
+        "live_assisted_physics",
+        "source_recorded_replay",
+        "experimental_p37_policy",
     }
     assert (site / "recorded/index.html").is_file()
     assert (site / "recorded/samples/mimicgen-square-source.json").is_file()
