@@ -253,12 +253,31 @@ def build(
             return None
 
     manifest_module.record_scene_gui = compatible_gui
+    # mjswan currently exposes the simulation through a private Engine instance.
+    # Add one narrowly scoped integration hook to the *build-time template*.
+    # The public steering bridge never replaces the robot meshes or physics.
+    from mjswan.build import frontend as frontend_module
+
+    app_source = frontend_module.TEMPLATE_DIR / "src" / "App.tsx"
+    original_app = app_source.read_text(encoding="utf-8")
+    hook = "      engineRef.current = engine;"
+    if original_app.count(hook) != 1:
+        raise RuntimeError("Upstream mjswan engine integration hook changed")
+    patched_app = original_app.replace(
+        hook,
+        hook
+        + "\n"
+        + ("      (window as Window & { __p37Engine?: unknown }).__p37Engine = engine;"),
+        1,
+    )
     old_cwd = Path.cwd()
     try:
+        app_source.write_text(patched_app, encoding="utf-8")
         os.chdir(ROOT)
         builder.build()
     finally:
         os.chdir(old_cwd)
+        app_source.write_text(original_app, encoding="utf-8")
 
     output = ROOT / "dist"
     manifest = output / "manifest.json"
@@ -272,9 +291,20 @@ def build(
     }
     if not set(built_scenes).issubset(generated_ids):
         raise RuntimeError(f"missing compiled scenes: {sorted(set(built_scenes) - generated_ids)}")
-    # Export the actual sampled joint/motor trajectories for inspection.
+    # The bridge is loaded into the same-origin iframe after Vite has compiled
+    # mjswan, and sends measured displacement back to the P37 parent page.
     import shutil
 
+    shutil.copyfile(ROOT / "steering_bridge.js", output / "steering_bridge.js")
+    index = output / "index.html"
+    html = index.read_text(encoding="utf-8")
+    if html.count("</body>") != 1:
+        raise RuntimeError("Upstream mjswan HTML no longer has one body closing tag")
+    index.write_text(
+        html.replace("</body>", '<script defer src="./steering_bridge.js"></script></body>'),
+        encoding="utf-8",
+    )
+    # Export the actual sampled joint/motor trajectories for inspection.
     target = output / "motion_data"
     if target.exists():
         shutil.rmtree(target)
