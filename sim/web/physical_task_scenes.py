@@ -144,7 +144,11 @@ def validate_task_scene(model: mujoco.MjModel, robot_id: str) -> None:
     expected = {
         "unitree_go2": ("p37_terrain_curb", "p37_terrain_step", "p37_terrain_pylon"),
         "anymal_c": ("p37_terrain_curb", "p37_terrain_step", "p37_terrain_pylon"),
-        "franka_panda": ("p37_stack_bench", "p37_stack_blue_collision", "p37_stack_amber_collision"),
+        "franka_panda": (
+            "p37_stack_bench",
+            "p37_stack_blue_collision",
+            "p37_stack_amber_collision",
+        ),
         "hello_robot_stretch": ("p37_delivery_station",),
     }.get(robot_id, ())
     for name in expected:
@@ -160,6 +164,6 @@ def validate_task_scene(model: mujoco.MjModel, robot_id: str) -> None:
                 raise ValueError(f"missing cube body {name}")
             if model.body_mass[body] <= 0:
                 raise ValueError(f"nonphysical cube mass {name}")
-    if robot_id == "hello_robot_stretch":
-        if mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "object") < 0:
-            raise ValueError("Stretch source physical object missing")
+    if (robot_id == "hello_robot_stretch"
+        and mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "object") < 0):
+        raise ValueError("Stretch source physical object missing")
