@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 type Robot = {
   id: string; name: string; model: string; kind: string;
@@ -13,6 +13,13 @@ type MotionClip = {
 };
 type MotionLibrary = {
   schema_version: number; kind: string; motions: Record<string, MotionClip[]>;
+};
+type SteeringKey = 'forward'|'back'|'left'|'right'|'turnLeft'|'turnRight';
+type SteeringTelemetry = {
+  status: 'waiting'|'ready'|'running'|'fixed';
+  controllable?: boolean;
+  x?: number; y?: number; z?: number; distance?: number; moved?: number;
+  message?: string; steering?: boolean;
 };
 type BuildInfo = {
   trained_p37_policy_attached: boolean;
@@ -45,6 +52,9 @@ export function App() {
   const [panel, setPanel] = useState(false);
   const [reload, setReload] = useState(0);
   const [stageLoaded, setStageLoaded] = useState(false);
+  const [telemetry, setTelemetry] = useState<SteeringTelemetry>({status:'waiting'});
+  const iframeRef = useRef<HTMLIFrameElement|null>(null);
+  const heldRef = useRef<Set<SteeringKey>>(new Set());
   const [error, setError] = useState('');
   const [build, setBuild] = useState<BuildInfo | null>(null);
   const [evidence, setEvidence] = useState<Evidence | null>(null);
@@ -96,11 +106,76 @@ export function App() {
     && build.experimental_policy_robot === 'unitree_g1'
     && build.p37_checkpoint_sha256 === evidence?.checkpoint_sha256;
   const p37Active = p37Available && motion === 'p37_experimental';
-  const currentMotion = motionLibrary?.motions[selected]?.find(clip => clip.id === motion);
+  const isFixedArm = current?.kind === 'Manipulators';
+  const canSteer = !isFixedArm && telemetry.status !== 'fixed';
+  const sendSteer = (key: SteeringKey, down: boolean) => {
+    const message = { type:'p37:steering', robot:selected, action:'input', key, down };
+    iframeRef.current?.contentWindow?.postMessage(message, window.location.origin);
+    if (down) heldRef.current.add(key);
+    else heldRef.current.delete(key);
+  };
+  const releaseSteer = () => {
+    heldRef.current.clear();
+    iframeRef.current?.contentWindow?.postMessage(
+      {type:'p37:steering', robot:selected, action:'release'}, window.location.origin
+    );
+  };
+  useEffect(() => {
+    const accepted: Record<string, SteeringKey> = {
+      w:'forward', ArrowUp:'forward', s:'back', ArrowDown:'back',
+      a:'left', ArrowLeft:'left', d:'right', ArrowRight:'right',
+      q:'turnLeft', e:'turnRight',
+    };
+    const handleKey = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement|null;
+      if (target?.closest('input, select, textarea, [contenteditable="true"]')) return;
+      const key = accepted[event.key] ?? accepted[event.key.toLowerCase()];
+      if (!key || isFixedArm) return;
+      event.preventDefault();
+      if (event.type==='keydown' && event.repeat) return;
+      sendSteer(key,event.type==='keydown');
+    };
+    const keydown = (event: KeyboardEvent) => handleKey(event);
+    const keyup = (event: KeyboardEvent) => handleKey(event);
+    const blur = () => releaseSteer();
+    window.addEventListener('keydown',keydown);
+    window.addEventListener('keyup',keyup);
+    window.addEventListener('blur',blur);
+    return () => {
+      window.removeEventListener('keydown',keydown);
+      window.removeEventListener('keyup',keyup);
+      window.removeEventListener('blur',blur);
+      releaseSteer();
+    };
+  }, [selected,isFixedArm]);
+  useEffect(() => {
+    const receive = (event: MessageEvent) => {
+      if (event.origin!==window.location.origin ||
+          event.source!==iframeRef.current?.contentWindow) return;
+      const msg = event.data;
+      if (!msg || msg.type!=='p37:telemetry' || msg.robot!==selected) return;
+      const status = msg.status;
+      if (!['ready','running','fixed'].includes(status)) return;
+      setTelemetry({
+        status, controllable: msg.controllable===true,
+        x: Number.isFinite(msg.x)?msg.x:undefined,
+        y: Number.isFinite(msg.y)?msg.y:undefined,
+        z: Number.isFinite(msg.z)?msg.z:undefined,
+        distance: Number.isFinite(msg.distance)?msg.distance:undefined,
+        moved: Number.isFinite(msg.moved)?msg.moved:undefined,
+        message: typeof msg.message==='string'?msg.message:undefined,
+        steering: msg.steering===true,
+      });
+    };
+    window.addEventListener('message',receive);
+    return () => window.removeEventListener('message',receive);
+  },[selected]);
   const setPlayback = (next: MotionMode) => {
     if (next === 'p37_experimental' && !p37Available) return;
     if (next !== 'hold') setLastMotion(next);
+    releaseSteer();
     setMotion(next);
+    setTelemetry({status:'waiting'});
     setStageLoaded(false);
     setReload(x => x + 1);
   };
@@ -111,7 +186,9 @@ export function App() {
     p37_experimental: 'p37_g1_experimental_recurrent_ppo',
   })[mode];
   const selectRobot = (robot: Robot) => {
+    releaseSteer();
     setSelected(robot.id);
+    setTelemetry({status:'waiting'});
     setMotion('motion_cycle');
     setLastMotion('motion_cycle');
     setStageLoaded(false);
@@ -136,9 +213,10 @@ export function App() {
         <span className="overline">P37 / CROSS-EMBODIMENT ROBOTICS</span>
         <h1>One brain. Different bodies.</h1>
         <p className="intro">
-          Explore ten real robot models with motion data and physical simulation.
-          Select a movement sequence, inspect the joints and test collisions.
-          G1 also offers an experimental P37 learned policy.
+          Drive real robot models around a physics scene with WASD or touch controls.
+          Choose a motion sequence, steer the simulated floating base and inspect contacts.
+          Fixed industrial arms use joint controls instead of walking.
+          G1 also offers an experimental learned-policy mode.
         </p>
       </section>
       <section className="lab-grid" id="simulator" aria-label="Live manufacturer robot simulation">
@@ -159,6 +237,7 @@ export function App() {
           </div>
           <div className="canvas-wrap p37-scene">
             {catalog.length > 0 && current ? <iframe
+              ref={iframeRef}
               key={selected + '-' + reload + '-' + panel + '-' + motion}
               title={current.name + ' — real MuJoCo robot'}
               className="menagerie-viewer"
@@ -174,7 +253,7 @@ export function App() {
               <strong>{current.name}</strong>
               <span>{current.short}</span>
             </div>}
-            <div className="camera-tip">DRAG TO ORBIT · SELECT A BODY TO INTERACT</div>
+            <div className="camera-tip">DRAG TO ORBIT · WASD TO STEER · Q/E TO TURN</div>
           </div>
           <div className="playground-embodiment p37-stage-actions">
             <span>Motion mode</span>
@@ -190,15 +269,55 @@ export function App() {
                 motion === 'hold' ? lastMotion : 'hold'
               )}>{motion === 'hold' ? 'Play motion' : 'Hold motion'}</button>
               <button type="button" onClick={() => {
+                releaseSteer(); setTelemetry({status:'waiting'});
                 setStageLoaded(false); setReload(x => x + 1);
               }}>↻ Reset simulation</button>
               <button type="button" aria-pressed={panel} onClick={() => {
                 setPanel(x => !x); setStageLoaded(false);
               }}>{panel ? 'Hide physics controls' : 'Show physics controls'}</button>
             </div>
+            <div className="p37-steer-panel" aria-label="User-controlled physical movement">
+              <div className="p37-steer-heading">
+                <strong>{isFixedArm ? 'Fixed-base robot' : 'Drive the robot'}</strong>
+                <span>{isFixedArm ? 'Joint articulation only' : 'WASD / arrow keys · Q/E turn'}</span>
+              </div>
+              {isFixedArm ? <p className="p37-steer-help">
+                This industrial arm cannot walk. Use the movement dataset controls to move its real joints.
+              </p> : <>
+                <div className="p37-steer-pad" role="group" aria-label="Steering direction controls">
+                  {([
+                    {key:'forward',label:'Forward',glyph:'↑'},
+                    {key:'left',label:'Left',glyph:'←'},
+                    {key:'back',label:'Backward',glyph:'↓'},
+                    {key:'right',label:'Right',glyph:'→'},
+                    {key:'turnLeft',label:'Turn left',glyph:'↶'},
+                    {key:'turnRight',label:'Turn right',glyph:'↷'},
+                  ] as {key:SteeringKey; label:string; glyph:string}[]).map(button =>
+                    <button key={button.key} type="button" aria-label={button.label}
+                      disabled={!canSteer}
+                      onPointerDown={event=>{event.preventDefault();event.currentTarget.setPointerCapture(event.pointerId);sendSteer(button.key,true);}}
+                      onPointerUp={()=>sendSteer(button.key,false)}
+                      onPointerCancel={()=>sendSteer(button.key,false)}
+                      onLostPointerCapture={()=>sendSteer(button.key,false)}>
+                      {button.glyph}<small>{button.label}</small>
+                    </button>)}
+                  <button type="button" className="p37-stop" onClick={releaseSteer}>Stop</button>
+                </div>
+                <div className="p37-steering-telemetry" role="status" aria-live="polite">
+                  <span>{telemetry.status==='fixed' ? 'Model has no floating base' :
+                    telemetry.status==='waiting' ? 'Connecting steering…' :
+                    telemetry.steering ? 'Physical steering active' : 'Ready for input'}</span>
+                  <strong>{telemetry.distance===undefined?'—':telemetry.distance.toFixed(2)+' m'} traveled</strong>
+                </div>
+                <p className="p37-steer-help">Experimental assisted steering applies a bounded
+                  external force to the real simulated body while its motion clip
+                  moves the joints. Contacts and gravity remain physical.
+                  This is not a qualified learned walking controller.</p>
+              </>}
+            </div>
             <div className="status-line" role="status">{p37Active ?
-              'Experimental P37 inference · walking not qualified' :
-              'Model-derived dataset replay through MuJoCo actuators · not a learned P37 skill'}</div>
+              'Experimental P37 inference plus user-assisted steering · walking not qualified' :
+              'Physical motion replay with user-assisted steering · no learned walking claim'}</div>
           </div>
         </div>
         <aside className="playground-panel p37-real-panel">
@@ -227,7 +346,7 @@ export function App() {
               </div>
             </div>
             <div className="rule"/>
-            <div className="section-cap">Movement dataset</div>
+            <div className="section-cap">Movement controls</div>
             <div className="p37-motion-controls" role="group" aria-label="Choose motion dataset">
               <button type="button" aria-pressed={motion==='motion_cycle'}
                 onClick={()=>setPlayback('motion_cycle')}>Movement cycle</button>
@@ -238,13 +357,10 @@ export function App() {
               {p37Available && <button type="button" aria-pressed={p37Active}
                 onClick={()=>setPlayback('p37_experimental')}>P37 experimental model</button>}
             </div>
-            <p className="helper">Motion data is sampled from each real robot's
-              MuJoCo joint limits, reference pose and actuator contract.
-              It is a synthesized trajectory, not recorded human motion or learned P37 behavior.</p>
-            {currentMotion && <a className="policy-source-link"
-              href={import.meta.env.BASE_URL+'simulator/motion_data/'+currentMotion.dataset_file}
-              download>Download this robot's motion dataset (.npz) ↗</a>}
-            <div className="rule"/>
+            <p className="helper">Select a motion clip, then use WASD or the on-screen
+              direction controls to move the floating-base robot through the physical environment.
+              Motion clips are model-derived trajectories, not proven walking skills.</p>
+             <div className="rule"/>
             <div className="section-cap">Selected experiment</div>
             <p className="evidence-copy">{current?.task ?? 'Select a robot'}. {current?.capability ?? ''}
               {' '}{p37Active ? 'G1 receives genuine experimental ONNX inference and 29-joint commands at 50Hz.' :
