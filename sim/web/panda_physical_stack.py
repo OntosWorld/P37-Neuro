@@ -300,8 +300,9 @@ def simulate(
 
 def run(menagerie: Path, output: Path, *, require_success: bool) -> dict:
     model = load_model(menagerie)
-    if model.nu != 8 or [mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i)
-                              for i in range(model.nu)] != [f"actuator{i}" for i in range(1, 9)]:
+    if model.nu != 8 or [
+        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i) for i in range(model.nu)
+    ] != [f"actuator{i}" for i in range(1, 9)]:
         raise RuntimeError("Panda actuator order changed; refuse to replay motor sequence")
     actions, record = simulate(model)
     output.mkdir(parents=True, exist_ok=True)
