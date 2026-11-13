@@ -29,6 +29,34 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     if output.exists():
         shutil.rmtree(output)
     shutil.copytree(dist, output)
+    # A task gallery must show actual manufacturer-derived robot geometry.
+    # Posters are rendered from the SAME MJCF scenes as the live simulator
+    # during this build; never silently ship empty or generic thumbnails.
+    poster_dir = output / "task-posters"
+    manifest_file = poster_dir / "provenance.json"
+    if not manifest_file.is_file():
+        raise FileNotFoundError("Task gallery model-derived poster evidence missing")
+    provenance = json.loads(manifest_file.read_text(encoding="utf-8"))
+    entries = provenance.get("posters", [])
+    if (
+        provenance.get("format") != "p37-native-mujoco-task-posters"
+        or provenance.get("robot_count") != len(ROBOTS)
+        or {entry.get("robot_id") for entry in entries} != {robot.id for robot in ROBOTS}
+        or len(entries) != len(ROBOTS)
+    ):
+        raise RuntimeError("Task gallery poster provenance does not cover all ten robots")
+    for item in entries:
+        if item.get("pixels_from_native_renderer") is not True:
+            raise RuntimeError("Task gallery cannot publish non-MuJoCo robot posters")
+        filename = item.get("filename")
+        if filename != item["robot_id"] + ".webp":
+            raise RuntimeError("Untrusted gallery poster filename")
+        poster = poster_dir / filename
+        if not poster.is_file() or poster.stat().st_size < 7000:
+            raise RuntimeError(f"Missing or invalid physical poster: {filename}")
+    panda_cover = next(e for e in entries if e["robot_id"] == "franka_panda")
+    if panda_cover.get("panda_lift_frame_from_actual_motors") is not True:
+        raise RuntimeError("Featured Panda poster must use an actual physical lift frame")
     # Keep only native, manufacturer-derived robot geometry in the published
     # website. The former Steel reference URDFs / unused assets are excluded.
     for legacy in ("robots", "vendor"):
@@ -172,6 +200,7 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
             "final_blue_xyz": panda_record["final_blue_xyz"],
             "final_amber_xyz": panda_record["final_amber_xyz"],
         },
+        "task_gallery": {"version": 1, "native_robot_posters": len(entries), "source": provenance["generated_from"]},
         "physical_task_scene_version": 2,
         "task_experiences": [
             "live_assisted_physics",
