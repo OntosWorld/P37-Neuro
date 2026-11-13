@@ -287,7 +287,7 @@ export function App() {
         <a href="#evidence">Research evidence</a>
         <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noreferrer">GitHub ↗</a>
       </nav>
-      <span className="build-tag">POWERED BY P37-NEURO</span>
+      <span className="build-tag">P37-NEURO / PHYSICAL TASK LAB</span>
     </header>
     <main>
       {showGallery ? <TaskGallery onOpen={openGalleryTask} ready={catalog.length===10}/> : <>
@@ -337,6 +337,28 @@ export function App() {
                 p37Active ? 'P37 RECURRENT ONNX / EXPERIMENTAL' :
                 motion === 'hold' ? 'HOLD POSITION / NATIVE PHYSICS' :
                 'MOTION DATASET / NATIVE PHYSICS'}</span>
+            </div>
+          </div>
+          <div className="task-live-controls" role="group" aria-label="Task simulation controls">
+            <div>
+              <span>RUNNING EXPERIMENT {galleryTask.number} / 10</span>
+              <strong>{galleryTask.title}</strong>
+            </div>
+            <div className="task-live-actions">
+              {pandaActive && <button type="button" className="task-live-primary"
+                onClick={()=>setPlayback('panda_scripted_stack')}>
+                ▶ Replay grasp and stack</button>}
+              {experiment?.kind==='terrain' && <button type="button" className="task-live-primary"
+                onClick={toggleReferenceTask}>
+                {telemetry.scriptedTaskRunning ? 'Stop terrain attempt' : '▶ Run assisted terrain attempt'}
+              </button>}
+              {selected==='unitree_g1' && p37Available && <button type="button"
+                className="task-live-primary" onClick={()=>setPlayback('p37_experimental')}>
+                ▶ Test experimental P37 model</button>}
+              <button type="button" className="task-live-reset" onClick={()=>{
+                releaseSteer(); setTelemetry({status:'waiting'});
+                setStageLoaded(false); setReload(x=>x+1);
+              }}>↻ Reset scene</button>
             </div>
           </div>
           <div className="canvas-wrap p37-scene">
@@ -475,7 +497,13 @@ export function App() {
         </div>
         <aside className="playground-panel p37-real-panel">
           <div className="side-panel">
-            <div className="section-heading"><span>ROBOT LIBRARY</span><span>10 / VERIFIED MODELS</span></div>
+            <div className="p37-aside-task">
+              <div className="section-heading"><span>ACTIVE TASK</span><span>{galleryTask.number} / 10</span></div>
+              <h3>{galleryTask.title}</h3>
+              <p>{galleryTask.overview}</p>
+              <span>{galleryTask.label}</span>
+            </div>
+            <div className="section-heading"><span>ROBOT LIBRARY</span><span>10 / SOURCE MODELS</span></div>
             <label htmlFor="real-robot">Select a robot</label>
             <select id="real-robot" value={selected} onChange={e => {
               const robot = catalog.find(r => r.id === e.target.value);
