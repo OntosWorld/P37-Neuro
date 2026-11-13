@@ -82,7 +82,7 @@ def test_public_demos_keep_capability_claims_evidence_gated() -> None:
     assert "mujoco.MjModel.from_xml_path" in evidence
     assert "p37-cross-body-evidence.json" in evidence
     assert "p37_recovery_claimed" in evidence
-    assert "demos.css" in html and "demos.js" in html or "Task Gallery — P37 Neuro" in html
+    assert ("demos.css" in html and "demos.js" in html) or "Task Gallery — P37 Neuro" in html
 
 
 def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
