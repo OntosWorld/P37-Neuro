@@ -59,6 +59,17 @@ def _render(model: mujoco.MjModel, data: mujoco.MjData, target: Path, view: tupl
 def _model(menagerie: Path, robot_id: str) -> mujoco.MjModel:
     robot = next(robot for robot in ROBOTS if robot.id == robot_id)
     spec = mujoco.MjSpec.from_file(str(menagerie / robot.model / "scene.xml"))
+    # Match the low-saturation graphite materials in the live WebAssembly
+    # workcell. This is a visual treatment of source textures; real geometry,
+    # collisions, poses and task traces remain unmodified.
+    for texture in spec.textures:
+        if getattr(texture, "name", "") == "groundplane":
+            texture.rgb1 = [0.22, 0.23, 0.25]
+            texture.rgb2 = [0.19, 0.20, 0.22]
+            texture.markrgb = [0.26, 0.28, 0.30]
+        elif texture.type == mujoco.mjtTexture.mjTEXTURE_SKYBOX:
+            texture.rgb1 = [0.22, 0.25, 0.28]
+            texture.rgb2 = [0.07, 0.08, 0.10]
     # Use the same native task objects and key/fill light positions as the
     # published workcell. Keep image capture separate from mjswan's Torch
     # runtime so that offscreen EGL is light and deterministic.
