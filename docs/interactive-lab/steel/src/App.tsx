@@ -6,7 +6,7 @@ type Robot = {
   short: string; task: string; capability: string;
 };
 type Catalog = { robots: Robot[] };
-type MotionMode = 'motion_cycle' | 'articulation' | 'hold' | 'p37_experimental';
+type MotionMode = 'motion_cycle' | 'articulation' | 'hold' | 'p37_experimental' | 'panda_scripted_stack';
 type Experience = 'simulation' | 'recorded' | 'policy';
 type MotionClip = {
   robot_id: string; id: string; name: string; source: string;
@@ -114,6 +114,7 @@ export function App() {
     && build.experimental_policy_robot === 'unitree_g1'
     && build.p37_checkpoint_sha256 === evidence?.checkpoint_sha256;
   const p37Active = p37Available && motion === 'p37_experimental';
+  const pandaActive = selected === 'franka_panda' && motion === 'panda_scripted_stack';
   const isFixedArm = current?.kind === 'Manipulators';
   const canSteer = !isFixedArm && telemetry.status !== 'fixed';
   const sendSteer = (key: SteeringKey, down: boolean) => {
@@ -192,6 +193,7 @@ export function App() {
   },[selected]);
   const setPlayback = (next: MotionMode) => {
     if (next === 'p37_experimental' && !p37Available) return;
+    if (next === 'panda_scripted_stack' && selected !== 'franka_panda') return;
     if (next !== 'hold') setLastMotion(next);
     releaseSteer();
     setExperience(next === 'p37_experimental' ? 'policy' : 'simulation');
@@ -205,14 +207,15 @@ export function App() {
     articulation: 'motor_articulation',
     hold: 'hold_position',
     p37_experimental: 'p37_g1_experimental_recurrent_ppo',
+    panda_scripted_stack: 'panda_physical_cube_stack_scripted',
   })[mode];
   const selectRobot = (robot: Robot) => {
     releaseSteer();
     setSelected(robot.id);
     setExperience('simulation');
     setTelemetry({status:'waiting'});
-    setMotion('motion_cycle');
-    setLastMotion('motion_cycle');
+    setMotion(robot.id === 'franka_panda' ? 'panda_scripted_stack' : 'motion_cycle');
+    setLastMotion(robot.id === 'franka_panda' ? 'panda_scripted_stack' : 'motion_cycle');
     setStageLoaded(false);
     setReload(x => x + 1);
   };
@@ -261,8 +264,8 @@ export function App() {
           Watch a source-attributed robot recording, explore live MuJoCo tasks or test
           the experimental P37 controller on Unitree G1. Panda cube stacking,
           quadruped obstacle courses and Stretch delivery use real simulated
-          objects and contacts. Task experts and qualified cross-body policies
-          remain separate research work.
+          objects and contacts. Panda runs a contact-verified deterministic motor
+          reference; qualified cross-body policies remain separate research work.
         </p>
       </section>
       <section className="lab-grid" id="simulator" aria-label="Live manufacturer robot simulation">
@@ -285,7 +288,8 @@ export function App() {
             <div><span className="live-dot"/> {experience==='recorded'?'SOURCE-RECORDED EPISODE':'NATIVE ROBOT PHYSICS'}
               <span className="muted"> / MuJoCo · WebAssembly</span></div>
             <div className="stage-tools-head">
-              <span>{p37Active ? 'P37 RECURRENT ONNX / EXPERIMENTAL' :
+              <span>{pandaActive ? 'PANDA SCRIPTED TASK / VERIFIED NATIVE PHYSICS' :
+                p37Active ? 'P37 RECURRENT ONNX / EXPERIMENTAL' :
                 motion === 'hold' ? 'HOLD POSITION / NATIVE PHYSICS' :
                 'MOTION DATASET / NATIVE PHYSICS'}</span>
             </div>
@@ -317,6 +321,7 @@ export function App() {
           <div className="playground-embodiment p37-stage-actions">
             <span>Execution source</span>
             <strong>{experience==='recorded' ? 'MimicGen original Panda episodes · CC BY 4.0' :
+              pandaActive ? 'Validated scripted Panda motor reference · not learned' :
               p37Active ? 'Experimental P37 recurrent PPO' :
               motion === 'hold' ? 'Hold pose · model-derived' :
               'Recorded joint targets · model-derived'}</strong>
@@ -344,7 +349,7 @@ export function App() {
               </button>
               <span>External-force reference controller · no learned gait · up to 18 simulation seconds</span>
             </div>}
-            {(experiment.kind==='cube-stack' || experiment.kind==='delivery') && <p className="p37-task-source-note">
+            {((experiment.kind==='cube-stack' && !pandaActive) || experiment.kind==='delivery') && <p className="p37-task-source-note">
               Physical objects and success checks are live. A qualified grasp/placement task policy
               is not attached; the motor replay does not automatically complete the task.
             </p>}
@@ -446,6 +451,10 @@ export function App() {
                 onClick={()=>setPlayback('articulation')}>Articulation</button>
               <button type="button" aria-pressed={motion==='hold'}
                 onClick={()=>setPlayback('hold')}>Hold pose</button>
+              {selected === 'franka_panda' && <button type="button"
+                aria-pressed={pandaActive} onClick={()=>setPlayback('panda_scripted_stack')}>
+                {pandaActive ? 'Replay validated Panda stack' : 'Run validated Panda stack'}
+              </button>}
               {p37Available && <button type="button" aria-pressed={p37Active}
                 onClick={()=>setPlayback('p37_experimental')}>P37 experimental model</button>}
             </div>
@@ -455,13 +464,14 @@ export function App() {
              <div className="rule"/>
             <div className="section-cap">Research boundary</div>
             <p className="evidence-copy">{current?.task ?? 'Select a robot'}. {current?.capability ?? ''}
-              {' '}{p37Active ? 'G1 receives genuine experimental ONNX inference and 29-joint commands at 50Hz.' :
+              {' '}{pandaActive ? 'A validated deterministic Panda reference replays eight physical motor controls at 50Hz. Its grasp, lift, release and stable stack were verified in native MuJoCo and independent replay. This is scripted control, not a P37 learned policy.' :
+              p37Active ? 'G1 receives genuine experimental ONNX inference and 29-joint commands at 50Hz.' :
               'The motion dataset supplies model-compatible joint or motor targets through MuJoCo physics. It is not a trained autonomous skill.'}</p>
             <div className="info-row"><span>Physics engine</span><strong>MuJoCo</strong></div>
             <div className="info-row"><span>3D geometry</span><strong>Manufacturer-derived</strong></div>
-            <div className="info-row"><span>Controller</span><strong>{p37Active ? 'P37 recurrent PPO' : 'Dataset motor replay'}</strong></div>
-            <div className="info-row"><span>Source</span><strong>{p37Active ? 'Experimental P37 checkpoint' : 'MuJoCo model-derived motion'}</strong></div>
-            <div className="info-row"><span>Learning qualification</span><strong>Unqualified</strong></div>
+            <div className="info-row"><span>Controller</span><strong>{pandaActive ? 'Validated scripted Panda reference' : p37Active ? 'P37 recurrent PPO' : 'Dataset motor replay'}</strong></div>
+            <div className="info-row"><span>Source</span><strong>{pandaActive ? 'Native verified grasp and stack trial' : p37Active ? 'Experimental P37 checkpoint' : 'MuJoCo model-derived motion'}</strong></div>
+            <div className="info-row"><span>Learning qualification</span><strong>{pandaActive ? 'Scripted · physical task verified' : 'Unqualified'}</strong></div>
             {error && <p className="helper" role="alert">{error}</p>}
           </div>
         </aside>
