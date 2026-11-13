@@ -265,9 +265,9 @@ def build(
         raise RuntimeError("Upstream mjswan engine integration hook changed")
     patched_app = original_app.replace(
         hook,
-        hook + "\n" + (
-            "      (window as Window & { __p37Engine?: unknown }).__p37Engine = engine;"
-        ),
+        hook
+        + "\n"
+        + ("      (window as Window & { __p37Engine?: unknown }).__p37Engine = engine;"),
         1,
     )
     old_cwd = Path.cwd()
