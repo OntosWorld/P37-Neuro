@@ -496,7 +496,7 @@ export function App() {
         </div>
         <aside className="playground-panel p37-real-panel">
           <div className="side-panel">
-            <div className="section-heading"><span>ROBOT LIBRARY</span><span>10 / VERIFIED MODELS</span></div>
+            <div className="section-heading"><span>TASK CONTROLS</span><span>NATIVE MUJOCO</span></div>
             <label htmlFor="real-robot">Select a robot</label>
             <select id="real-robot" value={selected} onChange={e => {
               const robot = catalog.find(r => r.id === e.target.value);
@@ -506,8 +506,15 @@ export function App() {
                 {robot.name} · {robot.kind}
               </option>)}
             </select>
-            <p className="helper">Official MuJoCo Menagerie geometry, articulated joints,
-              native body collisions and accurate proportions.</p>
+            <p className="helper">Open the selected experiment above. Robot meshes,
+              task objects and contacts run in the native MuJoCo physics engine.</p>
+            <details className="p37-all-robots">
+              <summary>Browse all ten robot bodies</summary>
+              <div className="playground-scenes p37-scenes" role="group" aria-label="Choose robot category">
+                <span className="playground-scenes-label">Filter</span>
+                {CATEGORIES.map(item => <button key={item} type="button"
+                  aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}
+              </div>
             <div className="robot-catalog" role="group" aria-label="Select real robot body">
               <div className="catalog-heading">AVAILABLE BODIES <span>{selection.length} SHOWN</span></div>
               <div className="catalog-choices">
@@ -519,25 +526,27 @@ export function App() {
                 </button>)}
               </div>
             </div>
+            </details>
             <div className="rule"/>
-            <div className="section-cap">Controller and motion replay</div>
+            <div className="section-cap">Task execution and motor controls</div>
             <div className="p37-motion-controls" role="group" aria-label="Choose motion dataset">
+              {selected === 'franka_panda' && <button type="button"
+                className="p37-task-primary" aria-pressed={pandaActive}
+                onClick={()=>setPlayback('panda_scripted_stack')}>
+                {pandaActive ? '↻ Replay Panda stack' : '▶ Run physical Panda stack'}
+              </button>}
+              {p37Available && <button type="button" aria-pressed={p37Active}
+                onClick={()=>setPlayback('p37_experimental')}>Experimental P37 G1</button>}
               <button type="button" aria-pressed={motion==='motion_cycle'}
                 onClick={()=>setPlayback('motion_cycle')}>Movement cycle</button>
               <button type="button" aria-pressed={motion==='articulation'}
-                onClick={()=>setPlayback('articulation')}>Articulation</button>
+                onClick={()=>setPlayback('articulation')}>Motor articulation</button>
               <button type="button" aria-pressed={motion==='hold'}
                 onClick={()=>setPlayback('hold')}>Hold pose</button>
-              {selected === 'franka_panda' && <button type="button"
-                aria-pressed={pandaActive} onClick={()=>setPlayback('panda_scripted_stack')}>
-                {pandaActive ? 'Replay validated Panda stack' : 'Run validated Panda stack'}
-              </button>}
-              {p37Available && <button type="button" aria-pressed={p37Active}
-                onClick={()=>setPlayback('p37_experimental')}>P37 experimental model</button>}
             </div>
-            <p className="helper">Select a motion clip, then use WASD or the on-screen
-              direction controls to move the floating-base robot through the physical environment.
-              Motion clips are model-derived trajectories, not proven walking skills.</p>
+            <p className="helper">{pandaActive
+              ? 'The scripted Panda run starts in native MuJoCo. Orbit the camera, inspect the cube, or replay the complete 18.2-second sequence.'
+              : 'Use WASD or the on-screen controls on supported floating-base robots. Motion clips and assisted movement are not qualified learned walking policies.'}</p>
              <div className="rule"/>
             <div className="section-cap">Research boundary</div>
             <p className="evidence-copy">{current?.task ?? 'Select a robot'}. {current?.capability ?? ''}
