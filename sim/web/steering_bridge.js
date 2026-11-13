@@ -24,6 +24,9 @@
   let scriptedRun = false;
   let scriptedStart = null;
   let stableFrames = 0;
+  // Browser task evidence is derived from real MuJoCo free-joint state.
+  // Native Python qualification separately verifies finger/cube contact.
+  let pandaSequence = { lifted: false, carried: false, released: false, completed: false };
   const TERRAIN = Object.freeze({unitree_go2: 1.7, anymal_c: 1.6});
   const robot = new URLSearchParams(window.location.search).get('scene') || '';
 
@@ -120,12 +123,24 @@
       const velocities = data.qvel ? Array.from(data.qvel).slice(-12) : [];
       const objectsStill = velocities.length === 12 &&
         Math.hypot(...velocities.map(v => Number(v) || 0)) < 0.16;
+      // Require an observed, ordered physical sequence, not merely two cubes
+      // being close together (which could happen after a manual disturbance).
+      const liftedNow = blue[2] >= 0.67;
+      const transportedNow = blue[1] >= 0.045 && blue[2] >= 0.64;
+      if (liftedNow && !jawOpen) pandaSequence.lifted = true;
+      if (pandaSequence.lifted && transportedNow && !jawOpen) pandaSequence.carried = true;
+      if (pandaSequence.carried && jawOpen && blue[1] >= 0.045) pandaSequence.released = true;
       const validStack = offset <= 0.050 && gap >= 0.052 && gap <= 0.085
         && blue[2] >= 0.62 && amber[2] >= 0.55 &&
-        jawOpen && objectsStill;
+        jawOpen && objectsStill && pandaSequence.released;
       stableFrames = validStack ? stableFrames + 1 : 0;
+      pandaSequence.completed = stableFrames >= 20;
       return { taskKind: 'cube-stack', objectDistance: Number(offset.toFixed(4)),
-        stackHeight: Number(gap.toFixed(4)), stackStable: stableFrames >= 20,
+        stackHeight: Number(gap.toFixed(4)), stackStable: pandaSequence.completed,
+        taskLiftObserved: pandaSequence.lifted,
+        taskCarryObserved: pandaSequence.carried,
+        taskReleaseObserved: pandaSequence.released,
+        taskSequenceComplete: pandaSequence.completed,
         observedObjects: 2,
         bluePosition: blue.map(v => Number(v.toFixed(3))),
         amberPosition: amber.map(v => Number(v.toFixed(3))) };
@@ -177,6 +192,7 @@
       }
       frame = 0;
       scriptedRun = false; scriptedStart = null; stableFrames = 0;
+      pandaSequence = { lifted: false, carried: false, released: false, completed: false };
       resetInputs();
     }
     if (selectedBody < 0) {
