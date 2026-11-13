@@ -47,6 +47,14 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     }
     assert (site / "recorded/index.html").is_file()
     assert (site / "recorded/samples/mimicgen-square-source.json").is_file()
+    previews = json.loads((site / "task-previews/manifest.json").read_text(encoding="utf-8"))
+    assert previews["renderer"] == "MuJoCo Python offscreen"
+    assert len(previews["scenes"]) == 6
+    assert all(item["actual_mujoco_scene"] is True for item in previews["scenes"])
+    for item in previews["scenes"]:
+        image = site / "task-previews" / item["file"]
+        assert image.is_file() and image.stat().st_size > 12000
+        assert image.read_bytes().startswith(b"\\xff\\xd8\\xff")
     cross = json.loads((site / "p37-cross-body-evidence.json").read_text(encoding="utf-8"))
     assert metadata["p37_checkpoint_sha256"] == cross["checkpoint_sha256"]
     assert cross["qualified_for_walking"] is False
@@ -118,14 +126,38 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page = browser.new_page(viewport={"width": 1512, "height": 982})
             response = page.goto(origin, wait_until="domcontentloaded", timeout=45000)
             assert response is not None and response.status == 200
-            page.get_by_role("heading", name="One brain. Different bodies.").wait_for(timeout=35000)
-            page.get_by_role("button", name="Unitree G1").wait_for(timeout=30000)
+            page.get_by_role("heading", name="Watch the robots do the work.").wait_for(
+                timeout=35000
+            )
+            assert page.locator(".task-gallery-card").count() == 6
+            assert page.locator(".task-gallery-card img").count() == 6
+            page.wait_for_function(
+                "() => Array.from(document.querySelectorAll('.task-gallery-card img'))"
+                ".slice(0,3).every(img => img.complete && img.naturalWidth > 300)",
+                timeout=35000,
+            )
             assert page.locator(".robot-catalog button").count() == 10
             assert "reference arm" not in page.locator("main").inner_text().lower()
             assert "compact arm" not in page.locator("main").inner_text().lower()
-            assert "Dataset motor replay" in page.locator(".p37-real-panel").inner_text()
+            assert "Validated scripted Panda reference" in page.locator(
+                ".p37-real-panel"
+            ).inner_text()
             assert "walking" in page.locator(".policy-evidence").inner_text().lower()
             assert page.locator(".menagerie-viewer").count() == 1
+            assert "scene=franka_panda" in page.locator("iframe.menagerie-viewer").get_attribute(
+                "src"
+            )
+            assert "policy=panda_physical_cube_stack_scripted" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
+            page.screenshot(path=str(screenshots / "task-gallery-desktop.png"), timeout=90000)
+            page.get_by_role("button", name="Navigation", exact=True).click()
+            assert page.locator(".task-gallery-card").count() == 2
+            page.get_by_role("button", name="All experiments").click()
+            assert page.locator(".task-gallery-card").count() == 6
+            page.get_by_role(
+                "button", name="Inspect P37 experiment — Test a learned G1 controller."
+            ).click()
             assert "scene=unitree_g1" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
@@ -142,7 +174,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert page.get_by_role("progressbar", name="Measured task progress").is_visible()
             assert page.get_by_role("button", name="Turn left").is_visible()
             assert "Download this robot" not in page.locator("main").inner_text()
-            page.get_by_role("button", name="Articulation").click()
+            page.get_by_role("button", name="Motor articulation").click()
             assert "policy=motor_articulation" in page.locator(
                 "iframe.menagerie-viewer"
             ).get_attribute("src")
@@ -154,7 +186,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert "policy=motor_articulation" in page.locator(
                 "iframe.menagerie-viewer"
             ).get_attribute("src")
-            page.get_by_role("button", name="P37 experimental model").click()
+            page.get_by_role("button", name="Experimental P37 G1").click()
             assert "policy=p37_g1_experimental_recurrent_ppo" in page.locator(
                 "iframe.menagerie-viewer"
             ).get_attribute("src")
@@ -171,7 +203,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page.get_by_role("combobox", name="Select a robot").select_option("franka_panda")
             assert "Fixed-base robot" in page.locator(".p37-steer-panel").inner_text()
             assert page.get_by_text("Stack two physical cubes").is_visible()
-            assert page.get_by_role("button", name="Replay validated Panda stack").is_visible()
+            assert page.locator(".p37-task-primary").is_visible()
             assert "policy=panda_physical_cube_stack_scripted" in page.locator(
                 "iframe.menagerie-viewer"
             ).get_attribute("src")
@@ -261,6 +293,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
         "download_ui_removed": True,
         "task_objectives_and_metrics": True,
         "physical_task_scenes_and_source_recording": True,
+        "task_first_gallery_and_native_scenes": True,
         "desktop_mobile": True,
         "panda_model_loaded": True,
         "unqualified_models_not_mislabeled": True,
