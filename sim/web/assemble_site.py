@@ -48,8 +48,10 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     if not (recorded / "index.html").is_file() or not sample.is_file():
         raise FileNotFoundError("Verified source recording viewer is unavailable")
     publication = json.loads(sample.read_text(encoding="utf-8")).get("publication", {})
-    if (publication.get("source") != "amandlek/mimicgen_datasets"
-        or publication.get("learned_policy_attached") is not False):
+    if (
+        publication.get("source") != "amandlek/mimicgen_datasets"
+        or publication.get("learned_policy_attached") is not False
+    ):
         raise RuntimeError("Recorded task data failed source/learning integrity checks")
     shutil.copytree(recorded, output / "recorded")
     # Published measurements are recorded native policy experiments.
