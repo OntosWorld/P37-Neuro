@@ -126,9 +126,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page = browser.new_page(viewport={"width": 1512, "height": 982})
             response = page.goto(origin, wait_until="domcontentloaded", timeout=45000)
             assert response is not None and response.status == 200
-            page.get_by_role(
-                "heading", name="Robots at work. Explore the simulations."
-            ).wait_for(timeout=35000)
+            page.get_by_role("heading", name="Robots at work. Explore the simulations.").wait_for(
+                timeout=35000
+            )
             assert page.get_by_role("region", name="Task-first simulation gallery").count() == 1
             assert page.locator(".gallery-task-card").count() == 9
             assert page.locator(".task-poster").count() == 10
@@ -147,9 +147,7 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
                 "button", name="Open Franka Panda physical cube stacking simulation"
             ).click()
             assert page.url.endswith("#task=franka_panda")
-            assert page.get_by_role(
-                "heading", name="Stack two physical cubes"
-            ).first.is_visible()
+            assert page.get_by_role("heading", name="Stack two physical cubes").first.is_visible()
             assert "policy=panda_physical_cube_stack_scripted" in page.locator(
                 "iframe.menagerie-viewer"
             ).get_attribute("src")
@@ -211,9 +209,11 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page.screenshot(path=str(screenshots / "g1-p37-live-inference.png"), timeout=90000)
             page.get_by_role("combobox", name="Select a robot").select_option("franka_panda")
             assert "Fixed-base robot" in page.locator(".p37-steer-panel").inner_text()
-            assert page.locator(".p37-task-experiment h2").get_by_text(
-                "Stack two physical cubes"
-            ).is_visible()
+            assert (
+                page.locator(".p37-task-experiment h2")
+                .get_by_text("Stack two physical cubes")
+                .is_visible()
+            )
             assert page.get_by_role("button", name="Replay validated Panda stack").is_visible()
             assert "policy=panda_physical_cube_stack_scripted" in page.locator(
                 "iframe.menagerie-viewer"
