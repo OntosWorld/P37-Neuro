@@ -36,7 +36,7 @@ export const GALLERY_TASKS: GalleryTask[] = [
     description: 'Grasp a cube on the tabletop, carry it to a marked location, release it and verify it settles.',
     robotId: 'franka_panda', robotName: 'Franka Panda',
     category: 'Manipulation', route: 'pick',
-    status: 'Native verification required',
+    status: 'Build-gated physical task',
     source: 'MuJoCo Menagerie · native Panda',
     image: 'panda-stack.jpg',
     sourceImage: menagerie + 'franka_emika_panda/panda.png',
