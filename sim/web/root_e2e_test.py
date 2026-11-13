@@ -168,9 +168,14 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             )
             page.get_by_text("Ready for input").wait_for(state="visible", timeout=120000)
             page.keyboard.down("w")
-            page.wait_for_timeout(1700)
-            page.keyboard.up("w")
-            page.wait_for_timeout(350)
+            try:
+                page.wait_for_function(
+                    "() => Number.parseFloat(document.querySelector("
+                    "'.p37-steering-telemetry strong')?.textContent || '') > 0.02",
+                    timeout=15000,
+                )
+            finally:
+                page.keyboard.up("w")
             measured = page.locator(".p37-steering-telemetry strong").inner_text()
             assert measured.endswith(" m traveled"), measured
             displacement = float(measured.split(" ")[0])
