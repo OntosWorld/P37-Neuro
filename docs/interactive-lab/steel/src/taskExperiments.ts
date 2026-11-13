@@ -4,7 +4,7 @@
  * learned task execution. External benchmark references are integration leads,
  * not automatically compatible replay datasets.
  */
-export type TaskKind = 'checkpoint' | 'joint-excursion' | 'altitude';
+export type TaskKind = 'checkpoint' | 'terrain' | 'joint-excursion' | 'altitude' | 'cube-stack' | 'delivery';
 export type TaskExperiment = {
   id: string;
   robotId: string;
@@ -26,6 +26,13 @@ export type TaskTelemetry = {
   z?: number;
   jointDelta?: number;
   jointName?: string;
+  objectDistance?: number;
+  stackHeight?: number;
+  stackStable?: boolean;
+  objectDelivered?: boolean;
+  observedObjects?: number;
+  scriptedTaskRunning?: boolean;
+  scriptedTaskElapsed?: number;
 };
 
 export const TASK_EXPERIMENTS: Record<string, TaskExperiment> = {
@@ -54,9 +61,9 @@ export const TASK_EXPERIMENTS: Record<string, TaskExperiment> = {
     nextTask:'Test a licensed Booster T1 recovery checkpoint and control policy',
   },
   unitree_go2: {
-    id:'go2-patrol', robotId:'unitree_go2', title:'Patrol to a waypoint',
-    objective:'Drive the Go2 through real contact dynamics to the inspection checkpoint.',
-    kind:'checkpoint', target:1.1, tolerance:0.35, minBodyHeight:0.16,
+    id:'go2-curb-course', robotId:'unitree_go2', title:'Traverse the physical obstacle course',
+    objective:'Cross a colliding curb, a raised step and a pylon before reaching the finish. A scripted force-assisted attempt or manual steering can fail.',
+    kind:'terrain', target:1.7, tolerance:0.30, minBodyHeight:0.16,
     upstream:'ManiSkill · UnitreeGo2-Reach task',
     upstreamUrl:'https://maniskill.readthedocs.io/en/latest/tasks/quadruped/',
     nextTask:'Closed-loop gait control and obstacle-course evaluation',
@@ -70,17 +77,17 @@ export const TASK_EXPERIMENTS: Record<string, TaskExperiment> = {
     nextTask:'Multi-waypoint inspection with obstacle contact and recovery',
   },
   anymal_c: {
-    id:'anymal-survey', robotId:'anymal_c', title:'Reach the terrain survey point',
-    objective:'Steer ANYmal C to a marked floor waypoint in the live rigid-body scene.',
-    kind:'checkpoint', target:1.0, tolerance:0.35, minBodyHeight:0.18,
+    id:'anymal-terrain', robotId:'anymal_c', title:'Cross uneven terrain',
+    objective:'Attempt the real collision-backed curb, step and pylon course on ANYmal C. Body height and waypoint state are measured.',
+    kind:'terrain', target:1.6, tolerance:0.30, minBodyHeight:0.18,
     upstream:'ManiSkill · AnymalC-Reach',
     upstreamUrl:'https://maniskill.readthedocs.io/en/latest/tasks/quadruped/',
     nextTask:'AnymalC-Reach task port and rough-ground stability benchmark',
   },
   franka_panda: {
-    id:'panda-joint', robotId:'franka_panda', title:'Sweep a Panda arm joint by 0.15 rad',
-    objective:'Inspect the Panda articulated motion until a measured hinge has moved 0.15 rad.',
-    kind:'joint-excursion', target:0.15,
+    id:'panda-cube-stack', robotId:'franka_panda', title:'Stack two physical cubes',
+    objective:'Move the blue cube onto the amber cube using real Panda contacts. Two free-body objects, a workbench and measured stack alignment are simulated. Current joint replay is not a grasping expert.',
+    kind:'cube-stack', target:0.05,
     upstream:'SoftMimicGen · Franka towel fold task',
     upstreamUrl:'https://github.com/NVlabs/SoftMimicGen',
     nextTask:'Franka towel folding and cube stacking with verified deformable/contact physics',
@@ -94,9 +101,9 @@ export const TASK_EXPERIMENTS: Record<string, TaskExperiment> = {
     nextTask:'Task-space reach, assembly insertion and tool interaction',
   },
   hello_robot_stretch: {
-    id:'stretch-delivery', robotId:'hello_robot_stretch', title:'Reach a delivery station',
-    objective:'Move Stretch to a marked station. The arm motion is separate from payload handling.',
-    kind:'checkpoint', target:0.8, tolerance:0.35, minBodyHeight:0.12,
+    id:'stretch-object-delivery', robotId:'hello_robot_stretch', title:'Deliver the physical parcel',
+    objective:'Transport the real movable Stretch scene object from its source table to the receiving table. Base motion alone does not count as delivery.',
+    kind:'delivery', target:0.19,
     upstream:'RoboCasa365 · mobile manipulation scenes',
     upstreamUrl:'https://robocasa.ai/',
     nextTask:'Pickup, navigate and place using a payload and gripper contact predicate',
@@ -113,6 +120,27 @@ export const TASK_EXPERIMENTS: Record<string, TaskExperiment> = {
 
 export function taskProgress(task: TaskExperiment, t: TaskTelemetry) {
   const bounded = (n: number) => Math.max(0, Math.min(1, n));
+  if (task.kind === 'cube-stack') {
+    const separation = t.objectDistance;
+    return {
+      progress: separation === undefined ? 0 : bounded(1 - separation / 0.36),
+      reached: t.stackStable === true,
+      measure: separation === undefined ? 'Waiting for cube positions' :
+        separation.toFixed(3) + ' m cube alignment · ' +
+        (t.stackStable ? 'stable stack' : 'stack not confirmed'),
+      goal: 'Blue cube rests on amber cube for 20 sampled frames',
+    };
+  }
+  if (task.kind === 'delivery') {
+    const distance = t.objectDistance;
+    return {
+      progress: distance === undefined ? 0 : bounded(1 - distance / 1.25),
+      reached: t.objectDelivered === true,
+      measure: distance === undefined ? 'Waiting for parcel position' :
+        distance.toFixed(2) + ' m to destination',
+      goal: 'Physical parcel settles on receiving table',
+    };
+  }
   if (task.kind === 'joint-excursion') {
     const movement = t.jointDelta ?? 0;
     return {
