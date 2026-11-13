@@ -15,7 +15,6 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
-from build_mjswan import _light_scene, _task_checkpoint
 from catalog import ROBOTS
 from panda_physical_stack import initial_data
 from physical_task_scenes import add_physical_task_scene
@@ -60,8 +59,23 @@ def _render(model: mujoco.MjModel, data: mujoco.MjData, target: Path, view: tupl
 def _model(menagerie: Path, robot_id: str) -> mujoco.MjModel:
     robot = next(robot for robot in ROBOTS if robot.id == robot_id)
     spec = mujoco.MjSpec.from_file(str(menagerie / robot.model / "scene.xml"))
-    _light_scene(spec, robot)
-    _task_checkpoint(spec, robot)
+    # Use the same native task objects and key/fill light positions as the
+    # published workcell. Keep image capture separate from mjswan's Torch
+    # runtime so that offscreen EGL is light and deterministic.
+    spec.worldbody.add_light(
+        name="p37_preview_key",
+        pos=[-3.8, -3.2, 5.5],
+        dir=[0.65, 0.55, -1.0],
+        diffuse=[0.70, 0.73, 0.78],
+        specular=[0.24, 0.26, 0.29],
+    )
+    spec.worldbody.add_light(
+        name="p37_preview_fill",
+        pos=[3.4, 2.3, 4.2],
+        dir=[-0.65, -0.55, -1.0],
+        diffuse=[0.38, 0.42, 0.48],
+        specular=[0.09, 0.11, 0.14],
+    )
     add_physical_task_scene(spec, robot_id)
     return spec.compile()
 
