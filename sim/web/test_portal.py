@@ -116,3 +116,29 @@ def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
     adapter = (ROOT / "p37_browser_policy.py").read_text(encoding="utf-8")
     assert "next_memory" in adapter and "adapt_hx" in adapter
     assert "p37_checkpoint_sha256" in assembler
+
+
+def test_pick_place_is_separate_and_fails_closed() -> None:
+    """Gallery task, native contact checks and browser runtime must agree."""
+    builder = (ROOT / "build_mjswan.py").read_text(encoding="utf-8")
+    tasks = (ROOT / "physical_task_scenes.py").read_text(encoding="utf-8")
+    controller = (ROOT / "panda_pick_place.py").read_text(encoding="utf-8")
+    assembler = (ROOT / "assemble_site.py").read_text(encoding="utf-8")
+    bridge = (ROOT / "steering_bridge.js").read_text(encoding="utf-8")
+    gallery = (ROOT.parents[1] / "docs/interactive-lab/steel/src/taskGallery.ts").read_text(
+        encoding="utf-8"
+    )
+    for marker in ("franka_pick_place", "panda-pick-place.onnx", "qualify_pick_place"):
+        assert marker in builder
+    for marker in ("p37_pick_bench", "p37_pick_cube", "p37_pick_target"):
+        assert marker in tasks
+    for marker in ("contact_grasp_observed", "transport_observed", "release_observed",
+                   "stable_target_observed", "replay_verified",
+                   "open_jaw_negative_control_failed"):
+        assert marker in controller and marker in assembler
+    assert '"franka_pick_place"' in assembler
+    assert "panda_physical_pick_place_scripted" in assembler
+    assert "sceneId === 'franka_pick_place'" in bridge
+    assert "taskSequenceComplete" in bridge
+    assert "id: 'panda-pick-place'" in gallery
+    assert "route: 'pick'" in gallery
