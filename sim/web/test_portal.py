@@ -90,7 +90,7 @@ def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
     assert "unitree_g1" in root_app
     assert "TaskGallery" in root_app
     task_gallery = (
-        ROOT.parents[1] / "docs" / "interactive-lab" / "steel" / "src" / "TaskGallery.tsx"
+        ROOT.parents[1] / "docs" / "interactive-lab" / "steel" / "src" / "SimulationGallery.tsx"
     ).read_text(encoding="utf-8")
     assert "Robots at work." in task_gallery
     assert "Watch the simulation" in task_gallery
@@ -99,7 +99,7 @@ def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
     assert "Articulation" in root_app
     assert "Hold motion" in root_app
     assert "not a trained autonomous skill" in root_app.lower()
-    assert "POWERED BY P37-NEURO" in root_app
+    assert "P37-NEURO / PHYSICAL TASK LAB" in root_app
     assert "model_derived" in (ROOT / "model_motion_library.py").read_text(encoding="utf-8")
     assert "compact arm" not in root_app.lower()
     assert "extended arm" not in root_app.lower()
