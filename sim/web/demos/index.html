@@ -1,126 +1,81 @@
 <!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#101315">
-  <meta name="description" content="Live robotics simulations, measured disturbances and P37-Neuro policy experiments. Real models, reproducible evidence and explicit capability limits.">
-  <title>Robotics Demos / P37 Brain Lab</title>
-  <link rel="stylesheet" href="./demos.css">
-  <script src="./demos.js" defer></script>
-</head>
-<body>
-  <header class="topbar">
-    <a class="wordmark" href="../" aria-label="Ontos Brain Lab"><strong>ONTOS</strong><span>/</span><span>P37 Brain Lab</span></a>
-    <nav class="nav" aria-label="Main navigation">
-      <a href="../">Simulator</a>
-      <a href="./" class="current" aria-current="page">Demos</a>
-      <a href="../lab/steel/">3D Workcell</a>
-      <a href="../lab/compare/?sample=mimicgen">Recorded Data</a>
-      <a href="#research">Research</a>
-    </nav>
-    <a class="top-source" href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noopener noreferrer">Source code <span aria-hidden="true">↗</span></a>
-  </header>
-  <main>
-    <section class="intro content-width">
-      <p class="eyebrow"><span class="eyebrow-line"></span> P37 / SIMULATION RESEARCH</p>
-      <div class="intro-grid">
-        <h1>Robotics,<br>under test<span class="period">.</span></h1>
-        <div class="intro-copy">
-          <p>Explore real robot models, compare how different bodies respond to physics, and inspect what P37 has actually achieved in neural control.</p>
-          <div class="trust-line"><span class="status-dot"></span> Live MuJoCo physics <span class="sep">/</span> Verified experiment data <span class="sep">/</span> No staged behavior</div>
-        </div>
-      </div>
-      <div class="facts" aria-label="Demonstration scope">
-        <div><strong id="robot-total">10</strong><span>real robot models</span></div>
-        <div><strong id="force-total">2</strong><span>measured force trials</span></div>
-        <div><strong id="trial-total">3</strong><span>P37 neural evaluation runs</span></div>
-      </div>
-    </section>
-
-    <section id="interactive" class="content-width scene-section" aria-labelledby="interactive-heading">
-      <div class="section-heading"><div><p class="section-index">01 / INTERACTIVE PHYSICS</p><h2 id="interactive-heading">Choose a simulation.</h2></div><p>Every scene runs MuJoCo physics on your device. Select a real robot, drag it and inspect its response.</p></div>
-      <div class="sim-layout">
-        <div class="scene-menu" id="scene-menu" role="group" aria-label="Choose a robot simulation">
-          <div class="menu-label">SIMULATIONS <span>05 SELECTED</span></div>
-          <button type="button" class="scene-choice selected" data-scene="unitree_g1" aria-pressed="true"><span class="scene-ordinal">01</span><span class="choice-copy"><strong>Humanoid balance</strong><small>Unitree G1 · Whole-body physics</small></span><span class="choice-arrow">↗</span></button>
-          <button type="button" class="scene-choice" data-scene="unitree_go2" aria-pressed="false"><span class="scene-ordinal">02</span><span class="choice-copy"><strong>Four-legged contact</strong><small>Unitree Go2 · Body stability</small></span><span class="choice-arrow">↗</span></button>
-          <button type="button" class="scene-choice" data-scene="franka_panda" aria-pressed="false"><span class="scene-ordinal">03</span><span class="choice-copy"><strong>Robot arm articulation</strong><small>Franka Panda · Physical joints</small></span><span class="choice-arrow">↗</span></button>
-          <button type="button" class="scene-choice" data-scene="hello_robot_stretch" aria-pressed="false"><span class="scene-ordinal">04</span><span class="choice-copy"><strong>Mobile manipulation</strong><small>Stretch · Base and arm dynamics</small></span><span class="choice-arrow">↗</span></button>
-          <button type="button" class="scene-choice" data-scene="crazyflie_2" aria-pressed="false"><span class="scene-ordinal">05</span><span class="choice-copy"><strong>Micro-drone dynamics</strong><small>Crazyflie 2 · Free-body motion</small></span><span class="choice-arrow">↗</span></button>
-          <div class="menu-note">These scenes demonstrate a real physics solver with physical robot models. A trained P37 controller is not attached.</div>
-        </div>
-        <div class="sim-stage" id="sim-stage">
-          <div class="stage-top"><span class="stage-state"><span class="live-dot"></span> <span id="stage-state">LOADING PHYSICS</span></span><span id="stage-robot">UNITREE G1</span></div>
-          <iframe id="stage-frame" title="Live MuJoCo robot simulation" allow="fullscreen;xr-spatial-tracking" loading="eager"></iframe>
-          <div class="stage-loading" id="stage-loading"><span class="spinner" aria-hidden="true"></span><span>Loading physical robot model…</span></div>
-          <div class="stage-error" id="stage-error" hidden><strong>Simulation unavailable in this browser.</strong><span>Try a WebGL-enabled browser or open the model in the standalone simulator.</span></div>
-          <div class="stage-bottom"><div><strong id="stage-title">Unitree G1</strong><small id="stage-caption">Real robot model · Model-only physics</small></div><div class="stage-tools"><button id="stage-reset" type="button">↻ <span>Reset</span></button><a id="stage-standalone" href="../?robot=unitree_g1">Open full lab ↗</a></div></div>
-        </div>
-      </div>
-      <div class="subnote"><span class="tiny-star">✳</span> Drag a robot to test its physical response. Drag empty space to orbit. Behavior is generated by MuJoCo, not pre-recorded animation.</div>
-    </section>
-
-    <section id="embodiments" class="content-width cross-section" aria-labelledby="cross-heading">
-      <div class="section-heading"><div><p class="section-index">02 / CROSS-EMBODIMENT LAB</p><h2 id="cross-heading">Different bodies.<br>One evaluation framework.</h2></div><p>Two robot models, viewed side by side under the same simulation engine. Inspect their different joint structures and test them independently.</p></div>
-      <div class="cross-claim"><span class="cross-marker" aria-hidden="true"></span><div><strong>What this verifies</strong><p>Different robot embodiments can be loaded, inspected and simulated through the same browser physics interface. <b>Successful transfer of a trained P37 checkpoint across these bodies is not yet verified.</b></p></div></div>
-      <div class="inference-proof" aria-label="Verified unchanged P37 checkpoint inference on two robots">
-        <div class="proof-main">
-          <p class="proof-overline">VERIFIED P37 / NATIVE MUJOCO INFERENCE</p>
-          <h3>One checkpoint.<br>Two actuator layouts.</h3>
-          <p>The same experimental P37 recurrent weights issued joint actions to both G1 and Go2 during short physics trials. The model was not retrained for Go2. This verifies the inference path, <strong>not learned walking or task transfer.</strong></p>
-          <a class="source-link" id="cross-p37-source" href="https://github.com/OntosRobotics/P37-Neuro/actions/runs/42896162520" target="_blank" rel="noopener noreferrer">See the native simulation run <span aria-hidden="true">↗</span></a>
-        </div>
-        <div class="proof-stats" id="cross-p37-stats" aria-live="polite">
-          <div class="proof-stat"><span>UNITREE G1</span><strong id="cross-g1-actions">—</strong><small>actuators controlled</small></div>
-          <div class="proof-stat"><span>UNITREE GO2</span><strong id="cross-go2-actions">—</strong><small>actuators controlled</small></div>
-          <div class="proof-stat"><span>TRIAL DURATION</span><strong id="cross-duration">—</strong><small>per robot / seed</small></div>
-          <div class="proof-stat"><span>RETRAINING FOR GO2</span><strong id="cross-retraining">—</strong><small>same checkpoint reused</small></div>
-          <div class="proof-disclaimer">Short-horizon integration smoke. Cross-body task success and recovery remain unqualified.</div>
-        </div>
-      </div>
-      <div class="compare-toolbar"><div class="compare-label">COMPARE BODIES</div><div class="selectors"><label for="body-a">BODY A</label><select id="body-a" aria-label="First robot model"><option value="unitree_g1">Unitree G1</option><option value="unitree_go2">Unitree Go2</option></select><span class="versus" aria-hidden="true">×</span><label for="body-b">BODY B</label><select id="body-b" aria-label="Second robot model"><option value="unitree_go2" selected>Unitree Go2</option><option value="unitree_g1">Unitree G1</option></select></div><button id="compare-run" class="primary" type="button">Launch both simulations <span aria-hidden="true">↗</span></button></div>
-      <div class="compare-grid">
-        <div class="compare-card"><div class="compare-card-top"><span>01 / BODY A</span><strong id="compare-name-a">Unitree G1</strong></div><div class="compare-viewport" id="compare-view-a"><iframe title="Robot A live MuJoCo simulation" id="compare-frame-a" loading="lazy" allow="fullscreen"></iframe><div class="compare-idle" id="compare-idle-a">Start the comparison to load this model.</div></div><div class="body-stats" id="body-stats-a">Physical model characteristics load from MuJoCo.</div></div>
-        <div class="compare-card"><div class="compare-card-top"><span>02 / BODY B</span><strong id="compare-name-b">Unitree Go2</strong></div><div class="compare-viewport" id="compare-view-b"><iframe title="Robot B live MuJoCo simulation" id="compare-frame-b" loading="lazy" allow="fullscreen"></iframe><div class="compare-idle" id="compare-idle-b">Start the comparison to load this model.</div></div><div class="body-stats" id="body-stats-b">Physical model characteristics load from MuJoCo.</div></div>
-      </div>
-      <div class="compare-footer"><p>Each frame is an independent MuJoCo simulation. The models have different masses, joints and actuators; this is <strong>not</strong> a controlled policy-transfer benchmark.</p><button id="compare-stop" type="button" disabled>Stop comparison</button></div>
-    </section>
-
-    <section id="research" class="content-width measured-section" aria-labelledby="research-heading">
-      <div class="section-heading"><div><p class="section-index">03 / REPRODUCIBLE RESULTS</p><h2 id="research-heading">Show the evidence.</h2></div><p>These figures come from native MuJoCo experiments and saved P37 checkpoint evaluations. Every result states what it measures—and what it doesn't.</p></div>
-      <div class="results-grid">
-        <article class="result-panel">
-          <div class="result-head"><span>SIMULATED PHYSICS / TWO ROBOT BODIES</span><span class="status-label">MEASURED</span></div>
-          <h3>Physical force response</h3>
-          <p>How far the simulated robot's base ended from an identical trial with no applied force. Each trial used a different force.</p>
-          <div class="force-results" id="force-results" aria-live="polite">Loading measured force results…</div>
-          <div class="footnote">Force applied for 0.15 seconds. No neural controller was used, so this does not measure P37 recovery. The different forces mean these results are not a direct performance ranking.</div>
-          <a class="source-link" href="https://github.com/OntosRobotics/P37-Neuro/blob/main/sim/web/disturbance_test.py" target="_blank" rel="noopener noreferrer">Inspect force-test implementation <span>↗</span></a>
-        </article>
-        <article class="result-panel">
-          <div class="result-head"><span>P37 / NATIVE MUJOCO G1</span><span class="status-label trial-warning">EXPERIMENTAL</span></div>
-          <h3>The recurrent controller, tested</h3>
-          <p>One PPO training update produced a real P37 checkpoint. These are short held-out G1 control trials, including the failures.</p>
-          <div class="p37-trials" id="p37-trials" aria-live="polite">Loading P37 checkpoint results…</div>
-          <div class="footnote">The third trial reached the short 2-second horizon. This does not establish walking, successful disturbance recovery, or transfer to another body.</div>
-          <a class="source-link" id="p37-source" href="https://github.com/OntosRobotics/P37-Neuro/actions/runs/42825360546" target="_blank" rel="noopener noreferrer">Inspect checkpoint and evaluation <span>↗</span></a>
-        </article>
-      </div>
-    </section>
-
-    <section class="content-width transfer-section" aria-labelledby="transfer-heading">
-      <div class="transfer-copy"><p class="section-index">04 / THE P37 RESEARCH DIRECTION</p><h2 id="transfer-heading">One model.<br>More than one body.</h2><p>P37's architecture represents robot bodies explicitly and keeps task context separate from physical actuation. That creates a testable path toward shared intelligence across robots.</p><p>The evidence needed is specific: the <em>same trained checkpoint</em>, with documented embodiment mapping, must succeed on held-out tasks across materially different bodies. We have not passed that gate yet.</p><a class="source-link" href="https://github.com/OntosRobotics/P37-Neuro/blob/main/docs/roadmap.md" target="_blank" rel="noopener noreferrer">Read capability qualification roadmap <span>↗</span></a></div>
-      <div class="transfer-diagram" aria-label="P37 capability evidence gates">
-        <div class="diagram-head">CROSS-EMBODIMENT EVIDENCE GATES</div>
-        <div class="gate"><span class="gate-index">01</span><div><strong>Common robot representation</strong><span>Typed robot models and simulation interfaces</span></div><span class="gate-state done">Implemented</span></div>
-        <div class="gate"><span class="gate-index">02</span><div><strong>Actual P37 control</strong><span>Checkpoint controlling Unitree G1 in MuJoCo</span></div><span class="gate-state done">Smoke tested</span></div>
-        <div class="gate"><span class="gate-index">03</span><div><strong>One checkpoint across bodies</strong><span>Qualified held-out success on two robot morphologies</span></div><span class="gate-state future">Pending</span></div>
-        <div class="gate"><span class="gate-index">04</span><div><strong>Task transfer and recovery</strong><span>Baseline comparisons, reproducible failures and metrics</span></div><span class="gate-state future">Pending</span></div>
-        <div class="diagram-foot">No performance advantage over other robot brains is claimed without matched, independently reproducible benchmarks.</div>
-      </div>
-    </section>
-  </main>
-  <footer class="footer"><a href="../">ONTOS / P37 BRAIN LAB</a><span>Actual models · Actual physics · Evidence before claims</span><a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noopener noreferrer">GitHub ↗</a></footer>
-</body>
-</html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b0d0f"><meta name="description" content="P37 Neuro task-first robotics simulation gallery. Explore tasks, available MuJoCo robot scenes, and the evidence required to qualify physical task execution.">
+<title>Task Gallery — P37 Neuro / Ontos</title>
+<style>
+:root{color-scheme:dark;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;--bg:#0b0d0f;--line:#292d31;--text:#f3f4f4;--muted:#9aa1a6;--card:#171b1f}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--bg);color:var(--text);min-width:320px}button,a{font:inherit}button{cursor:pointer}a{color:inherit;text-decoration:none}button:focus-visible,a:focus-visible{outline:2px solid #fff;outline-offset:4px}
+header{height:72px;padding:0 clamp(20px,5vw,86px);display:flex;align-items:center;gap:35px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#0b0d0ff0;backdrop-filter:blur(15px);z-index:20}
+.brand{font-size:13px;letter-spacing:-.01em;white-space:nowrap}.brand strong{letter-spacing:.13em;font-weight:800}.brand i{font-style:normal;color:#5d6369;margin:0 14px}.brand span{color:#b7bdc2}
+nav{margin-left:auto;display:flex;gap:28px;align-items:center}nav a{font-size:12px;color:#9da5a9}nav a[aria-current],nav a:hover{color:#fff}.source{border:1px solid #51565a;padding:11px 15px;border-radius:3px}
+main{max-width:1650px;margin:auto;padding:0 clamp(20px,5vw,86px) 100px}
+.hero{padding:90px 0 65px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:1.35fr .65fr;align-items:end;gap:40px}
+.eyebrow,.overline{font-size:10px;letter-spacing:.16em;color:#a4adb2;font-weight:700;text-transform:uppercase}
+.hero h1{font-size:clamp(54px,7.5vw,124px);letter-spacing:-.085em;line-height:.92;font-weight:530;margin:26px 0 0}.hero p{max-width:420px;color:#b0b8bc;font-size:16px;line-height:1.7;margin:0 0 4px}.hero p small{display:block;font-size:12px;color:#899399;margin-top:18px;line-height:1.6}
+.filters{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:26px 0 32px}.filters button{border:1px solid #353b3e;color:#a8b0b4;background:transparent;border-radius:3px;padding:11px 16px;font-size:12px}.filters button:hover,.filters button[aria-pressed=true]{background:#f0f1f1;border-color:#f0f1f1;color:#111416}.count{margin-left:auto;font-size:11px;color:#7d878c;letter-spacing:.08em}
+.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+.task{border:1px solid #2b3034;background:#15191c;overflow:hidden;display:flex;flex-direction:column;min-width:0;transition:border-color .2s,transform .2s}.task:hover{border-color:#7b858b;transform:translateY(-2px)}.visual{aspect-ratio:1.45;position:relative;overflow:hidden;background:radial-gradient(ellipse at 58% 63%,#3f484c 0%,#252b2f 35%,#15191c 75%);display:grid;place-items:center;border-bottom:1px solid #353b40}.visual:before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,transparent 40%,#ffffff08 40.3%,transparent 40.8%),repeating-linear-gradient(0deg,transparent 0 45px,#ffffff08 46px 47px);pointer-events:none}.visual svg{width:76%;height:80%;position:relative;filter:drop-shadow(0 19px 19px #0009)}.visual .index{position:absolute;top:19px;left:20px;color:#c9d1d5;font-size:11px;letter-spacing:.1em}.visual .type{position:absolute;right:18px;top:18px;border:1px solid #81909766;background:#121619a8;padding:8px 10px;font-size:9px;letter-spacing:.1em;color:#dde3e5}
+.body{padding:23px 23px 25px;display:flex;flex-direction:column;flex:1}.meta{font-size:10px;letter-spacing:.08em;color:#9da9ae;text-transform:uppercase}.body h2{font-size:clamp(23px,2.2vw,34px);font-weight:520;letter-spacing:-.055em;margin:13px 0 12px}.body p{font-size:13px;line-height:1.65;color:#9ba6ac;margin:0 0 24px;flex:1}.bottom{border-top:1px solid #333b40;padding-top:17px;display:flex;align-items:center;justify-content:space-between;gap:12px}.status{font-size:10px;letter-spacing:.055em;color:#c9b89c}.status.available{color:#9ecbb7}.open{font-size:12px;color:#e1e6e8;border:0;background:transparent;padding:8px 0;text-align:right}.open:hover{text-decoration:underline}.open:disabled{cursor:default;color:#8c979c;text-decoration:none}
+.section-note{border-top:1px solid #333b40;margin-top:70px;padding-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:30px}.section-note h2{font-size:clamp(26px,3.8vw,48px);font-weight:520;letter-spacing:-.06em;margin:12px 0}.section-note p{color:#9fa9ae;line-height:1.8;font-size:14px;max-width:620px}.section-note a{text-decoration:underline;text-underline-offset:4px}
+dialog{width:min(1060px,calc(100vw - 28px));max-height:94vh;border:1px solid #444c51;background:#13171a;color:#f5f5f5;padding:0;box-shadow:0 30px 110px #000b}dialog::backdrop{background:#050607d9}.dialog-top{padding:20px 25px;border-bottom:1px solid #333b40;display:flex;justify-content:space-between;align-items:center;gap:20px}.dialog-top strong{font-weight:560;font-size:20px;letter-spacing:-.04em}.close{border:1px solid #545d63;border-radius:2px;color:#fff;background:transparent;padding:9px 14px}.dialog-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(270px,.7fr)}.viewer{min-height:475px;position:relative;background:#222a2f}.viewer iframe{width:100%;height:475px;border:0;display:block}.viewer .notice{position:absolute;bottom:16px;left:16px;right:16px;font-size:11px;color:#dde5e8;background:#0c1012d9;padding:12px;pointer-events:none}.detail{padding:24px;border-left:1px solid #353d41;overflow:auto}.detail h3{font-size:25px;letter-spacing:-.05em;font-weight:530;margin:10px 0}.detail p,.detail li{font-size:12px;line-height:1.75;color:#a6b2b7}.detail ul{padding-left:18px}.detail a{display:inline-block;margin-top:12px;background:#e8eeee;color:#111719;padding:12px 16px;font-size:12px;font-weight:650}.disclaimer{font-size:11px;color:#a9b1b5;line-height:1.65;margin-top:20px;border-top:1px solid #343a3e;padding-top:16px}
+footer{border-top:1px solid var(--line);padding:35px clamp(20px,5vw,86px);color:#818d93;font-size:11px;display:flex;justify-content:space-between;gap:20px}
+[hidden]{display:none!important}
+@media(max-width:1050px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{grid-template-columns:1fr}.hero p{max-width:660px}.dialog-grid{grid-template-columns:1fr}.viewer,.viewer iframe{min-height:360px;height:360px}.detail{border-left:0;border-top:1px solid #353d41}}
+@media(max-width:680px){header{height:64px;padding:0 18px;gap:12px}.brand span{display:none}.brand i{display:none}nav{gap:14px}nav a{font-size:10px}nav .source{display:none}.hero{padding:59px 0 40px}.grid{grid-template-columns:1fr}.filters{gap:7px}.filters button{padding:9px 11px}.count{width:100%;margin-top:7px}.section-note{grid-template-columns:1fr}.viewer,.viewer iframe{height:300px;min-height:300px}.visual{aspect-ratio:1.65}footer{flex-direction:column}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style></head>
+<body><header><a class="brand" href="../"><strong>ONTOS</strong><i>/</i><span>P37 NEURO</span></a><nav aria-label="Site navigation"><a href="./" aria-current="page">Task gallery</a><a href="./physics.html">Physics lab</a><a href="../">Robots</a><a class="source" href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noopener">Source ↗</a></nav></header>
+<main>
+<section class="hero"><div><div class="eyebrow">P37 / PHYSICAL INTELLIGENCE EXPERIMENTS</div><h1>Robots<br>at work.</h1></div><p>Explore physical tasks across robot bodies. Open an available MuJoCo scene, inspect the task's success criteria, and follow the work toward verified end-to-end execution.<small>Current public browser scenes are model-only physics sandboxes. Complete task execution and trained-policy success are not yet qualified.</small></p></section>
+<div class="filters" role="group" aria-label="Filter by task"><button data-filter="all" aria-pressed="true">All tasks</button><button data-filter="manipulation" aria-pressed="false">Manipulation</button><button data-filter="navigation" aria-pressed="false">Navigation</button><button data-filter="mobile" aria-pressed="false">Mobile tasks</button><button data-filter="locomotion" aria-pressed="false">Locomotion</button><span class="count" id="count"></span></div>
+<section class="grid" id="gallery" aria-label="Task simulations"></section>
+<section class="section-note"><div><div class="overline">THE EVIDENCE STANDARD</div><h2>A task is finished when the simulator can verify it.</h2></div><div><p>A moving robot is insufficient. For manipulation, we need to observe contact, grasp, object displacement, release and a final success check. For navigation, we need to measure the route, collisions, completion and recovery.</p><p>Three experiences stay distinct: <strong>recorded task execution</strong>, <strong>interactive physics</strong>, and <strong>qualified P37 learned-policy control</strong>. We only enable a mode when its underlying evidence exists. See the <a href="./physics.html#research">current experiment results</a>.</p></div></section>
+</main>
+<dialog id="task-dialog" aria-labelledby="dialog-title"><div class="dialog-top"><strong id="dialog-title">Task</strong><button class="close" id="close-dialog" type="button">Close ✕</button></div><div class="dialog-grid"><div class="viewer"><iframe id="task-frame" title="MuJoCo robot physics sandbox" loading="lazy" allow="fullscreen"></iframe><div class="notice">MODEL-ONLY PHYSICS · This scene does not execute the selected task autonomously.</div></div><div class="detail"><div class="overline" id="dialog-robot"></div><h3>What must happen</h3><p id="dialog-goal"></p><div class="overline">SUCCESS CHECKS</div><ul id="dialog-checks"></ul><div class="disclaimer">Task controller, object interactions and automated success verdict are pending integration. This viewer is for physical model inspection only.</div><a id="full-scene" href="../" target="_blank" rel="noopener">Open full simulator ↗</a></div></div></dialog>
+<footer><span>ONTOS / P37 NEURO</span><span>Real physics. Measurable tasks. No unverified capability claims.</span></footer>
+<script>
+(() => {
+"use strict";
+const tasks=[
+{id:"pick-place",name:"Pick and place",kind:"manipulation",robot:"Franka Panda",model:"franka_panda",goal:"Pick up a cube, transport it to a marked target and release it without losing control.",checks:["Gripper contacts the cube and establishes a stable grasp","Cube moves with the end-effector while elevated","Gripper opens and the cube settles within the target boundary"],available:true,art:"arm"},
+{id:"stack",name:"Stack two cubes",kind:"manipulation",robot:"Franka Panda",model:"franka_panda",goal:"Grasp a second cube and place it on top of the first cube.",checks:["Each grasp is contact-supported","The upper cube is released without toppling","Both blocks remain stacked and stable for the verification window"],available:true,art:"arm"},
+{id:"fold",name:"Fold a towel",kind:"manipulation",robot:"Franka Panda",model:"franka_panda",goal:"Manipulate a deformable towel into a defined folded configuration.",checks:["Cloth geometry and contact are simulated","Corners align inside tolerance","The final fold remains stable after release"],available:false,art:"cloth"},
+{id:"terrain",name:"Navigate rough terrain",kind:"navigation",robot:"Unitree Go2",model:"unitree_go2",goal:"Traverse uneven ground and reach a destination under physical contact constraints.",checks:["Target location reached within tolerance","Foot contacts, body stability and collisions measured","Time, progress and failed attempts recorded"],available:true,art:"quad"},
+{id:"recover",name:"Recover from a push",kind:"locomotion",robot:"Unitree G1",model:"unitree_g1",goal:"Maintain or recover upright balance after a measured external disturbance.",checks:["Force magnitude, timing and direction recorded","Base orientation and foot contacts measured","Recovery threshold and failure condition evaluated"],available:true,art:"human"},
+{id:"deliver",name:"Deliver an object",kind:"mobile",robot:"Hello Robot Stretch",model:"hello_robot_stretch",goal:"Reach for an object, grasp it, navigate to a destination, then release it.",checks:["Grasp and lift are physically verified","Base reaches the destination with collision monitoring","Object is released inside the delivery zone"],available:true,art:"mobile"}
+];
+const $=id=>document.getElementById(id);
+const icons={
+arm:'<g fill="none" stroke="#d5dedf" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"><path d="M130 226h190M182 220v-55l64-42 46 43-28 52"/><circle cx="182" cy="163" r="16" fill="#68747a"/><circle cx="246" cy="123" r="16" fill="#68747a"/><path d="M264 218l26 12 21-13"/><path d="M335 216h54v44h-54z" stroke-width="5"/></g>',
+quad:'<g fill="none" stroke="#d2dcdf" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"><path d="M145 121h176l26 59-27 18H146l-23-28z" fill="#6e7b80"/><path d="M158 197l-21 45 19 37M215 198l-13 48 8 32M279 198l18 47-10 33M328 191l33 46-7 42"/><path d="M115 122l-25 15"/></g>',
+human:'<g fill="none" stroke="#dae1e2" stroke-width="13" stroke-linecap="round" stroke-linejoin="round"><circle cx="240" cy="65" r="25" fill="#88959a"/><path d="M240 100v93M196 116l-27 63 8 30M283 117l29 59-8 32M241 193l-30 48-10 41M243 193l32 47 8 42" /><path d="M215 120h49" stroke-width="28" stroke="#9ca9ad"/></g>',
+mobile:'<g fill="none" stroke="#d9e1e2" stroke-width="12" stroke-linejoin="round"><path d="M133 237h202v30H133z" fill="#88969b"/><circle cx="166" cy="273" r="17" fill="#6a787e"/><circle cx="311" cy="273" r="17" fill="#6a787e"/><path d="M217 238V105h49v132" fill="#78878d"/><path d="M243 120l80 23 19-21"/><path d="M340 117l14-12M342 119l18 8"/><path d="M226 102h37V73h-37z" fill="#99a7ac"/></g>',
+cloth:'<g fill="none" stroke="#d3dfe1" stroke-width="7"><path d="M101 180l100-91 178 70-92 96z" fill="#68777d"/><path d="M101 180l127 17 151-38M201 89l27 108 59 58" stroke="#b8c6ca" stroke-dasharray="9 10"/></g>'
+};
+const kindNames={manipulation:"MANIPULATION",navigation:"NAVIGATION",mobile:"MOBILE MANIPULATION",locomotion:"LOCOMOTION"};
+let filter="all";
+function render(){
+const visible=tasks.filter(t=>filter==="all"||t.kind===filter);$("count").textContent=visible.length+" TASKS";
+$("gallery").replaceChildren();
+visible.forEach((t,i)=>{
+const article=document.createElement("article");article.className="task";
+const svg='<svg viewBox="0 0 480 330" role="img" aria-label="'+t.robot+' technical illustration"><path d="M65 284h350" stroke="#718188" stroke-width="2" />'+icons[t.art]+'</svg>';
+article.innerHTML='<div class="visual"><span class="index">'+String(tasks.indexOf(t)+1).padStart(2,"0")+' / 06</span><span class="type">'+kindNames[t.kind]+'</span>'+svg+'</div><div class="body"><div class="meta">'+t.robot+'</div><h2>'+t.name+'</h2><p>'+t.goal+'</p><div class="bottom"><span class="status '+(t.available?"available":"")+'">'+(t.available?"PHYSICS SANDBOX":"TASK SIM PENDING")+'</span></div></div>';
+const bottom=article.querySelector(".bottom");const button=document.createElement("button");button.type="button";button.className="open";
+button.textContent=t.available?"Inspect model ↗":"View requirements ↗";button.addEventListener("click",()=>openTask(t));bottom.append(button);$("gallery").append(article);
+});
+}
+function openTask(t){
+$("dialog-title").textContent=t.name;$("dialog-robot").textContent=t.robot+" / "+kindNames[t.kind];$("dialog-goal").textContent=t.goal;
+$("dialog-checks").replaceChildren(...t.checks.map(c=>{const li=document.createElement("li");li.textContent=c;return li;}));
+const url="../simulator/?"+new URLSearchParams({project:"p37_robot_models",scene:t.model,panel:"0"});
+$("task-frame").src=t.available?url:"about:blank";$("full-scene").href="../?robot="+encodeURIComponent(t.model);
+$("task-dialog").querySelector(".viewer").hidden=!t.available;$("full-scene").hidden=!t.available;$("task-dialog").showModal();
+}
+$("close-dialog").addEventListener("click",()=>$("task-dialog").close());
+$("task-dialog").addEventListener("close",()=>$("task-frame").src="about:blank");
+$("task-dialog").addEventListener("click",e=>{if(e.target===$("task-dialog"))$("task-dialog").close();});
+document.querySelectorAll("[data-filter]").forEach(b=>b.addEventListener("click",()=>{filter=b.dataset.filter;document.querySelectorAll("[data-filter]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));render();}));
+render();
+})();
+</script></body></html>
