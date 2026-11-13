@@ -14,7 +14,7 @@ import mujoco
 import numpy as np
 
 from panda_physical_stack import (
-    RATE, CONTROL_DT, initial_data, panda_coords, solve_ik, tool_pose,
+    CONTROL_DT, RATE, initial_data, panda_coords, solve_ik,
 )
 from physical_task_scenes import add_physical_task_scene
 
@@ -42,31 +42,36 @@ def _touching(model: mujoco.MjModel, data: mujoco.MjData, a: int, b: int) -> boo
 def waypoints():
     s, t = SOURCE, TARGET
     return [
-        ("settle", s + [0, 0, 0.20], 255.0, 0.6),
-        ("approach", s + [0, 0, 0.19], 255.0, 2.4),
+        ("settle", s + np.array([0.0, 0.0, 0.20]), 255.0, 0.6),
+        ("approach", s + np.array([0.0, 0.0, 0.19]), 255.0, 2.4),
         ("descend", s.copy(), 255.0, 2.0),
         ("grasp", s.copy(), 0.0, 1.5),
-        ("lift", s + [0, 0, 0.22], 0.0, 2.4),
-        ("carry", t + [0, 0, 0.18], 0.0, 2.6),
+        ("lift", s + np.array([0.0, 0.0, 0.22]), 0.0, 2.4),
+        ("carry", t + np.array([0.0, 0.0, 0.18]), 0.0, 2.6),
         ("place", t.copy(), 0.0, 1.9),
         ("release", t.copy(), 255.0, 1.6),
-        ("retreat", t + [0, 0, 0.20], 255.0, 1.7),
-        ("verify", t + [0, 0, 0.20], 255.0, 1.5),
+        ("retreat", t + np.array([0.0, 0.0, 0.20]), 255.0, 1.7),
+        ("verify", t + np.array([0.0, 0.0, 0.20]), 255.0, 1.5),
     ]
 
 
 def simulate(model: mujoco.MjModel, reference_controls: np.ndarray | None = None):
     data = initial_data(model)
-    q_addresses, _, hand = panda_coords(model)
+    q_addresses, _, _hand = panda_coords(model)
     finger_address = int(model.joint("finger_joint1").qposadr[0])
     cube_body = model.body(CUBE).id
     bench_body = int(model.geom_bodyid[model.geom(BENCH).id])
     left_body = model.body("left_finger").id
     right_body = model.body("right_finger").id
-    if reference_controls is not None:
-        if (reference_controls.ndim != 2 or reference_controls.shape[1] != model.nu or
-                not np.isfinite(reference_controls).all()):
-            raise ValueError("Expected finite Panda actuator controls in native order")
+    if (
+        reference_controls is not None
+        and (
+            reference_controls.ndim != 2
+            or reference_controls.shape[1] != model.nu
+            or not np.isfinite(reference_controls).all()
+        )
+    ):
+        raise ValueError("Expected finite Panda actuator controls in native order")
     targets = []
     if reference_controls is None:
         scratch = initial_data(model)
@@ -75,7 +80,9 @@ def simulate(model: mujoco.MjModel, reference_controls: np.ndarray | None = None
             if phase not in {"settle", "grasp", "release", "verify"}:
                 seed, position_error, rotation_error = solve_ik(model, scratch, seed, xyz)
                 if position_error > 0.025 or rotation_error > 0.22:
-                    raise RuntimeError(f"Unsafe IK target in {phase}: {position_error}, {rotation_error}")
+                    raise RuntimeError(
+                        f"Unsafe IK target in {phase}: {position_error}, {rotation_error}"
+                    )
             targets.append((phase, seed.copy(), grip, duration))
     else:
         targets = [("replay", None, None, len(reference_controls) * CONTROL_DT)]
@@ -165,7 +172,9 @@ def simulate(model: mujoco.MjModel, reference_controls: np.ndarray | None = None
         "transport_observed": transported,
         "release_observed": released,
         "stable_target_observed": stable_frames >= 12,
-        "success": two_finger_frames >= 5 and lifted and transported and released and stable_frames >= 12,
+        "success": (
+            two_finger_frames >= 5 and lifted and transported and released and stable_frames >= 12
+        ),
         "end_state": last_event,
     }
     return np.asarray(controls, dtype=np.float32), result
@@ -202,7 +211,9 @@ def run(menagerie: Path, output: Path, *, require_success: bool = True):
         "open_jaw_negative_control_failed": True,
         "source": "google-deepmind/mujoco_menagerie/franka_emika_panda",
     }
-    (output / "panda-pick-place.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+    (output / "panda-pick-place.json").write_text(
+        json.dumps(result, indent=2) + "\n", encoding="utf-8"
+    )
     return result
 
 
@@ -212,4 +223,6 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--require-success", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(run(args.menagerie, args.output, require_success=args.require_success), indent=2))
+    print(json.dumps(
+        run(args.menagerie, args.output, require_success=args.require_success), indent=2
+    ))
