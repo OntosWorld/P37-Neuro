@@ -137,9 +137,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert page.locator(".task-gallery-card").count() == 6
             assert page.locator(".task-gallery-card img").count() == 6
             assert page.locator(".task-gallery-card video").count() == 1
-            assert "panda-stack.mp4" in page.locator(".task-gallery-card video source").get_attribute(
-                "src"
-            )
+            assert "panda-stack.mp4" in page.locator(
+                ".task-gallery-card video source"
+            ).get_attribute("src")
             page.wait_for_function(
                 "() => Array.from(document.querySelectorAll('.task-gallery-card img'))"
                 ".slice(0,3).every(img => img.complete && img.naturalWidth > 300)",
