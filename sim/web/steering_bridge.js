@@ -45,6 +45,27 @@
     }
   });
 
+  // Keyboard input must work even when the MuJoCo canvas has focus.
+  // The parent handles keys while its controls are focused; this bridge
+  // handles the same keys while the viewer iframe receives keyboard events.
+  const keymap = {
+    w: 'forward', ArrowUp: 'forward', s: 'back', ArrowDown: 'back',
+    a: 'left', ArrowLeft: 'left', d: 'right', ArrowRight: 'right',
+    q: 'turnLeft', e: 'turnRight',
+  };
+  for (const eventName of ['keydown', 'keyup']) {
+    window.addEventListener(eventName, event => {
+      const target = event.target;
+      if (target instanceof Element && target.closest(
+        'input, select, textarea, [contenteditable="true"]')) return;
+      const key = keymap[event.key] || keymap[event.key.toLowerCase()];
+      if (!key) return;
+      event.preventDefault();
+      input[key] = eventName === 'keydown';
+    });
+  }
+  window.addEventListener('blur', resetInputs);
+
   function locateBase(model) {
     const jointType = model.jnt_type;
     const jointBody = model.jnt_bodyid;
