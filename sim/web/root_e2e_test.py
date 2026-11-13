@@ -139,9 +139,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert page.locator(".robot-catalog button").count() == 10
             assert "reference arm" not in page.locator("main").inner_text().lower()
             assert "compact arm" not in page.locator("main").inner_text().lower()
-            assert "Validated scripted Panda reference" in page.locator(
-                ".p37-real-panel"
-            ).inner_text()
+            assert (
+                "Validated scripted Panda reference" in page.locator(".p37-real-panel").inner_text()
+            )
             assert "walking" in page.locator(".policy-evidence").inner_text().lower()
             assert page.locator(".menagerie-viewer").count() == 1
             assert "scene=franka_panda" in page.locator("iframe.menagerie-viewer").get_attribute(
