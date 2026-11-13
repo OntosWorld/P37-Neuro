@@ -170,6 +170,7 @@ def build(
     panda_table = _onnx_table(panda_actions)
     frame_index = next(node for node in panda_table.graph.node if node.op_type == "Mod")
     frame_index.op_type = "Min"
+    frame_index.ClearField("attribute")  # Mod has an fmod attribute; Min does not.
     frame_index.input[1] = "p37_last_frame"
     panda_table.graph.initializer.append(
         onnx.helper.make_tensor(
