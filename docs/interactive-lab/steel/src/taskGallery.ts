@@ -6,7 +6,7 @@
  * claim that a qualified P37 policy executed the task.
  */
 export type TaskCategory = 'Manipulation' | 'Navigation' | 'Recordings' | 'Research';
-export type TaskRoute = 'panda' | 'terrain' | 'workcell' | 'recorded' | 'p37';
+export type TaskRoute = 'panda' | 'pick' | 'terrain' | 'workcell' | 'recorded' | 'p37';
 
 export type GalleryTask = {
   id: string;
@@ -30,9 +30,24 @@ const menagerie = 'https://raw.githubusercontent.com/google-deepmind/mujoco_mena
 
 export const GALLERY_TASKS: GalleryTask[] = [
   {
+    id: 'panda-pick-place',
+    title: 'Pick and place a cube.',
+    kicker: '01 / PHYSICAL MANIPULATION',
+    description: 'Grasp a cube on the tabletop, carry it to a marked location, release it and verify it settles.',
+    robotId: 'franka_panda', robotName: 'Franka Panda',
+    category: 'Manipulation', route: 'pick',
+    status: 'Native verification required',
+    source: 'MuJoCo Menagerie · native Panda',
+    image: 'panda-stack.jpg',
+    sourceImage: menagerie + 'franka_emika_panda/panda.png',
+    action: 'Run physical pick-and-place',
+    evidence: 'Separate cube/tabletop scene; contact and placement qualification is build-gated',
+    limits: 'Deterministic reference controller. Learned manipulation remains unqualified.',
+  },
+  {
     id: 'panda-stack',
     title: 'Pick up. Move. Stack.',
-    kicker: '01 / CONTACT MANIPULATION',
+    kicker: '02 / CONTACT MANIPULATION',
     description: 'Watch the Panda grasp a blue cube, lift it, carry it across the bench and release it onto another cube.',
     robotId: 'franka_panda', robotName: 'Franka Panda',
     category: 'Manipulation', route: 'panda',
