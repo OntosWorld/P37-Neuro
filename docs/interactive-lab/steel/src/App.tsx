@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { TASK_EXPERIMENTS, taskProgress } from './taskExperiments';
+import { TaskGallery } from './TaskExperimentGallery';
+import { GALLERY_TASKS, type GalleryTask } from './taskGallery';
 
 type Robot = {
   id: string; name: string; model: string; kind: string;
@@ -27,6 +29,7 @@ type SteeringTelemetry = {
   objectDistance?: number; stackHeight?: number; stackStable?: boolean;
   objectDelivered?: boolean; observedObjects?: number;
   scriptedTaskRunning?: boolean; scriptedTaskElapsed?: number;
+  taskTime?: number;
 };
 type BuildInfo = {
   trained_p37_policy_attached: boolean;
@@ -58,13 +61,22 @@ type Evidence = {
 type G1Evidence = { evaluation: { seeds: { fallen: boolean }[] }; qualification: string };
 
 const CATEGORIES = ['All', 'Humanoids', 'Quadrupeds', 'Manipulators', 'Mobile', 'Aerial'];
+const PANDA_STAGES = [
+  { name:'Approach', start:0, end:5.0 },
+  { name:'Grasp', start:5.0, end:6.5 },
+  { name:'Lift', start:6.5, end:8.9 },
+  { name:'Carry', start:8.9, end:11.5 },
+  { name:'Place', start:11.5, end:15.0 },
+  { name:'Verify', start:15.0, end:18.2 },
+];
 
 export function App() {
   const [catalog, setCatalog] = useState<Robot[]>([]);
-  const [selected, setSelected] = useState('unitree_g1');
+  const [selected, setSelected] = useState('franka_panda');
+  const [activeTaskId, setActiveTaskId] = useState('panda-stack');
   const [experience, setExperience] = useState<Experience>('simulation');
-  const [motion, setMotion] = useState<MotionMode>('motion_cycle');
-  const [lastMotion, setLastMotion] = useState<MotionMode>('motion_cycle');
+  const [motion, setMotion] = useState<MotionMode>('panda_scripted_stack');
+  const [lastMotion, setLastMotion] = useState<MotionMode>('panda_scripted_stack');
   const [category, setCategory] = useState('All');
   const [panel, setPanel] = useState(false);
   const [reload, setReload] = useState(0);
@@ -115,6 +127,8 @@ export function App() {
     return () => abort.abort();
   }, []);
   const current = catalog.find(r => r.id === selected);
+  const activeTask = GALLERY_TASKS.find(task => task.id === activeTaskId);
+  const pandaTime = telemetry.taskTime ?? 0;
   const experiment = TASK_EXPERIMENTS[selected];
   const result = experiment ? taskProgress(experiment, telemetry) : null;
   const selection = useMemo(() => catalog.filter(robot =>
@@ -196,6 +210,7 @@ export function App() {
         observedObjects: Number.isInteger(msg.observedObjects)?msg.observedObjects:undefined,
         scriptedTaskRunning: msg.scriptedTaskRunning === true,
         scriptedTaskElapsed: Number.isFinite(msg.scriptedTaskElapsed)?msg.scriptedTaskElapsed:undefined,
+        taskTime: Number.isFinite(msg.taskTime)?msg.taskTime:undefined,
       });
     };
     window.addEventListener('message',receive);
@@ -222,6 +237,8 @@ export function App() {
   const selectRobot = (robot: Robot) => {
     releaseSteer();
     setSelected(robot.id);
+    setActiveTaskId(GALLERY_TASKS.find(task =>
+      task.robotId === robot.id && task.route !== 'recorded')?.id ?? '');
     setExperience('simulation');
     setTelemetry({status:'waiting'});
     setMotion(robot.id === 'franka_panda' ? 'panda_scripted_stack' : 'motion_cycle');
@@ -245,6 +262,23 @@ export function App() {
     setExperience(next);
     setReload(n => n + 1);
   };
+  const openTask = (task: GalleryTask) => {
+    releaseSteer();
+    setActiveTaskId(task.id);
+    setSelected(task.robotId);
+    const mode: MotionMode = task.route === 'panda' || task.route === 'recorded'
+      ? 'panda_scripted_stack'
+      : task.route === 'p37' ? 'p37_experimental' : 'motion_cycle';
+    setMotion(mode);
+    setLastMotion(mode);
+    setExperience(task.route === 'recorded' ? 'recorded'
+      : task.route === 'p37' ? 'policy' : 'simulation');
+    setTelemetry({status:'waiting'});
+    setStageLoaded(false);
+    setReload(value => value + 1);
+    window.requestAnimationFrame(() => document.getElementById('simulator')
+      ?.scrollIntoView({ behavior:'smooth', block:'start' }));
+  };
   const toggleReferenceTask = () => {
     if (experiment?.kind !== 'terrain') return;
     iframeRef.current?.contentWindow?.postMessage({
@@ -260,30 +294,36 @@ export function App() {
     <header className="site-header">
       <a className="brand" href="./">ONTOS <span>/ P37 NEURO</span></a>
       <nav aria-label="P37 navigation">
-        <a href="#simulator">Simulation</a>
+        <a href="#tasks">Experiments</a>
+        <a href="#simulator">Live simulation</a>
         <a href="#evidence">Research evidence</a>
         <a href="https://github.com/OntosRobotics/P37-Neuro" target="_blank" rel="noreferrer">GitHub ↗</a>
       </nav>
       <span className="build-tag">POWERED BY P37-NEURO</span>
     </header>
     <main>
-      <section className="title-row">
-        <span className="overline">P37 / CROSS-EMBODIMENT ROBOTICS</span>
-        <h1>One brain. Different bodies.</h1>
-        <p className="intro">
-          Watch a source-attributed robot recording, explore live MuJoCo tasks or test
-          the experimental P37 controller on Unitree G1. Panda cube stacking,
-          quadruped obstacle courses and Stretch delivery use real simulated
-          objects and contacts. Panda runs a contact-verified deterministic motor
-          reference; qualified cross-body policies remain separate research work.
-        </p>
+      <TaskGallery activeId={activeTaskId} onSelect={openTask} baseUrl={import.meta.env.BASE_URL}/>
+      <section className="title-row p37-experiment-heading">
+        <span className="overline">OPEN EXPERIMENT / {activeTask?.kicker ?? 'MANUFACTURER ROBOT'}</span>
+        <div className="p37-experiment-heading-row">
+          <div>
+            <h2>{activeTask?.title ?? current?.name ?? 'Inspect a robot'}</h2>
+            <p className="intro">{activeTask?.description ??
+              'Explore manufacturer-derived articulated robots in live MuJoCo physics.'}</p>
+          </div>
+          <div className="p37-task-definition">
+            <small>EXECUTION STATUS</small>
+            <strong>{activeTask?.status ?? 'Model-derived physics'}</strong>
+            <span>{activeTask?.limits ?? 'No qualified task controller attached.'}</span>
+          </div>
+        </div>
       </section>
       <section className="lab-grid" id="simulator" aria-label="Live manufacturer robot simulation">
         <div className="viewport">
-          <div className="playground-scenes p37-scenes" role="group" aria-label="Choose robot category">
-            <span className="playground-scenes-label">Explore</span>
-            {CATEGORIES.map(item => <button key={item} type="button"
-              aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}
+          <div className="p37-live-task-header">
+            <span>SIMULATION / {activeTask?.robotName ?? current?.name ?? 'SELECT ROBOT'}</span>
+            <strong>{activeTask?.title ?? 'Physical model exploration'}</strong>
+            <span className="p37-sim-kind">{activeTask?.status ?? 'Native MuJoCo'}</span>
           </div>
           <div className="p37-experience-tabs" role="group" aria-label="Choose experiment experience">
             <button type="button" aria-pressed={experience==='simulation'}
@@ -335,7 +375,8 @@ export function App() {
               p37Active ? 'Experimental P37 recurrent PPO' :
               motion === 'hold' ? 'Hold pose · model-derived' :
               'Recorded joint targets · model-derived'}</strong>
-            <span className="playground-disclaimer">{stageLoaded ?
+            <span className="playground-disclaimer">{experience==='recorded'
+              ? 'Source data replay · separate from live simulation' : stageLoaded ?
               'Viewer loaded · inspect motion inside the live scene' : 'Loading native simulation…'}</span>
           </div>
           {experience!=='recorded' && experiment && result && <section className="p37-task-experiment" aria-label="Measured robot task experiment">
@@ -345,6 +386,19 @@ export function App() {
             </div>
             <h2>{experiment.title}</h2>
             <p>{experiment.objective}</p>
+            {pandaActive && <div className="p37-task-timeline"
+              role="list" aria-label="Measured Panda task sequence">
+              {PANDA_STAGES.map((stage, index) => <div key={stage.name}
+                role="listitem"
+                className={'p37-task-step' +
+                  (pandaTime >= stage.start ? ' is-started' : '') +
+                  (pandaTime >= stage.end ? ' is-finished' : '')}
+                aria-current={pandaTime >= stage.start && pandaTime < stage.end ? 'step' : undefined}>
+                <span className="p37-step-number">{String(index+1).padStart(2,'0')}</span>
+                <strong>{stage.name}</strong>
+              </div>)}
+              <div className="p37-task-clock">{pandaTime.toFixed(1)} / 18.2s</div>
+            </div>}
             {pandaActive && build?.panda_physical_cube_stack && <div
               className="p37-scripted-evidence" aria-label="Panda source experiment evidence">
               <strong>Native task verified · deterministic motor reference</strong>
@@ -381,9 +435,11 @@ export function App() {
           </section>}
           {experience!=='recorded' && <div className="viewport-controls">
             <div className="action-row">
-              <button type="button" onClick={() => setPlayback(
-                motion === 'hold' ? lastMotion : 'hold'
-              )}>{motion === 'hold' ? 'Play motion' : 'Hold motion'}</button>
+              {pandaActive ? <button type="button"
+                onClick={() => setPlayback('panda_scripted_stack')}>↻ Replay full task</button>
+                : <button type="button" onClick={() => setPlayback(
+                  motion === 'hold' ? lastMotion : 'hold'
+                )}>{motion === 'hold' ? 'Play motion' : 'Hold motion'}</button>}
               <button type="button" onClick={() => {
                 releaseSteer(); setTelemetry({status:'waiting'});
                 setStageLoaded(false); setReload(x => x + 1);
@@ -440,7 +496,7 @@ export function App() {
         </div>
         <aside className="playground-panel p37-real-panel">
           <div className="side-panel">
-            <div className="section-heading"><span>ROBOT LIBRARY</span><span>10 / VERIFIED MODELS</span></div>
+            <div className="section-heading"><span>TASK CONTROLS</span><span>NATIVE MUJOCO</span></div>
             <label htmlFor="real-robot">Select a robot</label>
             <select id="real-robot" value={selected} onChange={e => {
               const robot = catalog.find(r => r.id === e.target.value);
@@ -450,8 +506,15 @@ export function App() {
                 {robot.name} · {robot.kind}
               </option>)}
             </select>
-            <p className="helper">Official MuJoCo Menagerie geometry, articulated joints,
-              native body collisions and accurate proportions.</p>
+            <p className="helper">Open the selected experiment above. Robot meshes,
+              task objects and contacts run in the native MuJoCo physics engine.</p>
+            <details className="p37-all-robots">
+              <summary>Browse all ten robot bodies</summary>
+              <div className="playground-scenes p37-scenes" role="group" aria-label="Choose robot category">
+                <span className="playground-scenes-label">Filter</span>
+                {CATEGORIES.map(item => <button key={item} type="button"
+                  aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}
+              </div>
             <div className="robot-catalog" role="group" aria-label="Select real robot body">
               <div className="catalog-heading">AVAILABLE BODIES <span>{selection.length} SHOWN</span></div>
               <div className="catalog-choices">
@@ -463,25 +526,27 @@ export function App() {
                 </button>)}
               </div>
             </div>
+            </details>
             <div className="rule"/>
-            <div className="section-cap">Controller and motion replay</div>
+            <div className="section-cap">Task execution and motor controls</div>
             <div className="p37-motion-controls" role="group" aria-label="Choose motion dataset">
+              {selected === 'franka_panda' && <button type="button"
+                className="p37-task-primary" aria-pressed={pandaActive}
+                onClick={()=>setPlayback('panda_scripted_stack')}>
+                {pandaActive ? '↻ Replay Panda stack' : '▶ Run physical Panda stack'}
+              </button>}
+              {p37Available && <button type="button" aria-pressed={p37Active}
+                onClick={()=>setPlayback('p37_experimental')}>Experimental P37 G1</button>}
               <button type="button" aria-pressed={motion==='motion_cycle'}
                 onClick={()=>setPlayback('motion_cycle')}>Movement cycle</button>
               <button type="button" aria-pressed={motion==='articulation'}
-                onClick={()=>setPlayback('articulation')}>Articulation</button>
+                onClick={()=>setPlayback('articulation')}>Motor articulation</button>
               <button type="button" aria-pressed={motion==='hold'}
                 onClick={()=>setPlayback('hold')}>Hold pose</button>
-              {selected === 'franka_panda' && <button type="button"
-                aria-pressed={pandaActive} onClick={()=>setPlayback('panda_scripted_stack')}>
-                {pandaActive ? 'Replay validated Panda stack' : 'Run validated Panda stack'}
-              </button>}
-              {p37Available && <button type="button" aria-pressed={p37Active}
-                onClick={()=>setPlayback('p37_experimental')}>P37 experimental model</button>}
             </div>
-            <p className="helper">Select a motion clip, then use WASD or the on-screen
-              direction controls to move the floating-base robot through the physical environment.
-              Motion clips are model-derived trajectories, not proven walking skills.</p>
+            <p className="helper">{pandaActive
+              ? 'The scripted Panda run starts in native MuJoCo. Orbit the camera, inspect the cube, or replay the complete 18.2-second sequence.'
+              : 'Use WASD or the on-screen controls on supported floating-base robots. Motion clips and assisted movement are not qualified learned walking policies.'}</p>
              <div className="rule"/>
             <div className="section-cap">Research boundary</div>
             <p className="evidence-copy">{current?.task ?? 'Select a robot'}. {current?.capability ?? ''}

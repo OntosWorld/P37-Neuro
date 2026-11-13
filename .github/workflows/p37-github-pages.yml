@@ -7,6 +7,7 @@ on:
       - "sim/web/panda_physical_stack.py"
       - "sim/web/physical_task_scenes.py"
       - "sim/web/steering_bridge.js"
+      - "sim/web/render_task_gallery.py"
       - "sim/web/model_motion_library.py"
       - "sim/web/catalog.py"
       - "sim/web/p37_browser_policy.py"
@@ -21,6 +22,7 @@ on:
       - "sim/web/panda_physical_stack.py"
       - "sim/web/physical_task_scenes.py"
       - "sim/web/steering_bridge.js"
+      - "sim/web/render_task_gallery.py"
       - "sim/web/model_motion_library.py"
       - "sim/web/catalog.py"
       - "sim/web/p37_browser_policy.py"
@@ -73,6 +75,18 @@ jobs:
             --p37-artifact _p37_policy
       - name: Publish only the canonical root experience
         run: python sim/web/assemble_site.py --output _pages
+      - name: Render task-gallery scenes using manufacturer-derived MuJoCo meshes
+        env:
+          MUJOCO_GL: egl
+          LIBGL_ALWAYS_SOFTWARE: "1"
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libegl1 libgl1-mesa-dri ffmpeg
+          python -m pip install "PyOpenGL>=3.1.9" "Pillow>=11"
+          python sim/web/render_task_gallery.py \
+            --menagerie _menagerie \
+            --actions sim/web/motion_data/panda-physical-stack.npz \
+            --output _pages/task-previews
       - name: Validate root page and isolated browser assets
         run: |
           python -m pip install "playwright>=1.55,<2"

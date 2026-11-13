@@ -1,0 +1,59 @@
+name: P37 Task Gallery Visual Evidence
+on:
+  pull_request:
+    paths:
+      - "sim/web/render_task_gallery.py"
+      - "sim/web/panda_physical_stack.py"
+      - "sim/web/physical_task_scenes.py"
+      - "docs/interactive-lab/steel/src/taskGallery.ts"
+      - ".github/workflows/p37-task-gallery.yml"
+  push:
+    branches: [main]
+    paths:
+      - "sim/web/render_task_gallery.py"
+      - "sim/web/panda_physical_stack.py"
+      - "sim/web/physical_task_scenes.py"
+      - "docs/interactive-lab/steel/src/taskGallery.ts"
+      - ".github/workflows/p37-task-gallery.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  native-gallery:
+    name: Capture true task-scene images
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    env:
+      MUJOCO_GL: egl
+      LIBGL_ALWAYS_SOFTWARE: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install headless MuJoCo and native imaging
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq libegl1 libgl1-mesa-dri ffmpeg
+          python -m pip install "mujoco>=3.3,<4" "numpy>=1.26" "scipy>=1.13" "Pillow>=11" "PyOpenGL>=3.1.9"
+      - name: Fetch original manufacturer robot geometry
+        run: git clone --depth 1 https://github.com/google-deepmind/mujoco_menagerie.git _menagerie
+      - name: Qualify Panda physical grasp and produce controls
+        run: |
+          python sim/web/panda_physical_stack.py --menagerie _menagerie --output _panda_task --require-success
+      - name: Capture real robot and collision-backed task previews
+        run: |
+          python sim/web/render_task_gallery.py --menagerie _menagerie --actions _panda_task/panda-physical-stack.npz --output _gallery_previews
+      - name: Verify gallery image provenance
+        run: |
+          python -c "import json,pathlib; p=pathlib.Path('_gallery_previews'); m=json.loads((p/'manifest.json').read_text()); assert len(m['scenes'])==6; assert all((p/x['file']).stat().st_size>12000 for x in m['scenes']); assert m['featured_video']['file']=='panda-stack.mp4'; v=p/'panda-stack.mp4'; assert v.stat().st_size>50000 and v.read_bytes()[4:8]==b'ftyp'; print('PASS: Native MuJoCo task frames and real Panda task video')"
+      - name: Preserve actual task-gallery images
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: p37-native-task-gallery-scenes
+          path: _gallery_previews/
+          retention-days: 14
+          if-no-files-found: warn

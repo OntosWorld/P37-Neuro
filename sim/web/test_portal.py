@@ -62,10 +62,19 @@ def test_public_demos_keep_capability_claims_evidence_gated() -> None:
     html = (ROOT / "demos" / "index.html").read_text(encoding="utf-8")
     js = (ROOT / "demos" / "demos.js").read_text(encoding="utf-8")
     evidence = (ROOT / "build_demo_evidence.py").read_text(encoding="utf-8")
-    assert "same trained checkpoint" in html
-    assert "not yet verified" in html
-    assert "controlled policy-transfer benchmark" in html
-    assert "Live MuJoCo" in html
+    # The legacy evidence viewer and the new task-first /demos landing
+    # both keep experimental controller outcomes explicitly unqualified.
+    # GitHub's PR validation checks the latest main-branch demos page.
+    if "Task Gallery — P37 Neuro" in html:
+        assert "trained-policy success are not yet qualified" in html
+        assert "Filter by task" in html
+        assert "simulator/?" in html
+        assert "MuJoCo" in html
+    else:
+        assert "same trained checkpoint" in html
+        assert "not yet verified" in html
+        assert "controlled policy-transfer benchmark" in html
+        assert "Live MuJoCo" in html
     assert 'controller !== "none"' in js
     assert "qualified_for_walking !== false" in js
     assert "same_checkpoint_task_transfer_qualified" in evidence
@@ -73,7 +82,7 @@ def test_public_demos_keep_capability_claims_evidence_gated() -> None:
     assert "mujoco.MjModel.from_xml_path" in evidence
     assert "p37-cross-body-evidence.json" in evidence
     assert "p37_recovery_claimed" in evidence
-    assert "demos.css" in html and "demos.js" in html
+    assert ("demos.css" in html and "demos.js" in html) or "Task Gallery — P37 Neuro" in html
 
 
 def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
@@ -88,10 +97,15 @@ def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
     assert "iframe" in root_app and "menagerie-viewer" in root_app
     assert "Select real robot body" in root_app
     assert "unitree_g1" in root_app
-    assert "One brain. Different bodies." in root_app
+    assert "TaskGallery" in root_app
+    gallery = (
+        ROOT.parents[1] / "docs" / "interactive-lab" / "steel" / "src" / "TaskExperimentGallery.tsx"
+    ).read_text(encoding="utf-8")
+    assert "Watch the robots" in gallery
+    assert "task-gallery-card" in gallery
     assert "P37 recurrent PPO" in root_app
     assert "Movement cycle" in root_app
-    assert "Articulation" in root_app
+    assert "Motor articulation" in root_app
     assert "Hold motion" in root_app
     assert "not a trained autonomous skill" in root_app.lower()
     assert "POWERED BY P37-NEURO" in root_app

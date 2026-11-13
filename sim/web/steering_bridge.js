@@ -189,6 +189,7 @@
           jointDelta: Number.isFinite(angle) && jointOrigin !== null
             ? Number(Math.abs(angle - jointOrigin).toFixed(5)) : undefined,
           jointName: 'Hinge ' + Math.max(1, measuredJoint + 1),
+          taskTime: Number((Number(data.time) || 0).toFixed(2)),
           message: 'Measured native hinge motion; fixed arm cannot walk or drive.',
           ...taskObservation(model, data) });
         readyReported = true;

@@ -1,0 +1,266 @@
+"""Capture the actual task scenes for the public task-first gallery.
+
+Images are *rendered from the same manufacturer-derived MuJoCo geometries and
+physical task environments* used in the browser. Panda frames are captured
+after replaying the real qualified contact/grasp motor controls, not a dummy
+animation. This script fails the site build if rendering is unavailable.
+"""
+
+from __future__ import annotations
+
+import argparse
+import faulthandler
+import json
+import subprocess
+from pathlib import Path
+
+import mujoco
+import numpy as np
+from catalog import ROBOTS
+from panda_physical_stack import initial_data
+from physical_task_scenes import add_physical_task_scene
+from PIL import Image
+
+WIDTH = 960
+HEIGHT = 600
+
+VIEWS = {
+    "panda-stack": ("franka_panda", [0.52, -0.02, 0.61], 1.82, 136, -24),
+    "panda-recorded": ("franka_panda", [0.51, 0.01, 0.59], 1.88, 136, -26),
+    "go2-terrain": ("unitree_go2", [0.64, -0.02, 0.23], 3.18, 127, -20),
+    "anymal-terrain": ("anymal_c", [0.68, 0.00, 0.30], 3.25, 124, -22),
+    "stretch-delivery": ("hello_robot_stretch", [0.25, 0.22, 0.62], 3.0, 136, -21),
+    "g1-policy": ("unitree_g1", [0, 0, 0.90], 3.20, 128, -12),
+}
+
+
+def _render(model: mujoco.MjModel, data: mujoco.MjData, target: Path, view: tuple) -> None:
+    _robot, lookat, distance, azimuth, elevation = view
+    model.vis.global_.offwidth = max(WIDTH, int(model.vis.global_.offwidth))
+    model.vis.global_.offheight = max(HEIGHT, int(model.vis.global_.offheight))
+    camera = mujoco.MjvCamera()
+    mujoco.mjv_defaultCamera(camera)
+    camera.type = mujoco.mjtCamera.mjCAMERA_FREE
+    camera.lookat[:] = lookat
+    camera.distance = distance
+    camera.azimuth = azimuth
+    camera.elevation = elevation
+    renderer = mujoco.Renderer(model, width=WIDTH, height=HEIGHT)
+    try:
+        renderer.update_scene(data, camera=camera)
+        pixels = renderer.render()
+        if pixels.shape != (HEIGHT, WIDTH, 3):
+            raise RuntimeError("Unexpected real MuJoCo camera buffer dimensions")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        Image.fromarray(pixels).save(target, format="JPEG", quality=90, optimize=True)
+    finally:
+        renderer.close()
+
+
+def _model(menagerie: Path, robot_id: str) -> mujoco.MjModel:
+    robot = next(robot for robot in ROBOTS if robot.id == robot_id)
+    spec = mujoco.MjSpec.from_file(str(menagerie / robot.model / "scene.xml"))
+    # Match the low-saturation graphite materials in the live WebAssembly
+    # workcell. This is a visual treatment of source textures; real geometry,
+    # collisions, poses and task traces remain unmodified.
+    for texture in spec.textures:
+        if getattr(texture, "name", "") == "groundplane":
+            texture.rgb1 = [0.22, 0.23, 0.25]
+            texture.rgb2 = [0.19, 0.20, 0.22]
+            texture.markrgb = [0.26, 0.28, 0.30]
+        elif texture.type == mujoco.mjtTexture.mjTEXTURE_SKYBOX:
+            texture.rgb1 = [0.22, 0.25, 0.28]
+            texture.rgb2 = [0.07, 0.08, 0.10]
+    # Use the same native task objects and key/fill light positions as the
+    # published workcell. Keep image capture separate from mjswan's Torch
+    # runtime so that offscreen EGL is light and deterministic.
+    spec.worldbody.add_light(
+        name="p37_preview_key",
+        pos=[-3.8, -3.2, 5.5],
+        dir=[0.65, 0.55, -1.0],
+        diffuse=[0.70, 0.73, 0.78],
+        specular=[0.24, 0.26, 0.29],
+    )
+    spec.worldbody.add_light(
+        name="p37_preview_fill",
+        pos=[3.4, 2.3, 4.2],
+        dir=[-0.65, -0.55, -1.0],
+        diffuse=[0.38, 0.42, 0.48],
+        specular=[0.09, 0.11, 0.14],
+    )
+    add_physical_task_scene(spec, robot_id)
+    return spec.compile()
+
+
+def _panda_frames(
+    model: mujoco.MjModel,
+    controls: np.ndarray,
+    video_path: Path,
+) -> dict[str, mujoco.MjData]:
+    if controls.ndim != 2 or controls.shape[1] != 8 or len(controls) < 880:
+        raise ValueError("Physically qualified Panda motor trace is missing or corrupt")
+    snapshots: dict[str, mujoco.MjData] = {}
+    data = initial_data(model)
+    substeps = round((1.0 / 50.0) / float(model.opt.timestep))
+    model.vis.global_.offwidth = max(WIDTH, int(model.vis.global_.offwidth))
+    model.vis.global_.offheight = max(HEIGHT, int(model.vis.global_.offheight))
+    _robot, lookat, distance, azimuth, elevation = VIEWS["panda-stack"]
+    camera = mujoco.MjvCamera()
+    mujoco.mjv_defaultCamera(camera)
+    camera.type = mujoco.mjtCamera.mjCAMERA_FREE
+    camera.lookat[:] = lookat
+    camera.distance = distance
+    camera.azimuth = azimuth
+    camera.elevation = elevation
+    # A real video, generated from the same native physical motor trajectory:
+    # sample 12.5 fps from grasp through settled placement, without modifying
+    # any recorded object state. No synthetic interpolation or animation.
+    video_path.parent.mkdir(parents=True, exist_ok=True)
+    renderer = mujoco.Renderer(model, width=WIDTH, height=HEIGHT)
+    encoder = subprocess.Popen(
+        [
+            "ffmpeg",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "rawvideo",
+            "-pixel_format",
+            "rgb24",
+            "-video_size",
+            f"{WIDTH}x{HEIGHT}",
+            "-framerate",
+            "12.5",
+            "-i",
+            "pipe:0",
+            "-an",
+            "-c:v",
+            "libx264",
+            "-preset",
+            "ultrafast",
+            "-crf",
+            "26",
+            "-pix_fmt",
+            "yuv420p",
+            "-movflags",
+            "+faststart",
+            str(video_path),
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    video_frames = 0
+    try:
+        for frame in range(len(controls)):
+            data.ctrl[:] = controls[frame]
+            for _ in range(substeps):
+                mujoco.mj_step(model, data)
+            if frame >= 210 and frame % 4 == 0:
+                renderer.update_scene(data, camera=camera)
+                if encoder.stdin is None:
+                    raise RuntimeError("FFmpeg video encoder pipe unavailable")
+                encoder.stdin.write(renderer.render().tobytes())
+                video_frames += 1
+            if frame == 385:
+                snapshot = mujoco.MjData(model)
+                snapshot.qpos[:] = data.qpos
+                snapshot.qvel[:] = data.qvel
+                snapshot.ctrl[:] = data.ctrl
+                snapshot.time = data.time
+                mujoco.mj_forward(model, snapshot)
+                snapshots["panda-stack"] = snapshot
+            if frame == len(controls) - 1:
+                snapshot = mujoco.MjData(model)
+                snapshot.qpos[:] = data.qpos
+                snapshot.qvel[:] = data.qvel
+                snapshot.ctrl[:] = data.ctrl
+                snapshot.time = data.time
+                mujoco.mj_forward(model, snapshot)
+                snapshots["panda-recorded"] = snapshot
+    finally:
+        if encoder.stdin is not None:
+            encoder.stdin.close()
+        result = encoder.wait(timeout=120)
+        renderer.close()
+    if result != 0 or video_frames < 130 or not video_path.is_file():
+        raise RuntimeError("Physically simulated Panda task video capture failed")
+    if video_path.stat().st_size < 50000:
+        raise RuntimeError("Native Panda task clip unexpectedly small")
+    print(
+        f"Rendered {video_frames} genuine Panda physics frames: {video_path.stat().st_size} bytes",
+        flush=True,
+    )
+    if set(snapshots) != {"panda-stack", "panda-recorded"}:
+        raise RuntimeError("Qualified Panda task did not reach capture checkpoints")
+    return snapshots
+
+
+def build(menagerie: Path, actions: Path, output: Path) -> dict:
+    with np.load(actions, allow_pickle=False) as recorded:
+        controls = np.asarray(recorded["actions"], dtype=np.float64)
+    report = {
+        "renderer": "MuJoCo Python offscreen",
+        "image_source": "manufacturer meshes",
+        "scenes": [],
+    }
+    for robot_id in (
+        "franka_panda",
+        "unitree_go2",
+        "anymal_c",
+        "hello_robot_stretch",
+        "unitree_g1",
+    ):
+        model = _model(menagerie, robot_id)
+        if robot_id == "franka_panda":
+            captures = _panda_frames(model, controls, output / "panda-stack.mp4")
+        else:
+            data = mujoco.MjData(model)
+            if model.nkey:
+                mujoco.mj_resetDataKeyframe(model, data, 0)
+            mujoco.mj_forward(model, data)
+            task_key = next(key for key, value in VIEWS.items() if value[0] == robot_id)
+            captures = {task_key: data}
+        for key, capture in captures.items():
+            target = output / f"{key}.jpg"
+            print(f"Rendering native task scene {key}: {model.ngeom} geoms", flush=True)
+            _render(model, capture, target, VIEWS[key])
+            print(f"Rendered task scene {key}: {target.stat().st_size} bytes", flush=True)
+            if target.stat().st_size < 12_000:
+                raise RuntimeError(f"Scene preview suspiciously small: {target}")
+            report["scenes"].append(
+                {
+                    "task_id": key,
+                    "robot_id": robot_id,
+                    "file": target.name,
+                    "size_bytes": target.stat().st_size,
+                    "actual_mujoco_scene": True,
+                    "native_panda_motor_replay": robot_id == "franka_panda",
+                }
+            )
+    report["featured_video"] = {
+        "file": "panda-stack.mp4",
+        "native_physics_frames": True,
+        "controller": "contact_verified_scripted_reference",
+        "trained_p37_policy": False,
+    }
+    if len(report["scenes"]) != len(VIEWS):
+        raise RuntimeError("Missing rendered physical task gallery scene")
+    (output / "manifest.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    return report
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--menagerie", type=Path, required=True)
+    parser.add_argument("--actions", type=Path, required=True)
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args()
+    faulthandler.enable()
+    print("Starting headless MuJoCo EGL native task capture", flush=True)
+    print(json.dumps(build(args.menagerie, args.actions, args.output), indent=2))
+
+
+if __name__ == "__main__":
+    main()
