@@ -50,6 +50,11 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     previews = json.loads((site / "task-previews/manifest.json").read_text(encoding="utf-8"))
     assert previews["renderer"] == "MuJoCo Python offscreen"
     assert len(previews["scenes"]) == 6
+    assert previews["featured_video"]["file"] == "panda-stack.mp4"
+    assert previews["featured_video"]["native_physics_frames"] is True
+    movie = site / "task-previews/panda-stack.mp4"
+    assert movie.is_file() and movie.stat().st_size > 50000
+    assert movie.read_bytes()[4:8] == b"ftyp"
     assert all(item["actual_mujoco_scene"] is True for item in previews["scenes"])
     for item in previews["scenes"]:
         image = site / "task-previews" / item["file"]
@@ -131,6 +136,10 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             )
             assert page.locator(".task-gallery-card").count() == 6
             assert page.locator(".task-gallery-card img").count() == 6
+            assert page.locator(".task-gallery-card video").count() == 1
+            assert "panda-stack.mp4" in page.locator(".task-gallery-card video source").get_attribute(
+                "src"
+            )
             page.wait_for_function(
                 "() => Array.from(document.querySelectorAll('.task-gallery-card img'))"
                 ".slice(0,3).every(img => img.complete && img.naturalWidth > 300)",
@@ -161,9 +170,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert "scene=unitree_g1" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
-            assert "policy=movement_cycle" in page.locator("iframe.menagerie-viewer").get_attribute(
-                "src"
-            )
+            assert "policy=p37_g1_experimental_recurrent_ppo" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
             assert page.get_by_role("button", name="Hold motion").is_visible()
             assert page.get_by_role("button", name="Forward").is_visible()
             assert page.get_by_role("button", name="Live physical tasks").is_visible()
