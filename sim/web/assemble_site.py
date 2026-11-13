@@ -105,6 +105,39 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
                 raise RuntimeError("Motion dataset cannot be mislabeled as P37 intelligence")
             if not (output / "simulator" / "motion_data" / clip["dataset_file"]).is_file():
                 raise FileNotFoundError(f"Missing actual trajectory for {robot.id}")
+    # The Panda native scripted task is admitted only if the source physical
+    # controller actually grasped, lifted, released and stacked in MuJoCo AND
+    # independently reproduced with the exact recorded actuator controls.
+    panda_record_path = output / "simulator/motion_data/panda-physical-stack.json"
+    if not panda_record_path.is_file():
+        raise FileNotFoundError("Validated physical Panda task record missing")
+    panda_record = json.loads(panda_record_path.read_text(encoding="utf-8"))
+    required_outcomes = (
+        "native_physics_verified",
+        "contact_grasp_observed",
+        "lift_observed",
+        "release_observed",
+        "stable_stack_observed",
+        "replay_verified",
+    )
+    if (
+        panda_record.get("task") != "panda-physical-cube-stack"
+        or panda_record.get("learned_policy") is not False
+        or any(panda_record.get(key) is not True for key in required_outcomes)
+    ):
+        raise RuntimeError("Physical Panda task failed source/evidence checks")
+    panda_scene = next(
+        scene
+        for project in manifest["projects"]
+        for scene in project["scenes"]
+        if scene["id"] == "franka_panda"
+    )
+    panda_policies = {policy["id"]: policy for policy in panda_scene["policies"]}
+    expected_panda_id = "panda_physical_cube_stack_scripted"
+    if expected_panda_id not in panda_policies:
+        raise RuntimeError("Validated Panda motor task is not attached in the runtime")
+    if not (output / "simulator/motion_data/panda-physical-stack.onnx").is_file():
+        raise RuntimeError("Validated Panda ONNX motor table missing")
     g1_scene = next(
         scene
         for project in manifest["projects"]
@@ -127,6 +160,18 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         "motion_dataset_source": "MuJoCo Menagerie model-derived actuator targets",
         "motion_dataset_modes_per_robot": 3,
         "all_robot_motion_playback": True,
+        "panda_physical_cube_stack": {
+            "mode": "scripted_native_motor_reference",
+            "qualified_native_contact_and_replay": True,
+            "learned_p37_policy": False,
+            "control_sha256": panda_record["sha256"],
+            "frames": panda_record["frames"],
+            "control_hz": panda_record["control_hz"],
+            "left_contact_frames": panda_record["left_finger_contact_frames"],
+            "right_contact_frames": panda_record["right_finger_contact_frames"],
+            "final_blue_xyz": panda_record["final_blue_xyz"],
+            "final_amber_xyz": panda_record["final_amber_xyz"],
+        },
         "physical_task_scene_version": 2,
         "task_experiences": [
             "live_assisted_physics",

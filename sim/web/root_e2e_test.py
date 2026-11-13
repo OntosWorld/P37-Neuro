@@ -35,6 +35,11 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     assert metadata["experimental_policy_robot"] == "unitree_g1"
     assert metadata["qualified_cross_body_transfer"] is False
     assert metadata["physical_task_scene_version"] == 2
+    panda_task = metadata["panda_physical_cube_stack"]
+    assert panda_task["qualified_native_contact_and_replay"] is True
+    assert panda_task["learned_p37_policy"] is False
+    assert panda_task["frames"] > 500
+    assert panda_task["control_hz"] == 50
     assert set(metadata["task_experiences"]) == {
         "live_assisted_physics",
         "source_recorded_replay",
@@ -50,6 +55,9 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
     scenes = {s["id"]: s for p in manifest["projects"] for s in p["scenes"]}
     assert {r["id"] for r in robots} <= scenes.keys()
     assert scenes["unitree_g1"].get("policies"), "Missing browser ONNX controller"
+    assert any(
+        p["id"] == "panda_physical_cube_stack_scripted" for p in scenes["franka_panda"]["policies"]
+    ), "Validated physical Panda stack replay is not attached"
     motions = json.loads((site / "simulator/motion_data/index.json").read_text(encoding="utf-8"))
     assert set(motions["motions"]) == {r["id"] for r in robots}
     for robot in robots:
@@ -163,6 +171,10 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page.get_by_role("combobox", name="Select a robot").select_option("franka_panda")
             assert "Fixed-base robot" in page.locator(".p37-steer-panel").inner_text()
             assert page.get_by_text("Stack two physical cubes").is_visible()
+            assert page.get_by_role("button", name="Replay validated Panda stack").is_visible()
+            assert "policy=panda_physical_cube_stack_scripted" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
             assert page.get_by_role("button", name="Forward").count() == 0
             assert "scene=franka_panda" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
@@ -179,9 +191,11 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
                 "stack not confirmed" in page.locator(".p37-task-experiment").inner_text().lower()
             )
             page.screenshot(path=str(screenshots / "panda-real-model.png"), timeout=90000)
+            # Actual native physics trial and independent replay are enforced
+            # by build_mjswan before the browser artifact can be published.
             page.locator(".p37-real-panel .info-row").filter(has_text="Controller").locator(
                 "strong"
-            ).filter(has_text="Dataset motor replay").wait_for(timeout=15000)
+            ).filter(has_text="Validated scripted Panda reference").wait_for(timeout=15000)
             page.get_by_role("combobox", name="Select a robot").select_option("unitree_go2")
             assert "scene=unitree_go2" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"

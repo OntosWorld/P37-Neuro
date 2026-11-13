@@ -65,7 +65,7 @@ def _cube(
     body.add_geom(
         name=name + "_collision",
         type=mujoco.mjtGeom.mjGEOM_BOX,
-        size=[0.035, 0.035, 0.035],
+        size=[0.03, 0.03, 0.03],
         mass=0.065,
         friction=[1.1, 0.005, 0.0001],
         rgba=list(rgba),
@@ -115,16 +115,16 @@ def add_physical_task_scene(spec: mujoco.MjSpec, robot_id: str) -> None:
         _cube(
             spec,
             "p37_stack_blue",
-            pos=(0.45, -0.16, 0.578),
+            pos=(0.45, -0.16, 0.57),
             rgba=(0.20, 0.44, 0.78, 1.0),
         )
         _cube(
             spec,
             "p37_stack_amber",
-            pos=(0.61, 0.12, 0.578),
+            pos=(0.53, 0.12, 0.57),
             rgba=(0.86, 0.50, 0.24, 1.0),
         )
-        _marker(spec, "p37_stack_target", 0.61, 0.12, 0.546)
+        _marker(spec, "p37_stack_target", 0.53, 0.12, 0.546)
 
     elif robot_id == "hello_robot_stretch":
         # Menagerie already contains the real 6-DoF source object on its

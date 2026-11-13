@@ -113,8 +113,16 @@
       const [blue, amber] = free;
       const offset = Math.hypot(blue[0] - amber[0], blue[1] - amber[1]);
       const gap = blue[2] - amber[2];
-      const validStack = offset <= 0.050 && gap >= 0.058 && gap <= 0.086
-        && blue[2] >= 0.62 && amber[2] >= 0.55;
+      // A geometrically aligned cube in midair is not a settled stack.
+      // Require the source gripper to be open and both free-body velocities
+      // to be near zero in the real MuJoCo state over repeated frames.
+      const jawOpen = data.qpos && Number(data.qpos[7]) >= 0.035;
+      const velocities = data.qvel ? Array.from(data.qvel).slice(-12) : [];
+      const objectsStill = velocities.length === 12 &&
+        Math.hypot(...velocities.map(v => Number(v) || 0)) < 0.16;
+      const validStack = offset <= 0.050 && gap >= 0.052 && gap <= 0.085
+        && blue[2] >= 0.62 && amber[2] >= 0.55 &&
+        jawOpen && objectsStill;
       stableFrames = validStack ? stableFrames + 1 : 0;
       return { taskKind: 'cube-stack', objectDistance: Number(offset.toFixed(4)),
         stackHeight: Number(gap.toFixed(4)), stackStable: stableFrames >= 20,
