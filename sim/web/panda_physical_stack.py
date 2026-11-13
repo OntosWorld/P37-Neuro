@@ -47,8 +47,7 @@ def initial_data(model: mujoco.MjModel) -> mujoco.MjData:
         for name in ("finger_joint1", "finger_joint2"):
             adr = int(model.joint(name).qposadr[0])
             data.qpos[adr] = 0.04
-    data.ctrl[:7] = np.array([data.qpos[model.joint(f"joint{i}").qposadr[0]]
-                              for i in range(1, 8)])
+    data.ctrl[:7] = np.array([data.qpos[model.joint(f"joint{i}").qposadr[0]] for i in range(1, 8)])
     data.ctrl[7] = 255.0
     mujoco.mj_forward(model, data)
     return data
@@ -75,10 +74,8 @@ def solve_ik(
 ) -> tuple[np.ndarray, float, float]:
     qs, dofs, hand = panda_coords(model)
     working.qpos[qs] = q_seed
-    low = np.array([model.jnt_range[model.joint(f"joint{i}").id, 0]
-                    for i in range(1, 8)]) + 0.025
-    high = np.array([model.jnt_range[model.joint(f"joint{i}").id, 1]
-                     for i in range(1, 8)]) - 0.025
+    low = np.array([model.jnt_range[model.joint(f"joint{i}").id, 0] for i in range(1, 8)]) + 0.025
+    high = np.array([model.jnt_range[model.joint(f"joint{i}").id, 1] for i in range(1, 8)]) - 0.025
     jpos = np.zeros((3, model.nv))
     jrot = np.zeros((3, model.nv))
     err_p = float("inf")
@@ -162,10 +159,13 @@ def simulate(
             else:
                 err_p = err_r = 0.0
             targets.append((name, seed.copy(), gripper, duration))
-            ik_diagnostics.append({
-                "phase": name, "position_error": round(err_p, 4),
-                "rotation_error": round(err_r, 4)
-            })
+            ik_diagnostics.append(
+                {
+                    "phase": name,
+                    "position_error": round(err_p, 4),
+                    "rotation_error": round(err_r, 4),
+                }
+            )
         print("IK", json.dumps(ik_diagnostics), flush=True)
     else:
         if reference_controls.ndim != 2 or reference_controls.shape[1] != 8:
@@ -186,19 +186,23 @@ def simulate(
     arm_origin = data.qpos[qs].copy()
     jaw_origin = float(data.ctrl[7])
     frame_id = 0
-    segments = targets if reference_controls is None else [
-        ("replay", np.zeros(7), 0.0, len(reference_controls) * CONTROL_DT)
-    ]
+    segments = (
+        targets
+        if reference_controls is None
+        else [("replay", np.zeros(7), 0.0, len(reference_controls) * CONTROL_DT)]
+    )
     for phase, q_goal, grip_goal, duration in segments:
         frames = max(1, round(duration * RATE))
         for frame in range(frames):
             p = (frame + 1) / frames
             alpha = p * p * (3 - 2 * p)
             if reference_controls is None:
-                cmd = np.concatenate([
-                    arm_origin + alpha * (q_goal - arm_origin),
-                    [jaw_origin + alpha * (grip_goal - jaw_origin)]
-                ])
+                cmd = np.concatenate(
+                    [
+                        arm_origin + alpha * (q_goal - arm_origin),
+                        [jaw_origin + alpha * (grip_goal - jaw_origin)],
+                    ]
+                )
             else:
                 cmd = reference_controls[frame_id]
             data.ctrl[:] = cmd
@@ -213,52 +217,67 @@ def simulate(
             right_frames += int(right)
             recent_left = min(12, recent_left + 1) if left else max(0, recent_left - 1)
             recent_right = min(12, recent_right + 1) if right else max(0, recent_right - 1)
-            closed_contact = (recent_left >= 2 and recent_right >= 2
-                              and float(data.qpos[finger]) < 0.034)
+            closed_contact = (
+                recent_left >= 2 and recent_right >= 2 and float(data.qpos[finger]) < 0.034
+            )
             if closed_contact:
                 grasp_contact += 1
-            if (grasp_contact >= 5 and blue[2] > 0.66
-                and phase in ("lift", "carry", "place", "release", "replay")):
+            if (
+                grasp_contact >= 5
+                and blue[2] > 0.66
+                and phase in ("lift", "carry", "place", "release", "replay")
+            ):
                 lifted = True
-            if (grasp_contact >= 5 and lifted and float(data.qpos[finger]) > 0.033
-                and not left and not right):
+            if (
+                grasp_contact >= 5
+                and lifted
+                and float(data.qpos[finger]) > 0.033
+                and not left
+                and not right
+            ):
                 released = True
             offset = float(np.linalg.norm(blue[:2] - amber[:2]))
             dz = float(blue[2] - amber[2])
             stable = (
-                on_stack and released and 0.052 <= dz <= 0.085
+                on_stack
+                and released
+                and 0.052 <= dz <= 0.085
                 and offset <= 0.051
                 and float(np.linalg.norm(data.qvel[-6:])) < 0.12
             )
             settled = settled + 1 if stable else 0
             controls.append(np.asarray(cmd, dtype=np.float32).copy())
-            events.append({
-                "time": round(float(data.time), 3),
-                "phase": phase,
-                "blue_xyz": [round(float(v), 4) for v in blue],
-                "amber_xyz": [round(float(v), 4) for v in amber],
-                "finger_qpos": round(float(data.qpos[finger]), 4),
-                "finger_contacts": [left, right],
-                "cube_contact": on_stack,
-                "lift_observed": lifted,
-                "release_observed": released,
-                "settled": settled >= 12,
-            })
+            events.append(
+                {
+                    "time": round(float(data.time), 3),
+                    "phase": phase,
+                    "blue_xyz": [round(float(v), 4) for v in blue],
+                    "amber_xyz": [round(float(v), 4) for v in amber],
+                    "finger_qpos": round(float(data.qpos[finger]), 4),
+                    "finger_contacts": [left, right],
+                    "cube_contact": on_stack,
+                    "lift_observed": lifted,
+                    "release_observed": released,
+                    "settled": settled >= 12,
+                }
+            )
             frame_id += 1
         arm_origin = data.qpos[qs].copy()
         jaw_origin = float(data.ctrl[7])
-        stage_results.append({
-            "phase": phase,
-            "blue": events[-1]["blue_xyz"],
-            "tool": [round(float(v), 3) for v in tool_pose(data, hand)[0]],
-            "grip": events[-1]["finger_qpos"],
-            "two_finger_frames": grasp_contact,
-            "left_contact_frames": left_frames,
-            "right_contact_frames": right_frames,
-            "lifted": lifted,
-            "released": released,
-            "settled_frames": settled,
-        })
+        stage_results.append(
+            {
+                "phase": phase,
+                "blue": events[-1]["blue_xyz"],
+                "tool": [round(float(v), 3) for v in tool_pose(data, hand)[0]],
+                "grip": events[-1]["finger_qpos"],
+                "two_finger_frames": grasp_contact,
+                "left_contact_frames": left_frames,
+                "right_contact_frames": right_frames,
+                "lifted": lifted,
+                "released": released,
+                "settled_frames": settled,
+            }
+        )
     result = {
         "engine": "mujoco",
         "source_robot": "google-deepmind/mujoco_menagerie/franka_emika_panda",
@@ -323,8 +342,9 @@ def main() -> None:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--require-success", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(run(args.menagerie, args.output, require_success=args.require_success),
-                     indent=2))
+    print(
+        json.dumps(run(args.menagerie, args.output, require_success=args.require_success), indent=2)
+    )
 
 
 if __name__ == "__main__":
