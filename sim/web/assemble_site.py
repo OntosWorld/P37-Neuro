@@ -39,14 +39,14 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     provenance = json.loads(manifest_file.read_text(encoding="utf-8"))
     entries = provenance.get("posters", [])
     if (
-        provenance.get("format") != "p37-native-mujoco-task-posters"
+        provenance.get("format") != "p37-mujoco-browser-task-posters"
         or provenance.get("robot_count") != len(ROBOTS)
         or {entry.get("robot_id") for entry in entries} != {robot.id for robot in ROBOTS}
         or len(entries) != len(ROBOTS)
     ):
         raise RuntimeError("Task gallery poster provenance does not cover all ten robots")
     for item in entries:
-        if item.get("pixels_from_native_renderer") is not True:
+        if item.get("pixels_from_mujoco_browser_renderer") is not True:
             raise RuntimeError("Task gallery cannot publish non-MuJoCo robot posters")
         filename = item.get("filename")
         if filename != item["robot_id"] + ".webp":
