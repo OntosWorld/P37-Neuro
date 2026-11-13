@@ -138,6 +138,32 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
         raise RuntimeError("Validated Panda motor task is not attached in the runtime")
     if not (output / "simulator/motion_data/panda-physical-stack.onnx").is_file():
         raise RuntimeError("Validated Panda ONNX motor table missing")
+    # A separate tabletop task may only be published after native physical
+    # grasp, carry, release and stable placement checks plus exact control replay.
+    pick_path = output / "simulator/motion_data/panda-pick-place.json"
+    if not pick_path.is_file():
+        raise FileNotFoundError("Qualified Panda pick-and-place record missing")
+    pick_record = json.loads(pick_path.read_text(encoding="utf-8"))
+    if (pick_record.get("task") != "panda-pick-place"
+        or pick_record.get("learned_policy") is not False
+        or any(pick_record.get(key) is not True for key in (
+            "native_physics_verified", "contact_grasp_observed",
+            "lift_observed", "transport_observed", "release_observed",
+            "stable_target_observed", "replay_verified",
+            "open_jaw_negative_control_failed",
+        ))):
+        raise RuntimeError("Panda pick/place physical qualification failed")
+    if not (output / "simulator/motion_data/panda-pick-place.onnx").is_file():
+        raise FileNotFoundError("Panda pick-place motor ONNX missing")
+    pick_scene = next(
+        (scene for project in manifest["projects"] for scene in project["scenes"]
+         if scene["id"] == "franka_pick_place"), None,
+    )
+    if pick_scene is None or not any(
+        policy.get("id") == "panda_physical_pick_place_scripted"
+        for policy in pick_scene.get("policies", [])
+    ):
+        raise RuntimeError("Panda pick-and-place scene/controller missing from browser runtime")
     g1_scene = next(
         scene
         for project in manifest["projects"]
@@ -172,7 +198,17 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
             "final_blue_xyz": panda_record["final_blue_xyz"],
             "final_amber_xyz": panda_record["final_amber_xyz"],
         },
-        "physical_task_scene_version": 2,
+        "panda_pick_place": {
+            "mode": "scripted_native_motor_reference",
+            "qualified_native_contact_and_replay": True,
+            "learned_p37_policy": False,
+            "control_sha256": pick_record["sha256"],
+            "frames": pick_record["frames"],
+            "control_hz": pick_record["control_hz"],
+            "final_cube_xyz": pick_record["end_state"]["cube_xyz"],
+            "final_target_error_m": pick_record["end_state"]["target_distance_m"],
+        },
+        "physical_task_scene_version": 3,
         "task_experiences": [
             "live_assisted_physics",
             "source_recorded_replay",
