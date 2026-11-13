@@ -320,10 +320,10 @@ export function App() {
       </section>
       <section className="lab-grid" id="simulator" aria-label="Live manufacturer robot simulation">
         <div className="viewport">
-          <div className="playground-scenes p37-scenes" role="group" aria-label="Choose robot category">
-            <span className="playground-scenes-label">Explore</span>
-            {CATEGORIES.map(item => <button key={item} type="button"
-              aria-pressed={category === item} onClick={() => setCategory(item)}>{item}</button>)}
+          <div className="p37-live-task-header">
+            <span>SIMULATION / {activeTask?.robotName ?? current?.name ?? 'SELECT ROBOT'}</span>
+            <strong>{activeTask?.title ?? 'Physical model exploration'}</strong>
+            <span className="p37-sim-kind">{activeTask?.status ?? 'Native MuJoCo'}</span>
           </div>
           <div className="p37-experience-tabs" role="group" aria-label="Choose experiment experience">
             <button type="button" aria-pressed={experience==='simulation'}
@@ -375,7 +375,8 @@ export function App() {
               p37Active ? 'Experimental P37 recurrent PPO' :
               motion === 'hold' ? 'Hold pose · model-derived' :
               'Recorded joint targets · model-derived'}</strong>
-            <span className="playground-disclaimer">{stageLoaded ?
+            <span className="playground-disclaimer">{experience==='recorded'
+              ? 'Source data replay · separate from live simulation' : stageLoaded ?
               'Viewer loaded · inspect motion inside the live scene' : 'Loading native simulation…'}</span>
           </div>
           {experience!=='recorded' && experiment && result && <section className="p37-task-experiment" aria-label="Measured robot task experiment">
@@ -385,6 +386,19 @@ export function App() {
             </div>
             <h2>{experiment.title}</h2>
             <p>{experiment.objective}</p>
+            {pandaActive && <div className="p37-task-timeline"
+              role="list" aria-label="Measured Panda task sequence">
+              {PANDA_STAGES.map((stage, index) => <div key={stage.name}
+                role="listitem"
+                className={'p37-task-step' +
+                  (pandaTime >= stage.start ? ' is-started' : '') +
+                  (pandaTime >= stage.end ? ' is-finished' : '')}
+                aria-current={pandaTime >= stage.start && pandaTime < stage.end ? 'step' : undefined}>
+                <span className="p37-step-number">{String(index+1).padStart(2,'0')}</span>
+                <strong>{stage.name}</strong>
+              </div>)}
+              <div className="p37-task-clock">{pandaTime.toFixed(1)} / 18.2s</div>
+            </div>}
             {pandaActive && build?.panda_physical_cube_stack && <div
               className="p37-scripted-evidence" aria-label="Panda source experiment evidence">
               <strong>Native task verified · deterministic motor reference</strong>
@@ -421,9 +435,11 @@ export function App() {
           </section>}
           {experience!=='recorded' && <div className="viewport-controls">
             <div className="action-row">
-              <button type="button" onClick={() => setPlayback(
-                motion === 'hold' ? lastMotion : 'hold'
-              )}>{motion === 'hold' ? 'Play motion' : 'Hold motion'}</button>
+              {pandaActive ? <button type="button"
+                onClick={() => setPlayback('panda_scripted_stack')}>↻ Replay full task</button>
+                : <button type="button" onClick={() => setPlayback(
+                  motion === 'hold' ? lastMotion : 'hold'
+                )}>{motion === 'hold' ? 'Play motion' : 'Hold motion'}</button>}
               <button type="button" onClick={() => {
                 releaseSteer(); setTelemetry({status:'waiting'});
                 setStageLoaded(false); setReload(x => x + 1);
