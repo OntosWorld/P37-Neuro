@@ -3,6 +3,10 @@ on:
   pull_request:
     paths:
       - "sim/web/assemble_site.py"
+      - "sim/web/build_mjswan.py"
+      - "sim/web/model_motion_library.py"
+      - "sim/web/catalog.py"
+      - "sim/web/p37_browser_policy.py"
       - "sim/web/root_e2e_test.py"
       - "docs/interactive-lab/steel/**"
       - ".github/workflows/p37-github-pages.yml"
@@ -10,6 +14,10 @@ on:
     branches: [main]
     paths:
       - "sim/web/assemble_site.py"
+      - "sim/web/build_mjswan.py"
+      - "sim/web/model_motion_library.py"
+      - "sim/web/catalog.py"
+      - "sim/web/p37_browser_policy.py"
       - "sim/web/root_e2e_test.py"
       - "docs/interactive-lab/steel/**"
       - ".github/workflows/p37-github-pages.yml"
