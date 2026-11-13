@@ -318,18 +318,20 @@ export function App() {
           </div>
         </div>
         <div className="p37-task-film">
-          {reelError ? <div className="p37-task-film-fallback" role="status">
+          {reelError && <div className="p37-task-film-fallback" role="status">
             <strong>Recorded demonstration unavailable</strong>
             <p>Open the live Panda simulation below to inspect the actual task.</p>
             <a href="#simulator">Open live task ↗</a>
-          </div> : <video ref={reelRef} className="p37-task-film-video"
+          </div>}
+          <video ref={reelRef} className="p37-task-film-video"
+            style={reelError ? {display:'none'} : undefined}
             aria-label="Native MuJoCo Panda cube grasp lift carry and stack"
             muted autoPlay playsInline loop preload="metadata"
             poster={import.meta.env.BASE_URL + 'films/panda-cube-stack.png'}
             onTimeUpdate={e=>setReelTime(e.currentTarget.currentTime)}
             onError={()=>setReelError(true)}>
             <source src={import.meta.env.BASE_URL + 'films/panda-cube-stack.mp4'} type="video/mp4"/>
-          </video>}
+          </video>
           <div className="p37-task-film-top">
             <span className="p37-task-film-live"><span/> SIMULATION RECORDING</span>
             <span>FRANKA PANDA / NATIVE MUJOCO</span>
