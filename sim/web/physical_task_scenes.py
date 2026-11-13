@@ -164,6 +164,8 @@ def validate_task_scene(model: mujoco.MjModel, robot_id: str) -> None:
                 raise ValueError(f"missing cube body {name}")
             if model.body_mass[body] <= 0:
                 raise ValueError(f"nonphysical cube mass {name}")
-    if (robot_id == "hello_robot_stretch"
-        and mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "object") < 0):
+    if (
+        robot_id == "hello_robot_stretch"
+        and mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, "object") < 0
+    ):
         raise ValueError("Stretch source physical object missing")
