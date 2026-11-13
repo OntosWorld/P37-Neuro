@@ -526,3 +526,180 @@ body,.app-shell{color:#242827!important}
 .p37-scripted-evidence span{font-size:12px;font-variant-numeric:tabular-nums;
   line-height:1.5;color:#375743}
 .p37-scripted-evidence small{font-size:11px;color:#68766a;line-height:1.5}
+
+/* Task-first P37 experience, built around real simulation evidence rather than
+   robot model selectors. All imagery is rendered from actual task MJCF scenes. */
+.task-gallery{max-width:1320px;margin:0 auto;padding:66px 0 58px;scroll-margin-top:22px}
+.task-gallery-heading{max-width:1280px}
+.task-gallery-label{display:flex;justify-content:space-between;align-items:center;gap:20px;
+  padding:0 0 21px;border-bottom:1px solid #daddda}
+.gallery-kicker{font-size:11px;letter-spacing:.105em;font-weight:650;color:#2d3d33}
+.gallery-index{font-size:11px;letter-spacing:.07em;color:#7b847d}
+.gallery-index b{font-weight:550;color:#23362a;margin-left:10px}
+.task-gallery-heading h1{font-size:clamp(58px,8.1vw,117px)!important;line-height:.985!important;
+  letter-spacing:-.075em!important;margin:38px 0 23px!important;font-weight:480!important;
+  color:#1f2822!important;max-width:1120px}
+.task-gallery-heading h1 em{font-style:normal;color:#9ca8a0;font-weight:420}
+.task-gallery-heading>p{font-size:clamp(15px,1.27vw,18px);line-height:1.62;color:#6e7770;
+  max-width:685px;margin:0 0 42px}
+.task-gallery-toolbar{display:flex;justify-content:space-between;align-items:center;
+  border-top:1px solid #e0e5df;padding:18px 0 19px;gap:16px}
+.task-gallery-filters{display:flex;align-items:center;gap:5px;flex-wrap:wrap}
+.task-gallery-filters button{background:transparent;color:#68746b;border:1px solid transparent;
+  padding:10px 16px;border-radius:100px;font-size:12px;font-weight:550;white-space:nowrap}
+.task-gallery-filters button[aria-pressed=true]{background:#242e29;color:#fff;border-color:#242e29}
+.task-gallery-filters button:hover:not([aria-pressed=true]){background:#edf1ed;color:#26362c}
+.task-gallery-count{font-size:11px;letter-spacing:.065em;color:#8a938d;white-space:nowrap}
+.task-gallery-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:16px;align-items:stretch}
+.task-gallery-card{display:flex;flex-direction:column;min-width:0;overflow:hidden;
+  padding:0;border:1px solid #dfe4df;border-radius:9px;
+  background:#fff;color:#27342b;text-align:left;box-shadow:none;
+  transition:border-color .2s,box-shadow .2s,transform .2s}
+.task-gallery-card:hover{transform:translateY(-3px);border-color:#a2b1a5;
+  box-shadow:0 14px 36px rgba(30,46,34,.09)}
+.task-gallery-card:focus-visible{outline-offset:4px}
+.task-gallery-card[aria-pressed=true]{border-color:#778f7d;box-shadow:0 0 0 1px #778f7d}
+.task-gallery-featured,.task-gallery-card:last-child{grid-column:span 2}
+.task-card-image{display:block;position:relative;overflow:hidden;background:#d1d6d1;
+  height:clamp(240px,25vw,330px);isolation:isolate}
+.task-gallery-featured .task-card-image{height:clamp(340px,34vw,450px)}
+.task-gallery-card:last-child .task-card-image{height:290px}
+.task-card-image img{display:block;width:100%;height:100%;object-fit:cover;
+  object-position:center 52%;transition:transform .6s cubic-bezier(.2,.75,.28,1);
+  filter:saturate(.78) contrast(1.02)}
+.task-gallery-card:hover .task-card-image img{transform:scale(1.035)}
+.task-card-image-shade{position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(10,20,14,.45) 0%,transparent 29%,
+    transparent 69%,rgba(10,20,14,.6) 100%)}
+.task-card-top{position:absolute;z-index:2;top:19px;left:22px;right:22px;
+  display:flex;gap:12px;justify-content:space-between;align-items:flex-start}
+.task-card-top small{font-size:10px;font-weight:640;letter-spacing:.085em;
+  color:#fff;text-shadow:0 1px 10px rgba(0,0,0,.35)}
+.task-card-source{font-weight:460!important;letter-spacing:.04em!important}
+.task-card-robot{position:absolute;z-index:2;bottom:21px;left:22px;color:#fff;
+  font-size:13px;font-weight:580;text-shadow:0 1px 8px rgba(0,0,0,.42)}
+.task-card-copy{display:flex;flex-direction:column;flex:1;padding:26px 27px 21px;min-width:0}
+.task-card-type{font-size:10px;text-transform:uppercase;letter-spacing:.08em;
+  font-weight:690;color:#526c57;margin-bottom:12px}
+.task-card-title{font-size:clamp(24px,2.6vw,35px);line-height:1.14;
+  letter-spacing:-.048em;font-weight:540;color:#212c25}
+.task-card-description{font-size:13px;line-height:1.65;color:#69766e;
+  margin-top:11px;max-width:650px;min-height:42px}
+.task-card-bottom{border-top:1px solid #e5e9e4;padding-top:17px;margin-top:21px;
+  display:flex;justify-content:space-between;align-items:center;gap:16px;
+  font-size:12px;font-weight:620;color:#273c2d}
+.task-card-round{width:36px;height:36px;display:grid;place-items:center;
+  border:1px solid #dce4dc;border-radius:50%;font-size:17px;
+  background:#f5f8f4;transition:background .2s,color .2s}
+.task-gallery-card:hover .task-card-round{background:#26392d;color:#fff}
+.task-gallery-featured .task-card-copy{display:grid;grid-template-columns:1fr auto;
+  align-items:start;column-gap:25px;padding:30px 34px 28px}
+.task-gallery-featured .task-card-type{grid-column:1/-1}
+.task-gallery-featured .task-card-title{font-size:clamp(33px,4vw,51px);grid-column:1/-1}
+.task-gallery-featured .task-card-description{font-size:15px;grid-column:1}
+.task-gallery-featured .task-card-bottom{grid-column:2;grid-row:3;align-self:end;
+  border:0;margin:0;padding:0;min-width:205px}
+.task-gallery-footnote{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:24px;border-top:1px solid #e0e4df;margin-top:22px;padding-top:22px;color:#728078}
+.task-gallery-footnote p{font-size:12px;line-height:1.64;max-width:720px;margin:0}
+.task-gallery-footnote strong{color:#304737;font-weight:620}
+.task-gallery-footnote>span{font-size:11px;line-height:1.6;max-width:280px;text-align:right}
+.p37-real .title-row.p37-experiment-heading{max-width:1320px!important;
+  padding:30px 0 25px!important;border-top:1px solid #e3e6e1}
+.p37-real .p37-experiment-heading .overline{font-size:10px!important;
+  color:#56745c!important;letter-spacing:.12em!important}
+.p37-experiment-heading-row{display:flex;justify-content:space-between;
+  align-items:flex-end;gap:32px}
+.p37-experiment-heading h2{font-weight:490;font-size:clamp(32px,4vw,55px);
+  line-height:1.12;letter-spacing:-.06em;color:#1c2d23;margin:14px 0 8px}
+.p37-real .p37-experiment-heading .intro{margin:0!important;font-size:14px!important;
+  color:#738078!important;max-width:690px!important;line-height:1.58!important}
+.p37-task-definition{max-width:245px;border-left:1px solid #d9e1d8;
+  padding-left:19px;display:flex;flex-direction:column;gap:6px;flex:none}
+.p37-task-definition small{font-size:9px;font-weight:650;letter-spacing:.1em;color:#89978b}
+.p37-task-definition strong{font-size:12px;font-weight:650;color:#2a4b33}
+.p37-task-definition span{font-size:11px;line-height:1.5;color:#78857d}
+.p37-live-task-header{display:flex;align-items:center;gap:15px;flex-wrap:wrap;
+  padding:15px 20px;background:#fbfcfb;border-bottom:1px solid #e1e6e1}
+.p37-live-task-header>span:first-child{font-size:10px;letter-spacing:.095em;
+  color:#76837a;font-weight:630}
+.p37-live-task-header>strong{font-size:14px;color:#22362a;font-weight:610}
+.p37-live-task-header .p37-sim-kind{margin-left:auto;font-size:11px;color:#577460}
+.p37-real .lab-grid{max-width:1320px!important}
+.p37-real .playground-panel{max-height:none!important}
+.p37-all-robots{border-top:1px solid #e2e7e2;margin-top:17px}
+.p37-all-robots summary{font-size:12px;color:#405647;cursor:pointer;
+  list-style-position:inside;padding:14px 0;font-weight:650}
+.p37-all-robots[open] summary{margin-bottom:10px}
+.p37-all-robots .playground-scenes{padding:9px 0!important;border:0!important;
+  background:transparent!important}
+.p37-all-robots .playground-scenes button{font-size:10px!important;padding:7px 10px!important}
+.p37-all-robots .robot-catalog{margin-top:10px}
+.p37-real .p37-motion-controls .p37-task-primary{grid-column:span 2;
+  background:#213d2b;color:#fff;border-color:#213d2b;font-size:12px;
+  font-weight:680;min-height:49px}
+.p37-real .p37-motion-controls .p37-task-primary:hover{background:#365540;color:#fff}
+.p37-task-timeline{display:grid;grid-template-columns:repeat(6,minmax(0,1fr)) 98px;
+  gap:8px;margin:21px 0 14px;align-items:stretch}
+.p37-task-step{display:flex;flex-direction:column;gap:6px;min-width:0;
+  padding:12px 10px 11px;border:1px solid #dfe5df;background:#fff;border-radius:6px;
+  color:#87958b}
+.p37-task-step.is-started{border-color:#b6c9b9;color:#46684b;background:#eff5ef}
+.p37-task-step.is-finished{background:#263b2b;border-color:#263b2b;color:#fff}
+.p37-step-number{font-size:9px;letter-spacing:.095em;opacity:.75}
+.p37-task-step strong{font-size:11px;font-weight:620;white-space:nowrap}
+.p37-task-clock{display:flex;align-items:center;justify-content:flex-end;
+  font-size:12px;color:#506956;font-variant-numeric:tabular-nums;font-weight:620}
+@media(max-width:1000px){
+  .task-gallery{padding-top:52px}
+  .task-gallery-heading h1{font-size:clamp(52px,8vw,94px)!important}
+  .task-gallery-featured .task-card-copy{display:flex}
+  .task-gallery-featured .task-card-bottom{border-top:1px solid #e5e9e4;
+    padding-top:17px;margin-top:19px;min-width:0}
+  .task-gallery-footnote>span{display:none}
+  .p37-task-timeline{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .p37-task-clock{justify-content:flex-start;padding:9px}
+}
+@media(max-width:690px){
+  .task-gallery{padding:33px 0 36px}
+  .task-gallery-label{padding-bottom:14px}
+  .gallery-kicker,.gallery-index{font-size:9px}
+  .gallery-index b{margin-left:3px}
+  .task-gallery-heading h1{font-size:clamp(44px,11.6vw,71px)!important;
+    line-height:1.01!important;margin:25px 0 16px!important}
+  .task-gallery-heading>p{font-size:14px;line-height:1.55;margin-bottom:25px}
+  .task-gallery-toolbar{padding:12px 0 13px;align-items:flex-start}
+  .task-gallery-filters{gap:4px}
+  .task-gallery-filters button{font-size:10px;padding:8px 10px}
+  .task-gallery-count{display:none}
+  .task-gallery-grid{grid-template-columns:1fr;gap:13px}
+  .task-gallery-featured,.task-gallery-card:last-child{grid-column:auto}
+  .task-card-image,.task-gallery-featured .task-card-image,
+  .task-gallery-card:last-child .task-card-image{height:clamp(235px,64vw,310px)}
+  .task-card-copy,.task-gallery-featured .task-card-copy{display:flex;padding:21px 20px 18px}
+  .task-card-title,.task-gallery-featured .task-card-title{font-size:clamp(23px,6vw,32px)}
+  .task-card-description,.task-gallery-featured .task-card-description{font-size:12px;margin-top:9px}
+  .task-card-top{top:15px;left:16px;right:16px}
+  .task-card-top small{font-size:9px}
+  .task-card-robot{left:16px;bottom:15px}
+  .task-card-bottom,.task-gallery-featured .task-card-bottom{margin-top:15px;
+    border-top:1px solid #e5e9e4;padding-top:13px}
+  .task-gallery-footnote{margin-top:17px}
+  .task-gallery-footnote p{font-size:11px}
+  .p37-experiment-heading-row{display:block}
+  .p37-experiment-heading h2{font-size:35px}
+  .p37-task-definition{max-width:none;border-left:0;
+    border-top:1px solid #e1e5df;padding:13px 0 0;margin-top:18px}
+  .p37-live-task-header{padding:11px 13px;gap:7px}
+  .p37-live-task-header>strong{width:100%;order:3;font-size:13px}
+  .p37-live-task-header .p37-sim-kind{font-size:10px}
+  .p37-task-timeline{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+  .p37-task-step{padding:9px 8px}
+  .p37-task-step strong{font-size:10px}
+  .p37-task-clock{padding:9px 0}
+}
+@media(prefers-reduced-motion:reduce){
+  .task-gallery-card,.task-card-image img{transition:none}
+  .task-gallery-card:hover{transform:none}
+}
