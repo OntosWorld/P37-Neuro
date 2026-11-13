@@ -78,12 +78,12 @@ export const TASK_EXPERIMENTS: Record<string, TaskExperiment> = {
     nextTask:'AnymalC-Reach task port and rough-ground stability benchmark',
   },
   franka_panda: {
-    id:'panda-joint', robotId:'franka_panda', title:'Move a real arm joint to a target',
+    id:'panda-joint', robotId:'franka_panda', title:'Sweep a Panda arm joint by 0.15 rad',
     objective:'Inspect the Panda articulated motion until a measured hinge has moved 0.15 rad.',
     kind:'joint-excursion', target:0.15,
-    upstream:'ManiSkill · PickCube and StackCube experts',
-    upstreamUrl:'https://maniskill.readthedocs.io/en/latest/user_guide/demos/scripts.html',
-    nextTask:'Source-verified cube pickup and stacking with object contact and success predicates',
+    upstream:'SoftMimicGen · Franka towel fold task',
+    upstreamUrl:'https://github.com/NVlabs/SoftMimicGen',
+    nextTask:'Franka towel folding and cube stacking with verified deformable/contact physics',
   },
   universal_robots_ur5e: {
     id:'ur5e-joint', robotId:'universal_robots_ur5e', title:'Precision joint positioning',
