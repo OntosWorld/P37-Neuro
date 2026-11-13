@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { TASK_EXPERIMENTS, taskProgress } from './taskExperiments';
 
 type Robot = {
   id: string; name: string; model: string; kind: string;
@@ -20,6 +21,8 @@ type SteeringTelemetry = {
   controllable?: boolean;
   x?: number; y?: number; z?: number; distance?: number; moved?: number;
   message?: string; steering?: boolean;
+  relativeX?: number; relativeY?: number; relativeZ?: number;
+  jointDelta?: number; jointName?: string;
 };
 type BuildInfo = {
   trained_p37_policy_attached: boolean;
@@ -97,6 +100,8 @@ export function App() {
     return () => abort.abort();
   }, []);
   const current = catalog.find(r => r.id === selected);
+  const experiment = TASK_EXPERIMENTS[selected];
+  const result = experiment ? taskProgress(experiment, telemetry) : null;
   const selection = useMemo(() => catalog.filter(robot =>
     category === 'All' || robot.kind === category), [catalog, category]);
   const p37Available = selected === 'unitree_g1'
@@ -163,6 +168,11 @@ export function App() {
         moved: Number.isFinite(msg.moved)?msg.moved:undefined,
         message: typeof msg.message==='string'?msg.message:undefined,
         steering: msg.steering===true,
+        relativeX: Number.isFinite(msg.relativeX)?msg.relativeX:undefined,
+        relativeY: Number.isFinite(msg.relativeY)?msg.relativeY:undefined,
+        relativeZ: Number.isFinite(msg.relativeZ)?msg.relativeZ:undefined,
+        jointDelta: Number.isFinite(msg.jointDelta)?msg.jointDelta:undefined,
+        jointName: typeof msg.jointName==='string'?msg.jointName:undefined,
       });
     };
     window.addEventListener('message',receive);
@@ -211,10 +221,10 @@ export function App() {
         <span className="overline">P37 / CROSS-EMBODIMENT ROBOTICS</span>
         <h1>One brain. Different bodies.</h1>
         <p className="intro">
-          Drive real robot models around a physics scene with WASD or touch controls.
-          Choose a motion sequence, steer the simulated floating base and inspect contacts.
-          Fixed industrial arms use joint controls instead of walking.
-          G1 also offers an experimental learned-policy mode.
+          Explore measurable simulation tasks on ten manufacturer-derived robots.
+          Steer to checkpoints, inspect articulated targets and monitor a flight objective.
+          Goals use live MuJoCo state; this assisted task lab does not claim autonomous skills.
+          The next research stage connects qualified task policies and full object interactions.
         </p>
       </section>
       <section className="lab-grid" id="simulator" aria-label="Live manufacturer robot simulation">
@@ -261,6 +271,28 @@ export function App() {
             <span className="playground-disclaimer">{stageLoaded ?
               'Viewer loaded · inspect motion inside the live scene' : 'Loading native simulation…'}</span>
           </div>
+          {experiment && result && <section className="p37-task-experiment" aria-label="Measured robot task experiment">
+            <div className="p37-task-topline">
+              <span>ACTIVE TASK / {experiment.id.toUpperCase()}</span>
+              <span>{result.reached ? 'CHECKPOINT REACHED' : 'TASK IN PROGRESS'}</span>
+            </div>
+            <h2>{experiment.title}</h2>
+            <p>{experiment.objective}</p>
+            <div className="p37-task-progress">
+              <progress aria-label="Measured task progress" max={1} value={result.progress}/>
+              <div><strong>{result.measure}</strong><span>{result.goal}</span></div>
+            </div>
+            <p className="p37-task-boundary">{result.reached
+              ? 'Measured condition reached in this physics sandbox. This is not a qualified autonomous-policy task success.'
+              : 'Goal checks use simulated state. A robot can fall, miss the target, or fail to reach it.'}
+            </p>
+            <div className="p37-task-next">
+              <span>Next research experiment: {experiment.nextTask}</span>
+              <a href={experiment.upstreamUrl} target="_blank" rel="noreferrer">
+                {experiment.upstream} ↗
+              </a>
+            </div>
+          </section>}
           <div className="viewport-controls">
             <div className="action-row">
               <button type="button" onClick={() => setPlayback(
@@ -344,7 +376,7 @@ export function App() {
               </div>
             </div>
             <div className="rule"/>
-            <div className="section-cap">Movement controls</div>
+            <div className="section-cap">Controller and motion replay</div>
             <div className="p37-motion-controls" role="group" aria-label="Choose motion dataset">
               <button type="button" aria-pressed={motion==='motion_cycle'}
                 onClick={()=>setPlayback('motion_cycle')}>Movement cycle</button>
@@ -359,7 +391,7 @@ export function App() {
               direction controls to move the floating-base robot through the physical environment.
               Motion clips are model-derived trajectories, not proven walking skills.</p>
              <div className="rule"/>
-            <div className="section-cap">Selected experiment</div>
+            <div className="section-cap">Research boundary</div>
             <p className="evidence-copy">{current?.task ?? 'Select a robot'}. {current?.capability ?? ''}
               {' '}{p37Active ? 'G1 receives genuine experimental ONNX inference and 29-joint commands at 50Hz.' :
               'The motion dataset supplies model-compatible joint or motor targets through MuJoCo physics. It is not a trained autonomous skill.'}</p>
