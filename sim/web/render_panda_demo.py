@@ -20,7 +20,7 @@ import mujoco
 import numpy as np
 from build_mjswan import _light_scene
 from catalog import ROBOTS
-from panda_physical_stack import CONTROL_DT, RATE, initial_data
+from panda_physical_stack import CONTROL_DT, RATE, initial_data, simulate
 from physical_task_scenes import add_physical_task_scene
 
 FPS = 25
@@ -64,6 +64,11 @@ def render(menagerie: Path, controls: Path, qualification: Path, video: Path, po
         model.geom_rgba[ring_id, 3] = 0
     if model.nu != 8:
         raise RuntimeError("Expected eight actual Panda actuators")
+    # Re-run the measured contact predicates in this exact rendered model.
+    # Visual staging must never invalidate the successful physical rollout.
+    _, rendered_trial = simulate(model, reference_controls=actions)
+    if not rendered_trial["report"]["success"]:
+        raise RuntimeError("Styled Panda film no longer reproduces physical task completion")
     model.vis.global_.offwidth = WIDTH
     model.vis.global_.offheight = HEIGHT
     data = initial_data(model)
