@@ -262,9 +262,17 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             assert displacement > 0.02, f"Steering did not move real Go2: {measured}"
             page.screenshot(path=str(screenshots / "go2-user-steering.png"), timeout=90000)
             page.get_by_role("button", name="Run assisted terrain attempt").click()
-            page.get_by_role("button", name="Stop scripted attempt").wait_for(timeout=15000)
+            # The native MuJoCo bridge can finish its 18 simulated seconds
+            # faster than 15 wall seconds on accelerated browser runners.
+            # Observe actual bridge task telemetry, then stop if still active.
+            page.wait_for_function(
+                "() => document.querySelector('.p37-task-execution button') !== null",
+                timeout=15000,
+            )
             page.screenshot(path=str(screenshots / "go2-scripted-task.png"), timeout=90000)
-            page.get_by_role("button", name="Stop scripted attempt").click()
+            stop = page.get_by_role("button", name="Stop scripted attempt")
+            if stop.is_visible():
+                stop.click()
             page.get_by_role("button", name="Run assisted terrain attempt").wait_for(timeout=15000)
             page.locator(".p37-real-panel .info-row").filter(has_text="Controller").locator(
                 "strong"
