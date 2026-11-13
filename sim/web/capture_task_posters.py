@@ -18,10 +18,9 @@ import threading
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from catalog import ROBOTS
 from PIL import Image, ImageStat
 from playwright.sync_api import sync_playwright
-
-from catalog import ROBOTS
 
 WIDTH = 1080
 HEIGHT = 700
