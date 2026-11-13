@@ -164,7 +164,24 @@ def build(
     with np.load(motion_dir / "panda-physical-stack.npz", allow_pickle=False) as data:
         panda_actions = np.asarray(data["actions"], dtype=np.float32)
     panda_policy_path = motion_dir / "panda-physical-stack.onnx"
-    onnx.save(_onnx_table(panda_actions), str(panda_policy_path))
+    # The ordinary motion clips cycle. This finite task must NOT loop back
+    # through another grasp after it has released and settled the stack.
+    # Clamp the ONNX frame index to the final safe open-gripper command.
+    panda_table = _onnx_table(panda_actions)
+    frame_index = next(node for node in panda_table.graph.node if node.op_type == "Mod")
+    frame_index.op_type = "Min"
+    frame_index.input[1] = "p37_last_frame"
+    panda_table.graph.initializer.append(
+        onnx.helper.make_tensor(
+            "p37_last_frame",
+            onnx.TensorProto.INT64,
+            [1],
+            [len(panda_actions) - 1],
+        )
+    )
+    panda_table.producer_name = "Ontos contact-verified finite Panda scripted task"
+    onnx.checker.check_model(panda_table)
+    onnx.save(panda_table, str(panda_policy_path))
     built_scenes = []
     for robot in ROBOTS:
         path = menagerie / robot.model / "scene.xml"
