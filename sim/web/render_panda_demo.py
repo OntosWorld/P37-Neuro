@@ -18,7 +18,10 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
-from panda_physical_stack import CONTROL_DT, RATE, initial_data, load_model
+from build_mjswan import _light_scene
+from catalog import ROBOTS
+from panda_physical_stack import CONTROL_DT, RATE, initial_data
+from physical_task_scenes import add_physical_task_scene
 
 FPS = 25
 WIDTH = 960
@@ -47,7 +50,18 @@ def render(menagerie: Path, controls: Path, qualification: Path, video: Path, po
     if actions.ndim != 2 or actions.shape[1] != 8 or len(actions) < 500:
         raise RuntimeError("Incomplete Panda motor sequence")
 
-    model = load_model(menagerie)
+    # Mirror the public robot viewer's graphite lighting; these light/texture
+    # edits and non-colliding reference markers do NOT alter Panda dynamics.
+    spec = mujoco.MjSpec.from_file(str(menagerie / "franka_emika_panda" / "scene.xml"))
+    panda = next(robot for robot in ROBOTS if robot.id == "franka_panda")
+    _light_scene(spec, panda)
+    add_physical_task_scene(spec, "franka_panda")
+    model = spec.compile()
+    # The fluorescent ring is a debug waypoint, not part of the task object.
+    # Hide it in the film without editing its model collision properties.
+    ring_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_GEOM, "p37_stack_target")
+    if ring_id >= 0:
+        model.geom_rgba[ring_id, 3] = 0
     if model.nu != 8:
         raise RuntimeError("Expected eight actual Panda actuators")
     model.vis.global_.offwidth = WIDTH
@@ -58,7 +72,7 @@ def render(menagerie: Path, controls: Path, qualification: Path, video: Path, po
     mujoco.mjv_defaultCamera(camera)
     camera.type = mujoco.mjtCamera.mjCAMERA_FREE
     camera.lookat[:] = [0.50, 0.0, 0.65]
-    camera.distance = 1.54
+    camera.distance = 1.37
     camera.azimuth = 126
     camera.elevation = -24
 
