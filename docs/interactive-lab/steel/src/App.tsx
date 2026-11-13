@@ -34,6 +34,16 @@ type BuildInfo = {
   manufacturer_robots: string[];
   experimental_policy_robot?: string;
   p37_checkpoint_sha256?: string;
+  panda_physical_cube_stack?: {
+    mode: string;
+    qualified_native_contact_and_replay: boolean;
+    learned_p37_policy: boolean;
+    control_sha256: string;
+    frames: number;
+    control_hz: number;
+    left_contact_frames: number;
+    right_contact_frames: number;
+  };
 };
 type Trial = { seed: number; commands_sent: number; sim_seconds: number };
 type Evidence = {
@@ -335,6 +345,15 @@ export function App() {
             </div>
             <h2>{experiment.title}</h2>
             <p>{experiment.objective}</p>
+            {pandaActive && build?.panda_physical_cube_stack && <div
+              className="p37-scripted-evidence" aria-label="Panda source experiment evidence">
+              <strong>Native task verified · deterministic motor reference</strong>
+              <span>{build.panda_physical_cube_stack.frames} recorded 50 Hz controls ·
+                {' '}{build.panda_physical_cube_stack.left_contact_frames} left-finger contact frames ·
+                {' '}{build.panda_physical_cube_stack.right_contact_frames} right-finger contact frames</span>
+              <small>Independent native MuJoCo replay passed. Browser playback is
+                measured separately below. No P37 learned policy is claimed.</small>
+            </div>}
             <div className="p37-task-progress">
               <progress aria-label="Measured task progress" max={1} value={result.progress}/>
               <div><strong>{result.measure}</strong><span>{result.goal}</span></div>
