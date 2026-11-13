@@ -75,7 +75,7 @@ const PANDA_STAGES = [
 export function App() {
   const [catalog, setCatalog] = useState<Robot[]>([]);
   const [selected, setSelected] = useState('franka_panda');
-  const [activeTaskId, setActiveTaskId] = useState('panda-stack');
+  const [activeTaskId, setActiveTaskId] = useState('panda-pick-place');
   const [experience, setExperience] = useState<Experience>('simulation');
   const [motion, setMotion] = useState<MotionMode>('panda_scripted_stack');
   const [lastMotion, setLastMotion] = useState<MotionMode>('panda_scripted_stack');
@@ -131,7 +131,7 @@ export function App() {
   const current = catalog.find(r => r.id === selected);
   const activeTask = GALLERY_TASKS.find(task => task.id === activeTaskId);
   const pandaTime = telemetry.taskTime ?? 0;
-  const experiment = TASK_EXPERIMENTS[selected];
+  const experiment = TASK_EXPERIMENTS[activeTaskId === 'panda-pick-place' ? 'franka_pick_place' : selected];
   const result = experiment ? taskProgress(experiment, telemetry) : null;
   const selection = useMemo(() => catalog.filter(robot =>
     category === 'All' || robot.kind === category), [catalog, category]);
@@ -141,6 +141,7 @@ export function App() {
     && build.p37_checkpoint_sha256 === evidence?.checkpoint_sha256;
   const p37Active = p37Available && motion === 'p37_experimental';
   const pandaActive = selected === 'franka_panda' && motion === 'panda_scripted_stack';
+  const pickActive = pandaActive && activeTaskId === 'panda-pick-place';
   const isFixedArm = current?.kind === 'Manipulators';
   const canSteer = !isFixedArm && telemetry.status !== 'fixed';
   const sendSteer = (key: SteeringKey, down: boolean) => {
@@ -272,7 +273,7 @@ export function App() {
     releaseSteer();
     setActiveTaskId(task.id);
     setSelected(task.robotId);
-    const mode: MotionMode = task.route === 'panda' || task.route === 'recorded'
+    const mode: MotionMode = task.route === 'panda' || task.route === 'pick' || task.route === 'recorded'
       ? 'panda_scripted_stack'
       : task.route === 'p37' ? 'p37_experimental' : 'motion_cycle';
     setMotion(mode);
@@ -292,9 +293,12 @@ export function App() {
       action:telemetry.scriptedTaskRunning ? 'stop-task' : 'start-task'
     }, window.location.origin);
   };
+  const sceneId = pickActive ? 'franka_pick_place' : selected;
+  const scenePolicy = pickActive
+    ? 'panda_physical_pick_place_scripted' : playableMode(motion);
   const url = import.meta.env.BASE_URL + 'simulator/?project=p37_robot_models&scene='
-    + encodeURIComponent(selected)
-    + '&policy=' + encodeURIComponent(playableMode(motion))
+    + encodeURIComponent(sceneId)
+    + '&policy=' + encodeURIComponent(scenePolicy)
     + '&panel=' + (panel ? '1' : '0');
   return <div className="app-shell p37-real">
     <header className="site-header">
@@ -357,7 +361,7 @@ export function App() {
               src={import.meta.env.BASE_URL + 'recorded/?sample=mimicgen'}
               loading="eager"/> : catalog.length > 0 && current ? <iframe
               ref={iframeRef}
-              key={selected + '-' + reload + '-' + panel + '-' + motion}
+              key={sceneId + '-' + reload + '-' + panel + '-' + motion}
               title={current.name + ' — real MuJoCo robot'}
               className="menagerie-viewer"
               src={url}
@@ -415,7 +419,7 @@ export function App() {
                 ['Cube lifted', telemetry.taskLiftObserved],
                 ['Cube carried toward target', telemetry.taskCarryObserved],
                 ['Cube released with jaws open', telemetry.taskReleaseObserved],
-                ['Final stack stable for 20 samples', telemetry.taskSequenceComplete],
+                [pickActive ? 'Cube settled on target for 20 samples' : 'Final stack stable for 20 samples', telemetry.taskSequenceComplete],
               ] as const).map(([label, observed]) =>
                 <div key={label} className="p37-task-live-gate">
                   <span>{observed ? '✓' : '○'} {label}</span>
@@ -425,7 +429,7 @@ export function App() {
               <small>Observed from MuJoCo cube poses and gripper opening.
                 Contact qualification is established separately by native simulation and replay.</small>
             </div>}
-            {pandaActive && build?.panda_physical_cube_stack && <div
+            {pandaActive && !pickActive && build?.panda_physical_cube_stack && <div
               className="p37-scripted-evidence" aria-label="Panda source experiment evidence">
               <strong>Native task verified · deterministic motor reference</strong>
               <span>{build.panda_physical_cube_stack.frames} recorded 50 Hz controls ·
@@ -516,7 +520,7 @@ export function App() {
               </>}
             </div>
             <div className="status-line" role="status">{pandaActive ?
-              'Panda verified contact-based grasp / lift / release / stack · scripted reference, not learned P37' :
+              'Panda physical grasp / lift / carry / release · scripted reference, not learned P37' :
               p37Active ?
               'Experimental P37 inference plus user-assisted steering · walking not qualified' :
               'Physical motion replay with user-assisted steering · no learned walking claim'}</div>
@@ -561,7 +565,7 @@ export function App() {
               {selected === 'franka_panda' && <button type="button"
                 className="p37-task-primary" aria-pressed={pandaActive}
                 onClick={()=>setPlayback('panda_scripted_stack')}>
-                {pandaActive ? '↻ Replay Panda stack' : '▶ Run physical Panda stack'}
+                {pandaActive ? (pickActive ? '↻ Replay Panda pick-and-place' : '↻ Replay Panda stack') : '▶ Run physical Panda task'}
               </button>}
               {p37Available && <button type="button" aria-pressed={p37Active}
                 onClick={()=>setPlayback('p37_experimental')}>Experimental P37 G1</button>}
@@ -573,7 +577,7 @@ export function App() {
                 onClick={()=>setPlayback('hold')}>Hold pose</button>
             </div>
             <p className="helper">{pandaActive
-              ? 'The scripted Panda run starts in native MuJoCo. Orbit the camera, inspect the cube, or replay the complete 18.2-second sequence.'
+              ? 'The scripted Panda run starts in native MuJoCo. Orbit the camera and inspect physical contact. Replay the complete 18.2-second task.'
               : 'Use WASD or the on-screen controls on supported floating-base robots. Motion clips and assisted movement are not qualified learned walking policies.'}</p>
              <div className="rule"/>
             <div className="section-cap">Research boundary</div>
