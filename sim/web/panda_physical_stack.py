@@ -178,7 +178,7 @@ def simulate(
     events: list[dict] = []
     stage_results = []
     grasp_contact = 0
-    left_frames = right_frames = palm_frames = 0
+    left_frames = right_frames = 0
     recent_left = recent_right = 0
     lifted = False
     released = False
