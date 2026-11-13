@@ -77,10 +77,11 @@ jobs:
         run: python sim/web/assemble_site.py --output _pages
       - name: Render task-gallery scenes using manufacturer-derived MuJoCo meshes
         env:
-          MUJOCO_GL: osmesa
+          MUJOCO_GL: egl
+          LIBGL_ALWAYS_SOFTWARE: "1"
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq libosmesa6 libosmesa6-dev
+          sudo apt-get install -y -qq libegl1 libgl1-mesa-dri
           python -m pip install "PyOpenGL>=3.1.9" "Pillow>=11"
           python sim/web/render_task_gallery.py \
             --menagerie _menagerie \
