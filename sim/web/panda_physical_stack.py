@@ -26,8 +26,8 @@ RATE = 50
 CONTROL_DT = 1.0 / RATE
 TIP_LOCAL = np.array([0.0, 0.0, 0.103])
 HAND_TARGET_ROT = Rotation.from_euler("xyz", [math.pi, 0.0, 0.0])
-SOURCE = np.array([0.45, -0.16, 0.565])
-DESTINATION = np.array([0.53, 0.12, 0.638])
+SOURCE = np.array([0.45, -0.16, 0.57])
+DESTINATION = np.array([0.53, 0.12, 0.63])
 
 
 def load_model(menagerie: Path) -> mujoco.MjModel:
