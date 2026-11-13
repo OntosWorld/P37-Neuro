@@ -170,3 +170,27 @@
   .gallery-feature-stage .task-poster,.gallery-task-visual .task-poster,
   .gallery-stage-play{transition:none}
 }
+
+/* The chosen task and its action precede the advanced robot controls. */
+.task-live-controls{display:flex;align-items:center;justify-content:space-between;gap:15px;
+  padding:13px 16px;background:#edf1ed;border:1px solid #dee5dc;border-bottom:0}
+.task-live-controls>div:first-child{display:flex;flex-direction:column;gap:4px}
+.task-live-controls>div:first-child span{font-size:9px;letter-spacing:.11em;color:#69796d}
+.task-live-controls>div:first-child strong{font-size:13px;font-weight:640;color:#253c2c}
+.task-live-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:8px}
+.task-live-actions button{border:1px solid #cdd8cc;background:#fff;padding:10px 13px;
+  font-size:11px;color:#334a37;font-weight:600}
+.task-live-actions .task-live-primary{background:#253e2d;color:#fff;border-color:#253e2d}
+.task-live-actions button:hover{filter:brightness(.95)}
+.p37-aside-task{padding:18px 17px 19px;margin-bottom:17px;background:#f0f4ee;
+  border:1px solid #d9e4d8}
+.p37-aside-task .section-heading{padding-bottom:0;border:0}
+.p37-aside-task h3{font-size:21px;letter-spacing:-.04em;line-height:1.17;
+  font-weight:550;margin:16px 0 10px;color:#233a2b}
+.p37-aside-task p{font-size:12px;line-height:1.65;color:#617464;margin:0 0 14px}
+.p37-aside-task>span{font-size:10px;color:#3b6245;font-weight:650}
+@media(max-width:640px){
+  .task-live-controls{align-items:stretch;flex-direction:column}
+  .task-live-actions{justify-content:flex-start}
+  .task-live-actions button{flex:1}
+}
