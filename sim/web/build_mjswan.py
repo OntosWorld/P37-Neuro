@@ -21,6 +21,7 @@ from catalog import ROBOTS, RobotScene, check_catalog
 from mjswan.envs.mdp.actions import JointPositionActionCfg, MuscleActivationActionCfg
 from model_motion_library import _onnx_table, create_library
 from panda_physical_stack import run as qualify_panda_stack
+from panda_pick_place import run as qualify_pick_place
 from physical_task_scenes import add_physical_task_scene, validate_task_scene
 
 ROOT = Path(__file__).resolve().parent
@@ -293,6 +294,63 @@ def build(
             )
         )
         built_scenes.append(robot.id)
+
+    # An independent tabletop pick-and-place scene must never inherit a stack
+    # verdict. Its native controller must pass contact, carry, release, settled
+    # placement, deterministic replay and open-jaw ablation before publication.
+    pick_qualification = qualify_pick_place(menagerie, motion_dir, require_success=True)
+    with np.load(motion_dir / "panda-pick-place.npz", allow_pickle=False) as archive:
+        pick_actions = np.asarray(archive["actions"], dtype=np.float32)
+    pick_table = _onnx_table(pick_actions)
+    pick_frame = next(node for node in pick_table.graph.node if node.op_type == "Mod")
+    pick_frame.op_type = "Min"
+    pick_frame.ClearField("attribute")
+    pick_frame.input[1] = "p37_pick_last_frame"
+    pick_table.graph.initializer.append(
+        onnx.helper.make_tensor("p37_pick_last_frame", onnx.TensorProto.INT64,
+                                [1], [len(pick_actions) - 1])
+    )
+    pick_table.producer_name = "Ontos native physical Panda tabletop pick-and-place reference"
+    onnx.checker.check_model(pick_table)
+    onnx.save(pick_table, str(motion_dir / "panda-pick-place.onnx"))
+
+    panda = next(robot for robot in ROBOTS if robot.id == "franka_panda")
+    pick_spec = mujoco.MjSpec.from_file(str(menagerie / panda.model / "scene.xml"))
+    _light_scene(pick_spec, panda)
+    add_physical_task_scene(pick_spec, "franka_pick_place")
+    validate_task_scene(pick_spec.compile(), "franka_pick_place")
+    pick_scene = project.add_scene(
+        spec=pick_spec, name="Franka Pick Place", control_dt=0.02,
+    )
+    pick_scene.add_policy(
+        name="Panda Physical Pick Place Scripted",
+        policy=pick_table,
+        in_keys=["time_step"], out_keys=["action"],
+        actions={
+            "motor": MuscleActivationActionCfg(
+                actuator_names=tuple(f"actuator{i}" for i in range(1, 9)),
+                action_mode="direct", scale=1.0,
+            )
+        },
+        observations={}, commands={}, terminations={},
+        policy_joint_names=None, policy_num_actions=8, default=True,
+        extras={
+            "source": "Native MuJoCo Panda contact-verified deterministic IK reference",
+            "task_id": "panda-pick-place",
+            "scripted_reference": True, "learned_p37_policy": False,
+            "native_physics_verified": True,
+            "replay_verified": True,
+            "control_sha256": pick_qualification["sha256"],
+        },
+    )
+    pick_scene.set_viewer(
+        mjswan.ViewerConfig(
+            lookat=panda.camera, distance=panda.distance,
+            elevation=panda.elevation, azimuth=panda.azimuth,
+            origin_type=mjswan.ViewerConfig.OriginType.WORLD,
+        )
+    )
+    built_scenes.append("franka_pick_place")
 
     # mjswan's native direct-actuator runtime can write validated site/tendon
     # motors, but its Python muscle checker normally permits only mjDYN_MUSCLE.
