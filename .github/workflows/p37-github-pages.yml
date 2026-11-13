@@ -81,7 +81,7 @@ jobs:
           LIBGL_ALWAYS_SOFTWARE: "1"
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq libegl1 libgl1-mesa-dri
+          sudo apt-get install -y -qq libegl1 libgl1-mesa-dri ffmpeg
           python -m pip install "PyOpenGL>=3.1.9" "Pillow>=11"
           python sim/web/render_task_gallery.py \
             --menagerie _menagerie \
