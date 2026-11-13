@@ -83,8 +83,8 @@ jobs:
             --menagerie _menagerie \
             --controls sim/web/motion_data/panda-physical-stack.npz \
             --qualification sim/web/motion_data/panda-physical-stack.json \
-            --video sim/web/motion_data/panda-cube-stack.mp4 \
-            --poster sim/web/motion_data/panda-cube-stack.png
+            --video sim/web/dist/motion_data/panda-cube-stack.mp4 \
+            --poster sim/web/dist/motion_data/panda-cube-stack.png
       - name: Publish only the canonical root experience
         run: python sim/web/assemble_site.py --output _pages
       - name: Validate root page and isolated browser assets
