@@ -90,7 +90,7 @@ def test_manufacturer_models_are_embedded_on_single_public_root() -> None:
     assert "unitree_g1" in root_app
     assert "TaskGallery" in root_app
     gallery = (
-        ROOT.parents[1] / "docs" / "interactive-lab" / "steel" / "src" / "TaskGallery.tsx"
+        ROOT.parents[1] / "docs" / "interactive-lab" / "steel" / "src" / "TaskExperimentGallery.tsx"
     ).read_text(encoding="utf-8")
     assert "Watch the robots" in gallery
     assert "task-gallery-card" in gallery
