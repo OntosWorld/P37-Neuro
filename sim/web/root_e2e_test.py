@@ -170,6 +170,14 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page.frame_locator("iframe.menagerie-viewer").locator("canvas").first.wait_for(
                 state="visible", timeout=120000
             )
+            page.wait_for_function(
+                "() => document.querySelector('.p37-task-progress strong')"
+                "?.textContent?.includes('cube alignment')",
+                timeout=120000,
+            )
+            assert "stack not confirmed" in page.locator(
+                ".p37-task-experiment"
+            ).inner_text().lower()
             page.screenshot(path=str(screenshots / "panda-real-model.png"), timeout=90000)
             page.locator(".p37-real-panel .info-row").filter(has_text="Controller").locator(
                 "strong"
@@ -198,6 +206,13 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             displacement = float(measured.split(" ")[0])
             assert displacement > 0.02, f"Steering did not move real Go2: {measured}"
             page.screenshot(path=str(screenshots / "go2-user-steering.png"), timeout=90000)
+            page.get_by_role("button", name="Run assisted terrain attempt").click()
+            page.get_by_role("button", name="Stop scripted attempt").wait_for(timeout=15000)
+            page.screenshot(path=str(screenshots / "go2-scripted-task.png"), timeout=90000)
+            page.get_by_role("button", name="Stop scripted attempt").click()
+            page.get_by_role("button", name="Run assisted terrain attempt").wait_for(
+                timeout=15000
+            )
             page.locator(".p37-real-panel .info-row").filter(has_text="Controller").locator(
                 "strong"
             ).filter(has_text="Dataset motor replay").wait_for(timeout=15000)
@@ -210,6 +225,17 @@ def test(site: Path, screenshots: Path, *, url_prefix: str = "/P37-Neuro/") -> d
             page.wait_for_timeout(400)
             assert page.evaluate("document.documentElement.scrollWidth <= innerWidth + 3")
             page.screenshot(path=str(screenshots / "real-robot-mobile.png"), timeout=90000)
+            page.get_by_role("button", name="Recorded execution").click()
+            assert page.locator("iframe.p37-recorded-viewer").count() == 1
+            assert page.locator("iframe.menagerie-viewer").count() == 0
+            page.frame_locator("iframe.p37-recorded-viewer").get_by_text(
+                "2 recorded episodes imported"
+            ).wait_for(timeout=30000)
+            page.get_by_role("button", name="Live physical tasks").click()
+            assert page.locator("iframe.p37-recorded-viewer").count() == 0
+            assert "scene=unitree_go2" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
             browser.close()
     finally:
         server.shutdown()
