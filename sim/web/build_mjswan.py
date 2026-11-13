@@ -15,10 +15,12 @@ from pathlib import Path
 
 import mjswan
 import mujoco
+import numpy as np
 import onnx
 from catalog import ROBOTS, RobotScene, check_catalog
 from mjswan.envs.mdp.actions import JointPositionActionCfg, MuscleActivationActionCfg
-from model_motion_library import create_library
+from model_motion_library import _onnx_table, create_library
+from panda_physical_stack import run as qualify_panda_stack
 from physical_task_scenes import add_physical_task_scene, validate_task_scene
 
 ROOT = Path(__file__).resolve().parent
@@ -156,6 +158,13 @@ def build(
 
     motion_dir = ROOT / "motion_data"
     library = create_library(menagerie, ROBOTS, motion_dir)
+    # Fail the public build if native contact / lift / release / final stack or
+    # deterministic replay fails. The validated actions remain scripted.
+    panda_qualification = qualify_panda_stack(menagerie, motion_dir, require_success=True)
+    with np.load(motion_dir / "panda-physical-stack.npz", allow_pickle=False) as data:
+        panda_actions = np.asarray(data["actions"], dtype=np.float32)
+    panda_policy_path = motion_dir / "panda-physical-stack.onnx"
+    onnx.save(_onnx_table(panda_actions), str(panda_policy_path))
     built_scenes = []
     for robot in ROBOTS:
         path = menagerie / robot.model / "scene.xml"
@@ -222,6 +231,38 @@ def build(
                     "model_derived": True,
                     "learned_p37_policy": False,
                     "locomotion_qualified": False,
+                },
+            )
+        if robot.id == "franka_panda":
+            # Full physically validated grasp/lift/carry/release stack, recorded
+            # from the *same* Menagerie model and the same real contact objects.
+            # All eight actuators are addressed with their native ctrl values.
+            scene.add_policy(
+                name="Panda Physical Cube Stack Scripted",
+                policy=onnx.load(str(panda_policy_path)),
+                in_keys=["time_step"],
+                out_keys=["action"],
+                actions={
+                    "motor": MuscleActivationActionCfg(
+                        actuator_names=tuple(f"actuator{i}" for i in range(1, 9)),
+                        action_mode="direct",
+                        scale=1.0,
+                    )
+                },
+                observations={},
+                commands={},
+                terminations={},
+                policy_joint_names=None,
+                policy_num_actions=8,
+                default=False,
+                extras={
+                    "source": "Physically qualified deterministic Panda IK reference",
+                    "task_id": "panda-physical-cube-stack",
+                    "scripted_reference": True,
+                    "learned_p37_policy": False,
+                    "contact_lift_release_stack_verified": True,
+                    "independent_native_replay_verified": True,
+                    "control_sha256": panda_qualification["sha256"],
                 },
             )
         scene.set_viewer(
