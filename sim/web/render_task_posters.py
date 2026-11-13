@@ -16,12 +16,11 @@ from pathlib import Path
 
 import mujoco
 import numpy as np
-from PIL import Image
-
 from build_mjswan import _light_scene, _task_checkpoint
 from catalog import ROBOTS, RobotScene
 from panda_physical_stack import initial_data, simulate
 from physical_task_scenes import add_physical_task_scene
+from PIL import Image
 
 WIDTH = 1080
 HEIGHT = 700
