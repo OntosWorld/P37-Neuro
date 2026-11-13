@@ -300,6 +300,9 @@ def simulate(
 
 def run(menagerie: Path, output: Path, *, require_success: bool) -> dict:
     model = load_model(menagerie)
+    if model.nu != 8 or [mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i)
+                              for i in range(model.nu)] != [f"actuator{i}" for i in range(1, 9)]:
+        raise RuntimeError("Panda actuator order changed; refuse to replay motor sequence")
     actions, record = simulate(model)
     output.mkdir(parents=True, exist_ok=True)
     (output / "panda-physical-task-diagnostics.json").write_text(
@@ -310,6 +313,13 @@ def run(menagerie: Path, output: Path, *, require_success: bool) -> dict:
         replay_actions, replay = simulate(load_model(menagerie), reference_controls=actions)
         if not np.array_equal(actions, replay_actions) or not replay["report"]["success"]:
             raise RuntimeError("Physical task rollout did not reproduce under exact controls")
+        # The no-grasp ablation must NOT be accepted as a completed task.
+        # Its arm trajectory is identical, but the real fingers never close.
+        ungrasped = actions.copy()
+        ungrasped[:, 7] = 255.0
+        _, no_grasp = simulate(load_model(menagerie), reference_controls=ungrasped)
+        if no_grasp["report"]["contact_grasp_observed"] or no_grasp["report"]["success"]:
+            raise RuntimeError("Open-jaw negative control incorrectly qualified a grasp")
         digest = hashlib.sha256(actions.tobytes()).hexdigest()
         np.savez_compressed(output / "panda-physical-stack.npz", actions=actions)
         info = {
@@ -326,6 +336,11 @@ def run(menagerie: Path, output: Path, *, require_success: bool) -> dict:
             "release_observed": True,
             "stable_stack_observed": True,
             "replay_verified": True,
+            "open_jaw_negative_control_failed": True,
+            "left_finger_contact_frames": record["report"]["left_contact_frames"],
+            "right_finger_contact_frames": record["report"]["right_contact_frames"],
+            "final_blue_xyz": record["report"]["end_state"]["blue_xyz"],
+            "final_amber_xyz": record["report"]["end_state"]["amber_xyz"],
         }
         (output / "panda-physical-stack.json").write_text(
             json.dumps(info, indent=2) + "\n", encoding="utf-8"
