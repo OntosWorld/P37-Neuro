@@ -130,13 +130,15 @@ def add_physical_task_scene(spec: mujoco.MjSpec, robot_id: str) -> None:
         # Dedicated tabletop placement scene. This is a separate physical
         # task from stacking, with one dynamic cube and a non-colliding target.
         _box(
-            spec, "p37_pick_bench",
+            spec,
+            "p37_pick_bench",
             pos=(0.53, 0.0, 0.27),
             half=(0.32, 0.36, 0.27),
             color=(0.38, 0.40, 0.39, 1.0),
         )
         _cube(
-            spec, "p37_pick_cube",
+            spec,
+            "p37_pick_cube",
             pos=(0.45, -0.16, 0.57),
             rgba=(0.20, 0.44, 0.78, 1.0),
         )
