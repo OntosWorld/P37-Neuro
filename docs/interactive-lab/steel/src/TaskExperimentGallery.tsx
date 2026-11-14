@@ -17,7 +17,7 @@ export function TaskGallery({ activeId, onSelect, baseUrl }: Props) {
     <div className="task-gallery-heading">
       <div className="task-gallery-label">
         <span className="gallery-kicker">ONTOS / P37-NEURO</span>
-        <span className="gallery-index">TASK EXPERIMENTS <b>001—006</b></span>
+        <span className="gallery-index">TASK EXPERIMENTS <b>001—007</b></span>
       </div>
       <h1>Watch the robots<br/><em>do the work.</em></h1>
       <p>Choose an experiment. Watch a physical task unfold, take control where supported,
@@ -88,8 +88,8 @@ export function TaskGallery({ activeId, onSelect, baseUrl }: Props) {
       )}
     </div>
     <div className="task-gallery-footnote">
-      <p><strong>Task status matters.</strong> Only the Panda stack has a validated
-        grasp, lift, release and placement controller. Navigation scenes use assisted
+      <p><strong>Task status matters.</strong> The Panda stack has a verified native reference; the pick-and-place task is
+        independently gated on contact, lift, transport, release and placement. Navigation scenes use assisted
         physics; the Stretch workcell and G1 learned controller are still experimental.</p>
       <span>Manufacturer-derived robots · Native contact simulation · Source-linked evidence</span>
     </div>

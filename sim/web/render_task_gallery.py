@@ -25,6 +25,7 @@ WIDTH = 960
 HEIGHT = 600
 
 VIEWS = {
+    "panda-pick-place": ("franka_pick_place", [0.52, -0.02, 0.59], 1.82, 136, -24),
     "panda-stack": ("franka_panda", [0.52, -0.02, 0.61], 1.82, 136, -24),
     "panda-recorded": ("franka_panda", [0.51, 0.01, 0.59], 1.88, 136, -26),
     "go2-terrain": ("unitree_go2", [0.64, -0.02, 0.23], 3.18, 127, -20),
@@ -58,7 +59,8 @@ def _render(model: mujoco.MjModel, data: mujoco.MjData, target: Path, view: tupl
 
 
 def _model(menagerie: Path, robot_id: str) -> mujoco.MjModel:
-    robot = next(robot for robot in ROBOTS if robot.id == robot_id)
+    source_id = "franka_panda" if robot_id == "franka_pick_place" else robot_id
+    robot = next(robot for robot in ROBOTS if robot.id == source_id)
     spec = mujoco.MjSpec.from_file(str(menagerie / robot.model / "scene.xml"))
     # Match the low-saturation graphite materials in the live WebAssembly
     # workcell. This is a visual treatment of source textures; real geometry,
@@ -197,15 +199,43 @@ def _panda_frames(
     return snapshots
 
 
+def _panda_pick_snapshot(model: mujoco.MjModel, controls: np.ndarray) -> dict[str, mujoco.MjData]:
+    """Capture a genuine mid-carry frame from the qualified tabletop task."""
+    if controls.ndim != 2 or controls.shape[1] != 8 or len(controls) < 880:
+        raise ValueError("Qualified Panda pick-place motor controls missing")
+    data = initial_data(model)
+    substeps = round((1.0 / 50.0) / float(model.opt.timestep))
+    for frame in range(511):
+        data.ctrl[:] = controls[frame]
+        for _ in range(substeps):
+            mujoco.mj_step(model, data)
+    snapshot = mujoco.MjData(model)
+    snapshot.qpos[:] = data.qpos
+    snapshot.qvel[:] = data.qvel
+    snapshot.ctrl[:] = data.ctrl
+    snapshot.time = data.time
+    mujoco.mj_forward(model, snapshot)
+    cube = snapshot.xpos[model.body("p37_pick_cube").id]
+    if cube[2] <= 0.64:
+        raise RuntimeError("Pick-place preview rejected: cube was not carried")
+    return {"panda-pick-place": snapshot}
+
+
 def build(menagerie: Path, actions: Path, output: Path) -> dict:
     with np.load(actions, allow_pickle=False) as recorded:
         controls = np.asarray(recorded["actions"], dtype=np.float64)
+    pick_path = actions.parent / "panda-pick-place.npz"
+    if not pick_path.is_file():
+        raise FileNotFoundError("Qualified pick-place source controls are required for previews")
+    with np.load(pick_path, allow_pickle=False) as recorded:
+        pick_controls = np.asarray(recorded["actions"], dtype=np.float64)
     report = {
         "renderer": "MuJoCo Python offscreen",
         "image_source": "manufacturer meshes",
         "scenes": [],
     }
     for robot_id in (
+        "franka_pick_place",
         "franka_panda",
         "unitree_go2",
         "anymal_c",
@@ -215,6 +245,8 @@ def build(menagerie: Path, actions: Path, output: Path) -> dict:
         model = _model(menagerie, robot_id)
         if robot_id == "franka_panda":
             captures = _panda_frames(model, controls, output / "panda-stack.mp4")
+        elif robot_id == "franka_pick_place":
+            captures = _panda_pick_snapshot(model, pick_controls)
         else:
             data = mujoco.MjData(model)
             if model.nkey:
@@ -236,7 +268,7 @@ def build(menagerie: Path, actions: Path, output: Path) -> dict:
                     "file": target.name,
                     "size_bytes": target.stat().st_size,
                     "actual_mujoco_scene": True,
-                    "native_panda_motor_replay": robot_id == "franka_panda",
+                    "native_panda_motor_replay": robot_id in {"franka_panda", "franka_pick_place"},
                 }
             )
     report["featured_video"] = {

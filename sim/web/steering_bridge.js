@@ -28,7 +28,8 @@
   // Native Python qualification separately verifies finger/cube contact.
   let pandaSequence = { lifted: false, carried: false, released: false, completed: false };
   const TERRAIN = Object.freeze({unitree_go2: 1.7, anymal_c: 1.6});
-  const robot = new URLSearchParams(window.location.search).get('scene') || '';
+  const sceneId = new URLSearchParams(window.location.search).get('scene') || '';
+  const robot = sceneId === 'franka_pick_place' ? 'franka_panda' : sceneId;
 
   function send(payload) {
     if (window.parent === window) return;
@@ -110,6 +111,27 @@
 
   function taskObservation(model, data) {
     if (robot !== 'franka_panda' && robot !== 'hello_robot_stretch') return {};
+    if (sceneId === 'franka_pick_place') {
+      const free = freeBodies(model, data);
+      if (free.length !== 1) return { taskKind: 'unavailable', observedObjects: free.length };
+      const cube = free[0];
+      const distance = Math.hypot(cube[0] - 0.53, cube[1] - 0.12);
+      const jaw = data.qpos && Number(data.qpos[7]);
+      const open = Number.isFinite(jaw) && jaw > 0.033;
+      if (!open && cube[2] > 0.66) pandaSequence.lifted = true;
+      if (pandaSequence.lifted && !open && cube[1] > 0.045 && cube[2] > 0.64) pandaSequence.carried = true;
+      if (pandaSequence.carried && open && cube[1] > 0.045) pandaSequence.released = true;
+      const velocity = data.qvel ? Array.from(data.qvel).slice(-6) : [];
+      const slow = velocity.length === 6 && Math.hypot(...velocity.map(v => Number(v) || 0)) < 0.12;
+      const settled = pandaSequence.released && distance < 0.055 &&
+        cube[2] >= 0.565 && cube[2] <= 0.605 && slow;
+      stableFrames = settled ? stableFrames + 1 : 0;
+      pandaSequence.completed = stableFrames >= 20;
+      return {taskKind:'pick-place', objectDistance:Number(distance.toFixed(4)),
+        taskLiftObserved:pandaSequence.lifted, taskCarryObserved:pandaSequence.carried,
+        taskReleaseObserved:pandaSequence.released,
+        taskSequenceComplete:pandaSequence.completed, observedObjects:1};
+    }
     const free = freeBodies(model, data);
     if (robot === 'franka_panda' && free.length >= 2) {
       // Two cubes were added, in order, after the factory Panda model.

@@ -126,6 +126,24 @@ def add_physical_task_scene(spec: mujoco.MjSpec, robot_id: str) -> None:
         )
         _marker(spec, "p37_stack_target", 0.53, 0.12, 0.546)
 
+    elif robot_id == "franka_pick_place":
+        # Dedicated tabletop placement scene. This is a separate physical
+        # task from stacking, with one dynamic cube and a non-colliding target.
+        _box(
+            spec,
+            "p37_pick_bench",
+            pos=(0.53, 0.0, 0.27),
+            half=(0.32, 0.36, 0.27),
+            color=(0.38, 0.40, 0.39, 1.0),
+        )
+        _cube(
+            spec,
+            "p37_pick_cube",
+            pos=(0.45, -0.16, 0.57),
+            rgba=(0.20, 0.44, 0.78, 1.0),
+        )
+        _marker(spec, "p37_pick_target", 0.53, 0.12, 0.546)
+
     elif robot_id == "hello_robot_stretch":
         # Menagerie already contains the real 6-DoF source object on its
         # source table. Add a distinct receiving station with actual contact.
@@ -149,6 +167,7 @@ def validate_task_scene(model: mujoco.MjModel, robot_id: str) -> None:
             "p37_stack_blue_collision",
             "p37_stack_amber_collision",
         ),
+        "franka_pick_place": ("p37_pick_bench", "p37_pick_cube_collision"),
         "hello_robot_stretch": ("p37_delivery_station",),
     }.get(robot_id, ())
     for name in expected:
@@ -157,8 +176,13 @@ def validate_task_scene(model: mujoco.MjModel, robot_id: str) -> None:
             raise ValueError(f"missing physical task geom {robot_id}/{name}")
         if int(model.geom_contype[geom]) == 0 or int(model.geom_conaffinity[geom]) == 0:
             raise ValueError(f"task geom {robot_id}/{name} must have physical collision")
-    if robot_id == "franka_panda":
-        for name in ("p37_stack_blue", "p37_stack_amber"):
+    if robot_id in {"franka_panda", "franka_pick_place"}:
+        cube_names = (
+            ("p37_stack_blue", "p37_stack_amber")
+            if robot_id == "franka_panda"
+            else ("p37_pick_cube",)
+        )
+        for name in cube_names:
             body = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_BODY, name)
             if body < 0:
                 raise ValueError(f"missing cube body {name}")

@@ -43,12 +43,15 @@ jobs:
       - name: Qualify Panda physical grasp and produce controls
         run: |
           python sim/web/panda_physical_stack.py --menagerie _menagerie --output _panda_task --require-success
+      - name: Qualify independent Panda pick-and-place controls
+        run: |
+          python sim/web/panda_pick_place.py --menagerie _menagerie --output _panda_task --require-success
       - name: Capture real robot and collision-backed task previews
         run: |
           python sim/web/render_task_gallery.py --menagerie _menagerie --actions _panda_task/panda-physical-stack.npz --output _gallery_previews
       - name: Verify gallery image provenance
         run: |
-          python -c "import json,pathlib; p=pathlib.Path('_gallery_previews'); m=json.loads((p/'manifest.json').read_text()); assert len(m['scenes'])==6; assert all((p/x['file']).stat().st_size>12000 for x in m['scenes']); assert m['featured_video']['file']=='panda-stack.mp4'; v=p/'panda-stack.mp4'; assert v.stat().st_size>50000 and v.read_bytes()[4:8]==b'ftyp'; print('PASS: Native MuJoCo task frames and real Panda task video')"
+          python -c "import json,pathlib; p=pathlib.Path('_gallery_previews'); m=json.loads((p/'manifest.json').read_text()); assert len(m['scenes'])==7; assert all((p/x['file']).stat().st_size>12000 for x in m['scenes']); assert m['featured_video']['file']=='panda-stack.mp4'; v=p/'panda-stack.mp4'; assert v.stat().st_size>50000 and v.read_bytes()[4:8]==b'ftyp'; print('PASS: Native MuJoCo task frames and real Panda task video')"
       - name: Preserve actual task-gallery images
         if: always()
         uses: actions/upload-artifact@v4
