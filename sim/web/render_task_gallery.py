@@ -199,7 +199,6 @@ def _panda_frames(
     return snapshots
 
 
-
 def _panda_pick_snapshot(
     model: mujoco.MjModel, controls: np.ndarray
 ) -> dict[str, mujoco.MjData]:
