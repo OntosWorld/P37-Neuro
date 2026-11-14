@@ -62,7 +62,7 @@ def test(
     if require_gallery_previews:
         previews = json.loads((site / "task-previews/manifest.json").read_text(encoding="utf-8"))
         assert previews["renderer"] == "MuJoCo Python offscreen"
-        assert len(previews["scenes"]) == 6
+        assert len(previews["scenes"]) == 7
         assert previews["featured_video"]["file"] == "panda-stack.mp4"
         assert previews["featured_video"]["native_physics_frames"] is True
         movie = site / "task-previews/panda-stack.mp4"
