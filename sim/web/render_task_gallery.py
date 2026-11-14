@@ -199,9 +199,7 @@ def _panda_frames(
     return snapshots
 
 
-def _panda_pick_snapshot(
-    model: mujoco.MjModel, controls: np.ndarray
-) -> dict[str, mujoco.MjData]:
+def _panda_pick_snapshot(model: mujoco.MjModel, controls: np.ndarray) -> dict[str, mujoco.MjData]:
     """Capture a genuine mid-carry frame from the qualified tabletop task."""
     if controls.ndim != 2 or controls.shape[1] != 8 or len(controls) < 880:
         raise ValueError("Qualified Panda pick-place motor controls missing")
