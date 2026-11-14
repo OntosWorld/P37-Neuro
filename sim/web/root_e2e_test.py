@@ -40,7 +40,13 @@ def test(
     assert metadata["trained_p37_policy_attached"] is True
     assert metadata["experimental_policy_robot"] == "unitree_g1"
     assert metadata["qualified_cross_body_transfer"] is False
-    assert metadata["physical_task_scene_version"] == 2
+    assert metadata["physical_task_scene_version"] == 3
+    pick = metadata["panda_pick_place"]
+    assert pick["qualified_native_contact_and_replay"] is True
+    assert pick["learned_p37_policy"] is False
+    assert pick["frames"] > 500
+    assert pick["control_hz"] == 50
+    assert pick["final_target_error_m"] <= 0.055
     panda_task = metadata["panda_physical_cube_stack"]
     assert panda_task["qualified_native_contact_and_replay"] is True
     assert panda_task["learned_p37_policy"] is False
@@ -78,6 +84,11 @@ def test(
     assert any(
         p["id"] == "panda_physical_cube_stack_scripted" for p in scenes["franka_panda"]["policies"]
     ), "Validated physical Panda stack replay is not attached"
+    assert "franka_pick_place" in scenes, "Physical Panda pick-place scene is missing"
+    assert any(
+        p["id"] == "panda_physical_pick_place_scripted"
+        for p in scenes["franka_pick_place"]["policies"]
+    ), "Validated tabletop pick-place controller is missing"
     motions = json.loads((site / "simulator/motion_data/index.json").read_text(encoding="utf-8"))
     assert set(motions["motions"]) == {r["id"] for r in robots}
     for robot in robots:
@@ -141,8 +152,8 @@ def test(
             page.get_by_role("heading", name="Watch the robots do the work.").wait_for(
                 timeout=35000
             )
-            assert page.locator(".task-gallery-card").count() == 6
-            assert page.locator(".task-gallery-card img").count() == 6
+            assert page.locator(".task-gallery-card").count() == 7
+            assert page.locator(".task-gallery-card img").count() == 7
             assert page.locator(".task-gallery-card video").count() == 1
             assert "panda-stack.mp4" in page.locator(
                 ".task-gallery-card video source"
@@ -161,10 +172,10 @@ def test(
             )
             assert "walking" in page.locator(".policy-evidence").inner_text().lower()
             assert page.locator(".menagerie-viewer").count() == 1
-            assert "scene=franka_panda" in page.locator("iframe.menagerie-viewer").get_attribute(
+            assert "scene=franka_pick_place" in page.locator("iframe.menagerie-viewer").get_attribute(
                 "src"
             )
-            assert "policy=panda_physical_cube_stack_scripted" in page.locator(
+            assert "policy=panda_physical_pick_place_scripted" in page.locator(
                 "iframe.menagerie-viewer"
             ).get_attribute("src")
             page.screenshot(path=str(screenshots / "task-gallery-desktop.png"), timeout=90000)
@@ -219,6 +230,17 @@ def test(
             page.screenshot(path=str(screenshots / "g1-p37-live-inference.png"), timeout=90000)
             page.get_by_role("combobox", name="Select a robot").select_option("franka_panda")
             assert "Fixed-base robot" in page.locator(".p37-steer-panel").inner_text()
+            assert "scene=franka_pick_place" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
+            assert page.get_by_text("Pick up and place a physical cube").is_visible()
+            assert "policy=panda_physical_pick_place_scripted" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
+            # The original stack must remain independently selectable and runnable.
+            page.get_by_role(
+                "button", name="Watch the physical task — Pick up. Move. Stack."
+            ).click()
             assert page.get_by_text("Stack two physical cubes").is_visible()
             assert page.locator(".p37-task-primary").is_visible()
             assert "policy=panda_physical_cube_stack_scripted" in page.locator(
