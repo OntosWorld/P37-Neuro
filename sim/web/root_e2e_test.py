@@ -182,7 +182,7 @@ def test(
             page.get_by_role("button", name="Navigation", exact=True).click()
             assert page.locator(".task-gallery-card").count() == 2
             page.get_by_role("button", name="All experiments").click()
-            assert page.locator(".task-gallery-card").count() == 6
+            assert page.locator(".task-gallery-card").count() == 7
             page.get_by_role(
                 "button", name="Inspect P37 experiment — Test a learned G1 controller."
             ).click()
