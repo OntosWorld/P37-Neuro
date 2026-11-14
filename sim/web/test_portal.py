@@ -132,9 +132,14 @@ def test_pick_place_is_separate_and_fails_closed() -> None:
         assert marker in builder
     for marker in ("p37_pick_bench", "p37_pick_cube", "p37_pick_target"):
         assert marker in tasks
-    for marker in ("contact_grasp_observed", "transport_observed", "release_observed",
-                   "stable_target_observed", "replay_verified",
-                   "open_jaw_negative_control_failed"):
+    for marker in (
+        "contact_grasp_observed",
+        "transport_observed",
+        "release_observed",
+        "stable_target_observed",
+        "replay_verified",
+        "open_jaw_negative_control_failed",
+    ):
         assert marker in controller and marker in assembler
     assert '"franka_pick_place"' in assembler
     assert "panda_physical_pick_place_scripted" in assembler
