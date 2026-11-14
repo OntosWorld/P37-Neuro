@@ -172,9 +172,9 @@ def test(
             )
             assert "walking" in page.locator(".policy-evidence").inner_text().lower()
             assert page.locator(".menagerie-viewer").count() == 1
-            assert "scene=franka_pick_place" in page.locator("iframe.menagerie-viewer").get_attribute(
-                "src"
-            )
+            assert "scene=franka_pick_place" in page.locator(
+                "iframe.menagerie-viewer"
+            ).get_attribute("src")
             assert "policy=panda_physical_pick_place_scripted" in page.locator(
                 "iframe.menagerie-viewer"
             ).get_attribute("src")
