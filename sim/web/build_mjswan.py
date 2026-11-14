@@ -307,8 +307,9 @@ def build(
     pick_frame.ClearField("attribute")
     pick_frame.input[1] = "p37_pick_last_frame"
     pick_table.graph.initializer.append(
-        onnx.helper.make_tensor("p37_pick_last_frame", onnx.TensorProto.INT64,
-                                [1], [len(pick_actions) - 1])
+        onnx.helper.make_tensor(
+            "p37_pick_last_frame", onnx.TensorProto.INT64, [1], [len(pick_actions) - 1]
+        )
     )
     pick_table.producer_name = "Ontos native physical Panda tabletop pick-and-place reference"
     onnx.checker.check_model(pick_table)
@@ -320,24 +321,33 @@ def build(
     add_physical_task_scene(pick_spec, "franka_pick_place")
     validate_task_scene(pick_spec.compile(), "franka_pick_place")
     pick_scene = project.add_scene(
-        spec=pick_spec, name="Franka Pick Place", control_dt=0.02,
+        spec=pick_spec,
+        name="Franka Pick Place",
+        control_dt=0.02,
     )
     pick_scene.add_policy(
         name="Panda Physical Pick Place Scripted",
         policy=pick_table,
-        in_keys=["time_step"], out_keys=["action"],
+        in_keys=["time_step"],
+        out_keys=["action"],
         actions={
             "motor": MuscleActivationActionCfg(
                 actuator_names=tuple(f"actuator{i}" for i in range(1, 9)),
-                action_mode="direct", scale=1.0,
+                action_mode="direct",
+                scale=1.0,
             )
         },
-        observations={}, commands={}, terminations={},
-        policy_joint_names=None, policy_num_actions=8, default=True,
+        observations={},
+        commands={},
+        terminations={},
+        policy_joint_names=None,
+        policy_num_actions=8,
+        default=True,
         extras={
             "source": "Native MuJoCo Panda contact-verified deterministic IK reference",
             "task_id": "panda-pick-place",
-            "scripted_reference": True, "learned_p37_policy": False,
+            "scripted_reference": True,
+            "learned_p37_policy": False,
             "native_physics_verified": True,
             "replay_verified": True,
             "control_sha256": pick_qualification["sha256"],
@@ -345,8 +355,10 @@ def build(
     )
     pick_scene.set_viewer(
         mjswan.ViewerConfig(
-            lookat=panda.camera, distance=panda.distance,
-            elevation=panda.elevation, azimuth=panda.azimuth,
+            lookat=panda.camera,
+            distance=panda.distance,
+            elevation=panda.elevation,
+            azimuth=panda.azimuth,
             origin_type=mjswan.ViewerConfig.OriginType.WORLD,
         )
     )
