@@ -144,20 +144,34 @@ def assemble(output: Path, *, demo_evidence: Path | None = None) -> Path:
     if not pick_path.is_file():
         raise FileNotFoundError("Qualified Panda pick-and-place record missing")
     pick_record = json.loads(pick_path.read_text(encoding="utf-8"))
-    if (pick_record.get("task") != "panda-pick-place"
+    if (
+        pick_record.get("task") != "panda-pick-place"
         or pick_record.get("learned_policy") is not False
-        or any(pick_record.get(key) is not True for key in (
-            "native_physics_verified", "contact_grasp_observed",
-            "lift_observed", "transport_observed", "release_observed",
-            "stable_target_observed", "replay_verified",
-            "open_jaw_negative_control_failed",
-        ))):
+        or any(
+            pick_record.get(key) is not True
+            for key in (
+                "native_physics_verified",
+                "contact_grasp_observed",
+                "lift_observed",
+                "transport_observed",
+                "release_observed",
+                "stable_target_observed",
+                "replay_verified",
+                "open_jaw_negative_control_failed",
+            )
+        )
+    ):
         raise RuntimeError("Panda pick/place physical qualification failed")
     if not (output / "simulator/motion_data/panda-pick-place.onnx").is_file():
         raise FileNotFoundError("Panda pick-place motor ONNX missing")
     pick_scene = next(
-        (scene for project in manifest["projects"] for scene in project["scenes"]
-         if scene["id"] == "franka_pick_place"), None,
+        (
+            scene
+            for project in manifest["projects"]
+            for scene in project["scenes"]
+            if scene["id"] == "franka_pick_place"
+        ),
+        None,
     )
     if pick_scene is None or not any(
         policy.get("id") == "panda_physical_pick_place_scripted"
