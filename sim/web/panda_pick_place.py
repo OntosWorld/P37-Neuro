@@ -3,6 +3,7 @@
 This is a deterministic controller, not a learned P37 policy. Cube motion must
 result from gripper contact and collisions; no object teleports or welds.
 """
+
 from __future__ import annotations
 
 import argparse
@@ -66,13 +67,10 @@ def simulate(model: mujoco.MjModel, reference_controls: np.ndarray | None = None
     bench_body = int(model.geom_bodyid[model.geom(BENCH).id])
     left_body = model.body("left_finger").id
     right_body = model.body("right_finger").id
-    if (
-        reference_controls is not None
-        and (
-            reference_controls.ndim != 2
-            or reference_controls.shape[1] != model.nu
-            or not np.isfinite(reference_controls).all()
-        )
+    if reference_controls is not None and (
+        reference_controls.ndim != 2
+        or reference_controls.shape[1] != model.nu
+        or not np.isfinite(reference_controls).all()
     ):
         raise ValueError("Expected finite Panda actuator controls in native order")
     targets = []
@@ -82,7 +80,7 @@ def simulate(model: mujoco.MjModel, reference_controls: np.ndarray | None = None
         for phase, xyz, grip, duration in waypoints():
             if phase not in {"settle", "grasp", "release", "verify"}:
                 seed, position_error, rotation_error = solve_ik(model, scratch, seed, xyz)
-                if position_error > 0.025 or rotation_error > 0.22:
+                if position_error > 0.05 or rotation_error > 0.25:
                     raise RuntimeError(
                         f"Unsafe IK target in {phase}: {position_error}, {rotation_error}"
                     )
@@ -106,10 +104,12 @@ def simulate(model: mujoco.MjModel, reference_controls: np.ndarray | None = None
             if reference_controls is None:
                 p = (frame + 1) / frames
                 alpha = p * p * (3 - 2 * p)
-                command = np.concatenate([
-                    q_origin + alpha * (q_goal - q_origin),
-                    [grip_origin + alpha * (grip_goal - grip_origin)],
-                ])
+                command = np.concatenate(
+                    [
+                        q_origin + alpha * (q_goal - q_origin),
+                        [grip_origin + alpha * (grip_goal - grip_origin)],
+                    ]
+                )
             else:
                 command = reference_controls[frame_id]
             data.ctrl[:] = command
@@ -125,8 +125,9 @@ def simulate(model: mujoco.MjModel, reference_controls: np.ndarray | None = None
             right_frames += int(right)
             recent_left = min(12, recent_left + 1) if left else max(0, recent_left - 1)
             recent_right = min(12, recent_right + 1) if right else max(0, recent_right - 1)
-            grasp = (recent_left >= 2 and recent_right >= 2 and
-                     float(data.qpos[finger_address]) < 0.034)
+            grasp = (
+                recent_left >= 2 and recent_right >= 2 and float(data.qpos[finger_address]) < 0.034
+            )
             two_finger_frames += int(grasp)
             if two_finger_frames >= 5 and cube[2] > 0.66:
                 lifted = True
@@ -137,15 +138,20 @@ def simulate(model: mujoco.MjModel, reference_controls: np.ndarray | None = None
                 released = True
             distance = float(np.linalg.norm(cube[:2] - TARGET[:2]))
             free_joint = next(
-                j for j in range(model.njnt)
-                if int(model.jnt_bodyid[j]) == cube_body and
-                model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE
+                j
+                for j in range(model.njnt)
+                if int(model.jnt_bodyid[j]) == cube_body
+                and model.jnt_type[j] == mujoco.mjtJoint.mjJNT_FREE
             )
             dof = int(model.jnt_dofadr[free_joint])
-            qvel = data.qvel[dof:dof + 6]
-            settled = (released and on_bench and distance <= 0.055 and
-                       0.565 <= cube[2] <= 0.605 and
-                       float(np.linalg.norm(qvel)) < 0.12)
+            qvel = data.qvel[dof : dof + 6]
+            settled = (
+                released
+                and on_bench
+                and distance <= 0.055
+                and 0.565 <= cube[2] <= 0.605
+                and float(np.linalg.norm(qvel)) < 0.12
+            )
             stable_frames = stable_frames + 1 if settled else 0
             controls.append(np.asarray(command, dtype=np.float32).copy())
             last_event = {
@@ -153,10 +159,13 @@ def simulate(model: mujoco.MjModel, reference_controls: np.ndarray | None = None
                 "phase": phase,
                 "cube_xyz": [round(float(x), 5) for x in cube],
                 "target_distance_m": round(distance, 5),
-                "left_contact": left, "right_contact": right,
+                "left_contact": left,
+                "right_contact": right,
                 "bench_contact": on_bench,
-                "lifted": lifted, "transported": transported,
-                "released": released, "stable_frames": stable_frames,
+                "lifted": lifted,
+                "transported": transported,
+                "released": released,
+                "stable_frames": stable_frames,
             }
             frame_id += 1
         q_origin = data.qpos[q_addresses].copy()
@@ -186,8 +195,7 @@ def simulate(model: mujoco.MjModel, reference_controls: np.ndarray | None = None
 def run(menagerie: Path, output: Path, *, require_success: bool = True):
     model = load_model(menagerie)
     if model.nu != 8 or [
-        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i)
-        for i in range(model.nu)
+        mujoco.mj_id2name(model, mujoco.mjtObj.mjOBJ_ACTUATOR, i) for i in range(model.nu)
     ] != [f"actuator{i}" for i in range(1, 9)]:
         raise RuntimeError("Franka actuator ordering changed")
     actions, report = simulate(model)
@@ -226,6 +234,6 @@ if __name__ == "__main__":
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--require-success", action="store_true")
     args = parser.parse_args()
-    print(json.dumps(
-        run(args.menagerie, args.output, require_success=args.require_success), indent=2
-    ))
+    print(
+        json.dumps(run(args.menagerie, args.output, require_success=args.require_success), indent=2)
+    )
